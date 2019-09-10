@@ -10,7 +10,7 @@ describe('address', function () {
         const key = ec.genKeyPair();
         const privateKey = key.getPrivate('hex');
         const generatedKeys = address.generateKeys(privateKey);
-
+        
         it("Should return correct public spend key in hex", function () {
             assert.equal(generatedKeys.pubSpend, key.getPublic().encodeCompressed('hex'))
         })

@@ -1,7 +1,7 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.4.0",
-  "description": "Privacy utils for tomochain crypto.",
+  "version": "0.1.0",
+  "description": "Privacy utils for tomochain crypto in javascript.",
   "main": "lib/index.js",
   "directories": {
     "test": "test"
@@ -36,6 +36,7 @@
   "devDependencies": {
     "coveralls": "^2.11.2",
     "istanbul": "^0.3.5",
-    "mocha": "^2.1.0"
+    "mocha": "^2.1.0",
+    "nyc": "^14.1.1"
   }
 }

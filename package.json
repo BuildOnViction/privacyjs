@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "coverage": "istanbul cover ./node_modules/.bin/_mocha -- --reporter list test/*.js",
+    "coverage": "istanbul cover ./node_modules/.bin/_mocha -- --reporter list test/*.js --require @babel/register",
     "coveralls": "npm run coverage && coveralls < coverage/lcov.info",
     "test": "mocha"
   },
@@ -35,8 +35,10 @@
     "randomhex": "^0.1.5"
   },
   "devDependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/register": "^7.6.0",
     "coveralls": "^2.11.2",
-    "istanbul": "^0.3.5",
+    "istanbul": "^1.1.0-alpha.1",
     "mocha": "^2.1.0",
     "nyc": "^14.1.1"
   }

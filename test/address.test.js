@@ -28,19 +28,19 @@ describe('address', function () {
             assert.equal(generatedKeys.pubAddr.length, 95);
             
             // decode the public address to get public spend key and public view key - length 140
-            let decodedPrivacyAddress = common.bintohex(Base58.decode(generatedKeys.pubAddr));
+            var decodedPrivacyAddress = common.bintohex(Base58.decode(generatedKeys.pubAddr));
     
             // get first 33 bytes - 66 hex string of public spend key
-            let publicSpendKey = decodedPrivacyAddress.substr(0, 66);
+            var publicSpendKey = decodedPrivacyAddress.substr(0, 66);
             assert.equal(generatedKeys.pubSpend, publicSpendKey);
     
             // get first 33 bytes - 66 hex string of public view key
-            let publicViewKey = decodedPrivacyAddress.substr(66, 66);
+            var publicViewKey = decodedPrivacyAddress.substr(66, 66);
             assert.equal(generatedKeys.pubView, publicViewKey);
     
             // double test check sum
-            let preAddr = generatedKeys.pubSpend + generatedKeys.pubView;
-            let hash = common.fastHash(preAddr).slice(0, 8);
+            var preAddr = generatedKeys.pubSpend + generatedKeys.pubView;
+            var hash = common.fastHash(preAddr).slice(0, 8);
             assert.equal(hash, decodedPrivacyAddress.substr(132, 8));
         })
 

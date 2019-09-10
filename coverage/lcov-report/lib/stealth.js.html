@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for lib/stealth.js</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../prettify.css">
+    <link rel="stylesheet" href="../base.css">
+    <style type='text/css'>
+        div.coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class="header low">
+    <h1>Code coverage report for <span class="entity">lib/stealth.js</span></h1>
+    <h2>
+        Statements: <span class="metric">19.61% <small>(20 / 102)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Branches: <span class="metric">0% <small>(0 / 24)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Functions: <span class="metric">0% <small>(0 / 13)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Lines: <span class="metric">20.2% <small>(20 / 99)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Ignored: <span class="metric"><span class="ignore-none">none</span></span> &nbsp;&nbsp;&nbsp;&nbsp;
+    </h2>
+    <div class="path"><a href="../index.html">All files</a> &#187; <a href="index.html">lib/</a> &#187; stealth.js</div>
+</div>
+<div class="body">
+<pre><table class="coverage">
+<tr><td class="line-count">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201</td><td class="line-coverage"><span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">var assert = require('assert')
+var bs58 = require('bs58')
+var ecurve = require('ecurve')
+var crypto = require('./crypto')
+var ecparams = ecurve.getCurveByName('secp256k1')
+var Point = ecurve.Point
+var BigInteger = crypto.BigInteger
+&nbsp;
+<span class="fstat-no" title="function not covered" >function Stealth(config) {</span>
+  // required
+<span class="cstat-no" title="statement not covered" >  this.payloadPubKey = config.payloadPubKey</span>
+<span class="cstat-no" title="statement not covered" >  this.scanPubKey = config.scanPubKey</span>
+&nbsp;
+  // only makes sense if you're the receiver, i.e. you own the stealth addresss
+<span class="cstat-no" title="statement not covered" >  this.payloadPrivKey = config.payloadPrivKey</span>
+<span class="cstat-no" title="statement not covered" >  this.scanPrivKey = config.scanPrivKey</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  assert(Buffer.isBuffer(this.payloadPubKey), 'payloadPubKey must be a buffer')</span>
+<span class="cstat-no" title="statement not covered" >  assert(Buffer.isBuffer(this.scanPubKey), 'scanPubKey must be a buffer')</span>
+}
+&nbsp;
+Stealth.prototype.toBuffer = <span class="fstat-no" title="function not covered" >function () {</span>
+<span class="cstat-no" title="statement not covered" >  return bconcat([</span>
+    0, // options
+    this.scanPubKey,
+    1, // number of payload keys, only 1 atm
+    this.payloadPubKey,
+    1, // number of sigs, only 1 atm
+    0 // prefix length, not supported (actually, don't even know what the hell it is)
+  ])
+}
+&nbsp;
+Stealth.prototype.toJSON = <span class="fstat-no" title="function not covered" >function () {</span>
+  // sucky converting to hex, but want to still support Node v0.10
+<span class="cstat-no" title="statement not covered" >  var o = {</span>
+    payloadPrivKey: this.payloadPrivKey ? this.payloadPrivKey.toString('hex') : undefined,
+    payloadPubKey: this.payloadPubKey.toString('hex'),
+    scanPrivKey: this.scanPrivKey ? this.scanPrivKey.toString('hex') : undefined,
+    scanPubKey: this.scanPubKey.toString('hex'),
+  }
+&nbsp;
+  // remove undefineds, when we use to return JSON string, stringify did this
+<span class="cstat-no" title="statement not covered" >  if (!o.payloadPrivKey) <span class="cstat-no" title="statement not covered" >delete o.payloadPrivKey</span></span>
+<span class="cstat-no" title="statement not covered" >  if (!o.scanPrivKey) <span class="cstat-no" title="statement not covered" >delete o.scanPrivKey</span></span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return o</span>
+}
+&nbsp;
+Stealth.prototype.toString = <span class="fstat-no" title="function not covered" >function () {</span>
+<span class="cstat-no" title="statement not covered" >  var payload = this.toBuffer()</span>
+<span class="cstat-no" title="statement not covered" >  var checksum = crypto.sha256x2(payload).slice(0, 4)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return bs58.encode(Buffer.concat([</span>
+    payload,
+    checksum
+  ]))
+}
+&nbsp;
+Stealth.fromBuffer = <span class="fstat-no" title="function not covered" >function (buffer) {</span>
+<span class="cstat-no" title="statement not covered" >  const pkLen = 33</span>
+<span class="cstat-no" title="statement not covered" >  var pos = 0</span>
+<span class="cstat-no" title="statement not covered" >  var options = buffer.readUInt8(pos++)</span>
+<span class="cstat-no" title="statement not covered" >  assert.equal(options, 0)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var scanPubKey = buffer.slice(pos, pos += pkLen)</span>
+<span class="cstat-no" title="statement not covered" >  var nPayloadPubkeys = buffer.readUInt8(pos++)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var payloadPubkeys = []</span>
+<span class="cstat-no" title="statement not covered" >  for (var i = 0; i &lt; nPayloadPubkeys; i++) {</span>
+<span class="cstat-no" title="statement not covered" >    payloadPubkeys.push(buffer.slice(pos, pos += pkLen))</span>
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var nSigs = buffer.readUInt8(pos++)</span>
+<span class="cstat-no" title="statement not covered" >  var nPrefix = buffer.readUInt8(pos++)</span>
+<span class="cstat-no" title="statement not covered" >  var prefix = buffer.slice(pos, pos + nPrefix / 8)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  assert.equal(nSigs, 1)</span>
+<span class="cstat-no" title="statement not covered" >  assert.equal(nPrefix, 0)</span>
+<span class="cstat-no" title="statement not covered" >  assert.equal(prefix.length, 0)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return new Stealth({</span>
+    payloadPubKey: payloadPubkeys[0],
+    scanPubKey: scanPubKey
+  })
+}
+&nbsp;
+Stealth.fromRandom = <span class="fstat-no" title="function not covered" >function (config) {</span>
+<span class="cstat-no" title="statement not covered" >  config = config || {}</span>
+<span class="cstat-no" title="statement not covered" >  var rng = config.rng || require('crypto').randomBytes</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var payloadPrivKey = new Buffer(rng(32))</span>
+<span class="cstat-no" title="statement not covered" >  var scanPrivKey = new Buffer(rng(32))</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var payloadPubKey = ecparams.G.multiply(BigInteger.fromBuffer(payloadPrivKey)).getEncoded(true)</span>
+<span class="cstat-no" title="statement not covered" >  var scanPubKey = ecparams.G.multiply(BigInteger.fromBuffer(scanPrivKey)).getEncoded(true)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return new Stealth({</span>
+    scanPrivKey: scanPrivKey,
+    scanPubKey: scanPubKey,
+    payloadPrivKey: payloadPrivKey,
+    payloadPubKey: payloadPubKeyd
+  })
+}
+&nbsp;
+// https://gist.github.com/ryanxcharles/1c0f95d0892b4a92d70a
+Stealth.prototype.genPaymentPubKeyHash = <span class="fstat-no" title="function not covered" >function (senderPrivKey) {</span>
+<span class="cstat-no" title="statement not covered" >  var kdf = crypto.hmacSha256</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var Ap = Point.decodeFrom(ecparams, this.scanPubKey)</span>
+<span class="cstat-no" title="statement not covered" >  var A = Point.decodeFrom(ecparams, this.payloadPubKey)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var S = Ap.multiply(BigInteger.fromBuffer(senderPrivKey))</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var d = BigInteger.fromBuffer(kdf(S.getEncoded(true)))</span>
+<span class="cstat-no" title="statement not covered" >  var D = ecparams.G.multiply(d)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var E = A.add(D)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var pubKeyHash = crypto.hash160(E.getEncoded(true))</span>
+<span class="cstat-no" title="statement not covered" >  return pubKeyHash</span>
+}
+&nbsp;
+Stealth.prototype.genPaymentAddress = <span class="fstat-no" title="function not covered" >function (senderPrivKey) {</span>
+<span class="cstat-no" title="statement not covered" >  var pubKeyHash = this.genPaymentPubKeyHash(senderPrivKey)</span>
+<span class="cstat-no" title="statement not covered" >  var payload = pubKeyHash</span>
+<span class="cstat-no" title="statement not covered" >  var checksum = crypto.sha256x2(payload).slice(0, 4)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return bs58.encode(Buffer.concat([</span>
+    payload,
+    checksum
+  ]))
+}
+&nbsp;
+// https://gist.github.com/ryanxcharles/1c0f95d0892b4a92d70a
+Stealth.prototype.checkPaymentPubKeyHash = <span class="fstat-no" title="function not covered" >function (opReturnPubKey, pubKeyHashToCompare) {</span>
+<span class="cstat-no" title="statement not covered" >  assert(this.payloadPrivKey, 'payloadPrivKey must be set if you use this method. i.e. Must be owner / receiver.')</span>
+<span class="cstat-no" title="statement not covered" >  assert(this.scanPrivKey, 'scanPrivKey must be set if you use this method. i.e. Must be owner / receiver.')</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (opReturnPubKey.length !== 33) <span class="cstat-no" title="statement not covered" >return null</span></span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var kdf = crypto.hmacSha256</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var a = this.payloadPrivKey</span>
+<span class="cstat-no" title="statement not covered" >  var ap = this.scanPrivKey</span>
+<span class="cstat-no" title="statement not covered" >  var B = Point.decodeFrom(ecparams, opReturnPubKey)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var S = B.multiply(BigInteger.fromBuffer(ap))</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var d = kdf(S.getEncoded(true))</span>
+<span class="cstat-no" title="statement not covered" >  var e = BigInteger.fromBuffer(a).add(BigInteger.fromBuffer(d)).mod(ecparams.n)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var E = ecparams.G.multiply(e)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var pubKeyHash = crypto.hash160(E.getEncoded(true))</span>
+<span class="cstat-no" title="statement not covered" >  if (pubKeyHash.toString('hex') !== pubKeyHashToCompare.toString('hex')) {</span>
+<span class="cstat-no" title="statement not covered" >    return null</span>
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return {</span>
+    privKey: e.toBuffer(32),
+    pubKey: E.getEncoded(true)
+  }
+}
+&nbsp;
+Stealth.fromJSON = <span class="fstat-no" title="function not covered" >function (json) {</span>
+<span class="cstat-no" title="statement not covered" >  var o</span>
+<span class="cstat-no" title="statement not covered" >  if (typeof json === 'string') {</span>
+<span class="cstat-no" title="statement not covered" >    o = JSON.parse(json)</span>
+  } else {
+<span class="cstat-no" title="statement not covered" >    o = json</span>
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return new Stealth({</span>
+    payloadPubKey: new Buffer(o.payloadPubKey, 'hex'),
+    scanPubKey: new Buffer(o.scanPubKey, 'hex'),
+    payloadPrivKey: o.payloadPrivKey ? new Buffer(o.payloadPrivKey, 'hex') : undefined,
+    scanPrivKey: o.scanPrivKey ? new Buffer(o.scanPrivKey, 'hex') : undefined
+  })
+}
+&nbsp;
+Stealth.fromString = <span class="fstat-no" title="function not covered" >function (str) {</span>
+<span class="cstat-no" title="statement not covered" >  var buffer = new Buffer(bs58.decode(str))</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  var payload = buffer.slice(0, -4)</span>
+<span class="cstat-no" title="statement not covered" >  var checksum = buffer.slice(-4)</span>
+<span class="cstat-no" title="statement not covered" >  var newChecksum = crypto.sha256x2(payload).slice(0, 4)</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  assert.deepEqual(newChecksum, checksum, 'Invalid checksum')</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return Stealth.fromBuffer(payload)</span>
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function bconcat(arr) {</span>
+<span class="cstat-no" title="statement not covered" >  arr = arr.map(<span class="fstat-no" title="function not covered" >function (item) {</span></span>
+<span class="cstat-no" title="statement not covered" >    return Buffer.isBuffer(item) ? item : new Buffer([item])</span>
+  })
+<span class="cstat-no" title="statement not covered" >  return Buffer.concat(arr)</span>
+}
+&nbsp;
+module.exports = Stealth
+&nbsp;</pre></td></tr>
+</table></pre>
+
+</div>
+<div class="footer">
+    <div class="meta">Generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Sep 10 2019 14:17:30 GMT+0700 (Indochina Time)</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

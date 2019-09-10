@@ -1,5 +1,5 @@
 var assert = require('assert')
-var Stealth = require('../')
+var Stealth = require('../').stealth
 var crypto = require('../lib/crypto')
 var fixtures = require('./fixtures')
 
@@ -20,7 +20,8 @@ describe('stealth', function () {
 
     describe('fromString()', function () {
       it('should convert from base58-check string to object', function () {
-        var stealth = Stealth.fromString(f.base58)
+        var stealth = Stealth.fromString("9dDbC9FzZ74r8njQkXD6W27gtrxLiWaeFPHxeo1fynQRXPt6izuCD63xBquh2L3KYkrAyhe3c2Y8AB1V7fKBjk5dHFMmHQq")
+
         assert.equal(stealth.scanPubKey.toString('hex'), f.receiverScan.pubKey)
         assert.equal(stealth.payloadPubKey.toString('hex'), f.receiverPayload.pubKey)
       })

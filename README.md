@@ -61,10 +61,10 @@ var scanKeyPair = require('coinkey').createRandom()
 // note, the private keys are NOT encoded in the Stealth address
 // you need to save them somewhere
 var stealth = new Stealth({
-  payloadPrivKey: payloadKeyPair.privateKey,
-  payloadPubKey: payloadKeyPair.publicKey,
-  scanPrivKey: scanKeyPair.privateKey,
-  scanPubKey: scanKeyPair.publicKey
+  viewPrivKey: payloadKeyPair.privateKey,
+  viewPubKey: payloadKeyPair.publicKey,
+  spendPrivKey: scanKeyPair.privateKey,
+  spendPubKey: scanKeyPair.publicKey
 })
 
 var addr = stealth.toString()

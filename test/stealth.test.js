@@ -21,11 +21,11 @@ describe('stealth', function () {
         describe('#genTransactionProof()', function () {
             it('should generate the payment pubkeyhash for the sender (payer) to send money to', function () {
                 var stealth = Stealth.fromString(f.base58)
-                var proof = stealth.genTransactionProof()
+                var proof = stealth.genTransactionProof(1000)
 
-                console.log(proof)
                 assert.equal(proof.onetimeAddress.toString('hex').length, 66)
                 assert.equal(proof.txPublicKey.toString('hex').length, 66)
+                assert.equal(proof.mask.length, 28)
             })
         })
 
@@ -38,15 +38,14 @@ describe('stealth', function () {
                     ...Address.generateKeys(f.receiverSpend.privKey)
                 })
 
-                // create proof for a transaction - notice there is no money in this proof
-                var proof = sender.genTransactionProof(receiver.pubSpendKey, receiver.pubViewKey)
-                console.log(proof)
+                // create proof for a transaction 
+                var proof = sender.genTransactionProof(1000, receiver.pubSpendKey, receiver.pubViewKey)
                 // prove above information belong to receiver
-                var result = receiver.checkTransactionProof(proof.txPublicKey, proof.onetimeAddress)
+                var result = receiver.checkTransactionProof(proof.txPublicKey, proof.onetimeAddress, proof.mask)
                 
                 // prove above information belong to receiver
-                console.log(result)
                 assert.notEqual(result, null)
+                assert.equal(result.amount, 1000)
             })
 
             it('should not claim proof for tx not belong', function () {
@@ -58,7 +57,7 @@ describe('stealth', function () {
                 })
 
                 // create proof for a transaction for an other receiver - not above one
-                var proof = sender.genTransactionProof(new Buffer(f.receiverSpend.pubKey, "hex"), new Buffer(f.receiverView.pubKey, "hex"))
+                var proof = sender.genTransactionProof(1000, new Buffer(f.receiverSpend.pubKey, "hex"), new Buffer(f.receiverView.pubKey, "hex"))
 
                 // try to claim the ownership and not success
                 var result = receiver.checkTransactionProof(proof.onetimeAddress, proof.txPublicKey)

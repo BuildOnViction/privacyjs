@@ -15,8 +15,7 @@
         "pubKey": "0266d5c408bb3752c5b2900b04cad54ec98d930c5d6370dcbe45a09a5bc5e083cb"
       },
       "base58": "9dDbC9FzZ74r8njQkXD6W27gtrxLiWaeFPHxeo1fynQRXPt6izuCD63xBquh2L3KYkrAyhe3c2Y8AB1V7fKBjk5dHFMmHQq",
-      "paymentPubKeyHash": "3cb64fa6ee9b3e8754e3e2bd033bf61048604a99",
-      "paymentAddress": "16Y1wiBLH4QVgM38vNwhB2ccTLQm5P7WNh"
+      "privacyAddress": "16Y1wiBLH4QVgM38vNwhB2ccTLQm5P7WNh"
     }
   ]
 }

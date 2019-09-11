@@ -28,18 +28,18 @@ First, you should really read this excellent resource:
 var Stealth = require('tomoprivacyjs').stealth
 var Commitment = require('tomoprivacyjs').commitment
 
-// you get this from the person you're going to pay (receiver) 
-var receiverPrivacyAddress = '1RFNeQ3b8t6GQ9HefzXbRcQyUb5D5vqNBgghGq6aKq4wTGCpZddp252erBwXq6zQgRfeaQdag27W5emHkPJBxxh334Ab3ceMS'
-var stealth = Stealth.fromString(addr)
+var stealth = Stealth.fromString(privacy_address_of_reciever)
 
-// generate payment address
-var payToAddress = stealth.genPaymentAddress(privateSpendKey)
+// create proof this tx belong to receiver
+var proof = sender.genTransactionProof(receiver.pubSpendKey, receiver.pubViewKey) // this 
 
-// to deposit money to your account in privacy mode
+// create pederson commitment for hiding the amount, this is for smart contract checking our spend is not larger than balance
+// ECDH_secret for this transaction = 
+var commitment = sender.genCommiment(receiver.pubSpendKey, receiver.pubViewKey) // this
 
-// create transaction with two outputs:
-// 1. Regular pay-to-pubkeyhash with `payToAddress` as recipient
-// 2. OP_RETURN with `keypair.publicKey`
+// encode amount by any symmetric-key algorithm using ECDH_shared_secret this is for account know the balance
+// Mask = AES(amount, ECDH_secret) 
+
 ```
 
 
@@ -61,10 +61,10 @@ var scanKeyPair = require('coinkey').createRandom()
 // note, the private keys are NOT encoded in the Stealth address
 // you need to save them somewhere
 var stealth = new Stealth({
-  viewPrivKey: payloadKeyPair.privateKey,
-  viewPubKey: payloadKeyPair.publicKey,
-  spendPrivKey: scanKeyPair.privateKey,
-  spendPubKey: scanKeyPair.publicKey
+  privViewKey: payloadKeyPair.privateKey,
+  pubViewKey: payloadKeyPair.publicKey,
+  privSpendKey: scanKeyPair.privateKey,
+  pubSpendKey: scanKeyPair.publicKey
 })
 
 var addr = stealth.toString()
@@ -92,6 +92,12 @@ if (keypair == null) {
   console.log(keypair.privKey)
 }
 ```
+
+#TODO
+- Use babel for development
+- Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
+- Minify the build
+- Shorten the address for saving
 
 API
 ---

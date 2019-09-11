@@ -31,8 +31,7 @@
     "bs58": "^2.0.1",
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
-    "js-sha3": "^0.8.0",
-    "randomhex": "^0.1.5"
+    "js-sha3": "^0.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.0",

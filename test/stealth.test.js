@@ -1,6 +1,7 @@
 var assert = require('assert')
 var Stealth = require('../').stealth
-var crypto = require('../lib/crypto')
+var Address = require('../').address
+var common = require('../')
 var fixtures = require('./fixtures')
 
 /* global describe, it */
@@ -10,20 +11,58 @@ describe('stealth', function () {
     fixtures.valid.forEach(function (f) {
         describe('fromString()', function () {
             it('should convert from base58-check string to object', function () {
-                var stealth = Stealth.fromString("9dDbC9FzZ74r8njQkXD6W27gtrxLiWaeFPHxeo1fynQRXPt6izuCD63xBquh2L3KYkrAyhe3c2Y8AB1V7fKBjk5dHFMmHQq")
+                var stealth = Stealth.fromString(f.base58)
 
-                assert.equal(stealth.spendPubKey.toString('hex'), f.receiverSpend.pubKey)
-                assert.equal(stealth.viewPubKey.toString('hex'), f.receiverView.pubKey)
+                assert.equal(stealth.pubSpendKey.toString('hex'), f.receiverSpend.pubKey)
+                assert.equal(stealth.pubViewKey.toString('hex'), f.receiverView.pubKey)
             })
         })
 
         describe('#genTransactionProof()', function () {
             it('should generate the payment pubkeyhash for the sender (payer) to send money to', function () {
                 var stealth = Stealth.fromString(f.base58)
-                var { onetimeAdress, txPublicKey} = stealth.genTransactionProof()
+                var proof = stealth.genTransactionProof()
 
-                assert.equal(onetimeAdress.toString('hex').length, 66)
-                assert.equal(txPublicKey.toString('hex').length, 66)
+                console.log(proof)
+                assert.equal(proof.onetimeAddress.toString('hex').length, 66)
+                assert.equal(proof.txPublicKey.toString('hex').length, 66)
+            })
+        })
+
+        describe('#checkTransactionProof()', function () {
+            it('should claim proof for right account', function () {
+                var sender = new Stealth({
+                    ...Address.generateKeys(f.sender.privKey)
+                })
+                var receiver = new Stealth({
+                    ...Address.generateKeys(f.receiverSpend.privKey)
+                })
+
+                // create proof for a transaction - notice there is no money in this proof
+                var proof = sender.genTransactionProof(receiver.pubSpendKey, receiver.pubViewKey)
+                console.log(proof)
+                // prove above information belong to receiver
+                var result = receiver.checkTransactionProof(proof.txPublicKey, proof.onetimeAddress)
+                
+                // prove above information belong to receiver
+                console.log(result)
+                assert.notEqual(result, null)
+            })
+
+            it('should not claim proof for tx not belong', function () {
+                var sender = new Stealth({
+                    ...Address.generateKeys(f.sender.privKey)
+                })
+                var receiver = new Stealth({
+                    ...Address.generateKeys(common.randomHex(64))
+                })
+
+                // create proof for a transaction for an other receiver - not above one
+                var proof = sender.genTransactionProof(new Buffer(f.receiverSpend.pubKey, "hex"), new Buffer(f.receiverView.pubKey, "hex"))
+
+                // try to claim the ownership and not success
+                var result = receiver.checkTransactionProof(proof.onetimeAddress, proof.txPublicKey)
+                assert.equal(result, null)
             })
         })
 

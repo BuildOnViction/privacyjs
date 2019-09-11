@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "max-len": 120,
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "optionalDependencies": false,
+        "peerDependencies": false
+      }
+    ],
+    "strict": "off"
+  }
+}

@@ -1,7 +1,8 @@
-var assert = require('assert')
-var Stealth = require('../').stealth
-var Address = require('../').address
-var common = require('../')
+import assert from 'assert';
+import common from '../src';
+import Address from '../src/address';
+import Stealth from '../src/stealth';
+
 var fixtures = require('./fixtures')
 
 /* global describe, it */

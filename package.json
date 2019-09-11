@@ -2,32 +2,38 @@
   "name": "tomoprivacyjs",
   "version": "0.1.0",
   "description": "Privacy utils for tomochain crypto in javascript.",
-  "main": "lib/index.js",
+  "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
     "test": "test"
-  },
-  "scripts": {
-    "coverage": "istanbul cover ./node_modules/.bin/_mocha -- --reporter list test/*.js --require @babel/register",
-    "coveralls": "npm run coverage && coveralls < coverage/lcov.info",
-    "test": "mocha"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/tomochain/privacyjs"
   },
+  "author": "anhnt@tomochain",
+  "license": "MIT",
   "keywords": [
     "bitcoin",
     "steatlth",
     "addresses",
     "privacy"
   ],
-  "author": "anhnt@tomochain.com",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/tomochain/privacyjs/issues"
+  "main": "index.js",
+  "jsnext:main": "index.es.js",
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      "@babel/plugin-transform-runtime"
+    ]
   },
-  "homepage": "https://github.com/tomochain/privacyjs",
+  "eslintConfig": {
+    "parser": "babel-eslint",
+    "extends": "airbnb-base"
+  },
   "dependencies": {
+    "@babel/runtime": "^7.0.0",
     "aes256": "^1.0.4",
     "bs58": "^2.0.1",
     "ecurve": "^1.0.1",
@@ -35,11 +41,38 @@
     "js-sha3": "^0.8.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.6.0",
-    "@babel/register": "^7.6.0",
-    "coveralls": "^2.11.2",
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/node": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "babel-eslint": "^10.0.1",
+    "chai": "^4.2.0",
+    "coveralls": "^2.11.14",
+    "del": "^2.2.2",
+    "easystatic": "^0.1.12",
+    "eslint": "^5.9.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.2.0",
     "istanbul": "^1.1.0-alpha.1",
-    "mocha": "^2.1.0",
-    "nyc": "^14.1.1"
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0",
+    "rollup": "^0.67.3",
+    "rollup-plugin-babel": "^4.0.3",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "sinon": "^7.1.1"
+  },
+  "scripts": {
+    "lint": "eslint src test tools",
+    "test": "mocha --require @babel/register",
+    "test:watch": "mocha --require @babel/register --reporter min --watch",
+    "test:cover": "nyc npm test",
+    "coveralls": "cat ./coverage/lcov.info | coveralls",
+    "build": "node tools/build",
+    "prepublish": "npm run build",
+    "publish:docs": "easystatic deploy docs --repo kriasoft/babel-starter-kit",
+    "start": "easystatic start docs"
   }
 }

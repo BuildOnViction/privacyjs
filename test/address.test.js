@@ -1,14 +1,11 @@
 var assert = require('assert')
-const common = require('../');
-const address = require('../').address;
+import common from '../src/';
+import address from '../src/address';
+
 const elliptic = require('elliptic');
 const ec = new elliptic.ec('secp256k1');
 const Base58 = require('bs58');
 
-// privSpendKey: privSk,
-// pubSpendKey: pubSk,
-// privViewKey: privVk,
-// pubViewKey: pubVk,
 describe('address', function () {
     describe('#generateKeys()', function () {
         const key = ec.genKeyPair();

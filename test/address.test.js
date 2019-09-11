@@ -5,6 +5,10 @@ const elliptic = require('elliptic');
 const ec = new elliptic.ec('secp256k1');
 const Base58 = require('bs58');
 
+// privSpendKey: privSk,
+// pubSpendKey: pubSk,
+// privViewKey: privVk,
+// pubViewKey: pubVk,
 describe('address', function () {
     describe('#generateKeys()', function () {
         const key = ec.genKeyPair();
@@ -12,15 +16,15 @@ describe('address', function () {
         const generatedKeys = address.generateKeys(privateKey);
         
         it("Should return correct public spend key in hex", function () {
-            assert.equal(generatedKeys.pubSpend, key.getPublic().encodeCompressed('hex'))
+            assert.equal(generatedKeys.pubSpendKey, key.getPublic().encodeCompressed('hex'))
         })
     
         it("Should return correct private view key", function () {
-            assert.equal(generatedKeys.privView, common.fastHash(privateKey));
+            assert.equal(generatedKeys.privViewKey, common.fastHash(privateKey));
         })
     
         it("Should return correct public view key", function () {
-            assert.equal(generatedKeys.pubView, address.privateKeyToPub(generatedKeys.privView))
+            assert.equal(generatedKeys.pubViewKey, address.privateKeyToPub(generatedKeys.privViewKey))
         })
     
         it("Return address with format Base58.encode(public spend key + public view key + checksum", function () {
@@ -32,14 +36,14 @@ describe('address', function () {
     
             // get first 33 bytes - 66 hex string of public spend key
             var publicSpendKey = decodedPrivacyAddress.substr(0, 66);
-            assert.equal(generatedKeys.pubSpend, publicSpendKey);
+            assert.equal(generatedKeys.pubSpendKey, publicSpendKey);
     
             // get first 33 bytes - 66 hex string of public view key
             var publicViewKey = decodedPrivacyAddress.substr(66, 66);
-            assert.equal(generatedKeys.pubView, publicViewKey);
+            assert.equal(generatedKeys.pubViewKey, publicViewKey);
     
             // double test check sum
-            var preAddr = generatedKeys.pubSpend + generatedKeys.pubView;
+            var preAddr = generatedKeys.pubSpendKey + generatedKeys.pubViewKey;
             var hash = common.fastHash(preAddr).slice(0, 8);
             assert.equal(hash, decodedPrivacyAddress.substr(132, 8));
         })

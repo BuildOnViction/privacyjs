@@ -1,4 +1,5 @@
 const { keccak256 } = require('js-sha3');
+const assert = require('assert');
 
 /**
  * hextobin converts string to Buffer
@@ -6,12 +7,12 @@ const { keccak256 } = require('js-sha3');
  * @returns {Buffer} Buffer
  */
 function hextobin(hex) {
-  if (hex.length % 2 !== 0) throw 'Hex string has invalid length!';
-  const res = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length / 2; ++i) {
-    res[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  }
-  return res;
+    assert(hex.length % 2 === 0, 'Hex string has invalid length!');
+    const res = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length / 2; ++i) {
+        res[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+    return res;
 }
 
 /**
@@ -20,11 +21,11 @@ function hextobin(hex) {
  * @returns {string} Hex string of input buffer
  */
 function bintohex(bin) {
-  const out = [];
-  for (let i = 0; i < bin.length; ++i) {
-    out.push((`0${bin[i].toString(16)}`).slice(-2));
-  }
-  return out.join('');
+    const out = [];
+    for (let i = 0; i < bin.length; ++i) {
+        out.push((`0${bin[i].toString(16)}`).slice(-2));
+    }
+    return out.join('');
 }
 
 /**
@@ -33,8 +34,8 @@ function bintohex(bin) {
  * @returns {boolean} true - is valid hex and false if not
  */
 function validHex(hex) {
-  const exp = new RegExp(`[0-9a-fA-F]{${hex.length}}`);
-  return exp.test(hex);
+    const exp = new RegExp(`[0-9a-fA-F]{${hex.length}}`);
+    return exp.test(hex);
 }
 
 /**
@@ -43,15 +44,13 @@ function validHex(hex) {
  * @returns {string} keccak256 of input
  */
 function fastHash(input) {
-  if (input.length % 2 !== 0 || !validHex(input)) {
-    throw 'Invalid Hex input for hashing Keccak256';
-  }
-  return keccak256(input);
+    assert(input.length % 2 === 0 && validHex(input), 'Invalid Hex input for hashing Keccak256');
+    return keccak256(input);
 }
 
 module.exports = {
-  hextobin,
-  bintohex,
-  validHex,
-  fastHash,
+    hextobin,
+    bintohex,
+    validHex,
+    fastHash,
 };

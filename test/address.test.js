@@ -1,6 +1,6 @@
 var assert = require('assert')
-import common from '../src/';
-import address from '../src/address';
+const common = require('../src/');
+const address= require('../src/address');
 
 const elliptic = require('elliptic');
 const ec = new elliptic.ec('secp256k1');

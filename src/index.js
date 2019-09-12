@@ -4,8 +4,8 @@ const common = require('./common');
 const crypto = require('./crypto');
 
 module.exports = {
-  stealth,
-  address,
-  ...common,
-  ...crypto,
+    stealth,
+    address,
+    ...common,
+    ...crypto,
 };

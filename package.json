@@ -35,10 +35,12 @@
   "dependencies": {
     "@babel/runtime": "^7.0.0",
     "aes256": "^1.0.4",
+    "bignumber.js": "^9.0.0",
     "bs58": "^2.0.1",
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
-    "js-sha3": "^0.8.0"
+    "js-sha3": "^0.8.0",
+    "truffle-hdwallet-provider": "^1.0.17"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
@@ -49,6 +51,8 @@
     "@babel/register": "^7.0.0",
     "babel-eslint": "^10.0.3",
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chain": "^0.1.3",
     "coveralls": "^2.11.14",
     "del": "^2.2.2",
     "easystatic": "^0.1.12",
@@ -62,12 +66,13 @@
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "sinon": "^7.1.1"
+    "sinon": "^7.1.1",
+    "web3": "^1.2.1"
   },
   "scripts": {
     "lint": "eslint src",
-    "test": "mocha --require @babel/register",
-    "test:watch": "mocha --require @babel/register --reporter min --watch",
+    "test": "mocha --recursive  --require @babel/register",
+    "test:watch": "mocha --recursive --require @babel/register --reporter min --watch",
     "test:cover": "nyc npm test",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "build": "node tools/build",

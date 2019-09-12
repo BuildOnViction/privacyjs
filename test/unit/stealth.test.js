@@ -1,7 +1,7 @@
 import assert from 'assert';
-import common from '../src';
-import Address from '../src/address';
-import Stealth from '../src/stealth';
+import common from '../../src';
+import Address from '../../src/address';
+import Stealth from '../../src/stealth';
 
 var fixtures = require('./fixtures')
 

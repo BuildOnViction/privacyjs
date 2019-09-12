@@ -41,6 +41,8 @@ Stealth.fromBuffer = function (buffer) {
  * read https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-part-2-stealth-addresses
  * for further information
  * to prove the asset belongs the receiver with known pair
+ * If there is input publickeys -> make transaction for other
+ * If there is no input -> deposit yourself to privacy account
  * (public spend key/public view key of receiver)
  * @returns {object} onetimeAddress and txPublicKey
  */
@@ -58,9 +60,9 @@ Stealth.prototype.genTransactionProof = function (amount, pubSpendKey, pubViewKe
 
     const F = basePoint.multiply(f);
 
-    const onetimeAddress = receiverPubSpendKey.add(F).getEncoded(true);
-
-    const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(true);
+    const onetimeAddress = receiverPubSpendKey.add(F).getEncoded(false);
+    
+    const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
 
     const mask = aes256.encrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)),
         amount.toString());
@@ -98,7 +100,8 @@ Stealth.prototype.checkTransactionProof = function (txPublicKey, onetimeAddress,
 
     const E = ecparams.G.multiply(e);
 
-    const onetimeAddressCalculated = E.getEncoded(true);
+    const onetimeAddressCalculated = E.getEncoded(false);
+    
     if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
         return null;
     }

@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xE58A66c9b2D373e761a8C517086DDD6DeD82B315",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xDE3bCEf412f738cf8D48B8c0A656c5698A099Efc",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -23,22 +23,52 @@
                     "type": "uint256"
                 },
                 {
-                    "name": "_pubkeyYBit",
-                    "type": "uint8"
+                    "name": "_pubkeyY",
+                    "type": "uint256"
                 },
                 {
                     "name": "_txPubKeyX",
                     "type": "uint256"
                 },
                 {
-                    "name": "_txPubKeyYBit",
-                    "type": "uint8"
+                    "name": "_txPubKeyY",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_mask",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_amount",
+                    "type": "uint256"
                 }
             ],
             "name": "deposit",
             "outputs": [],
             "payable": true,
             "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_inputIDs",
+                    "type": "uint256[]"
+                },
+                {
+                    "name": "_outputs",
+                    "type": "uint256[][2]"
+                },
+                {
+                    "name": "_amounts",
+                    "type": "uint256[]"
+                }
+            ],
+            "name": "privateSend",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {

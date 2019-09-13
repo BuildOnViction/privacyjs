@@ -66,13 +66,16 @@ class Stealth{
         
         const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
 
-        const mask = aes256.encrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)),
+        const encryptedAmount = aes256.encrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)),
             amount.toString());
+
+        const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
 
         return {
             onetimeAddress,
             txPublicKey,
-            mask,
+            encryptedAmount,
+            mask
         };
     }
 
@@ -80,10 +83,10 @@ class Stealth{
      * checkTransactionProof check if this user owns the UTXO or not
      * @param {string} onetimeAddress UTXO's steal address
      * @param {string} txPublicKey UTXO's transaction public key
-     * @param {string} mask optional = aes256(sharedSecret, amount)
+     * @param {string} encryptedAmount optional = aes256(sharedSecret, amount)
      * @returns {object} amount
      */
-    checkTransactionProof (txPublicKey, onetimeAddress, mask) {
+    checkTransactionProof (txPublicKey, onetimeAddress, encryptedAmount) {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
 
@@ -108,8 +111,8 @@ class Stealth{
             return null;
         }
 
-        if (mask) {
-            const amount = aes256.decrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)), mask);
+        if (encryptedAmount) {
+            const amount = aes256.decrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)), encryptedAmount);
 
             return {
                 privKey: common.bintohex(e.toBuffer(32)),

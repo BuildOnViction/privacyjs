@@ -24,8 +24,8 @@ describe('stealth', function () {
                 var stealth = Stealth.fromString(f.base58)
                 var proof = stealth.genTransactionProof(1000)
 
-                assert.equal(proof.onetimeAddress.toString('hex').length, 66)
-                assert.equal(proof.txPublicKey.toString('hex').length, 66)
+                assert.equal(proof.onetimeAddress.toString('hex').length, 130)
+                assert.equal(proof.txPublicKey.toString('hex').length, 130)
                 assert.equal(proof.mask.length, 28)
             })
         })

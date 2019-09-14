@@ -110,7 +110,7 @@ class Stealth{
         if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
             return null;
         }
-
+        console.log("encryptedAmount ", encryptedAmount);
         if (encryptedAmount) {
             const amount = aes256.decrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)), encryptedAmount);
 

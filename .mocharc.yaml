@@ -6,5 +6,5 @@ opts: ./test/mocha.opts
 package: ./package.json
 reporter: spec
 slow: 75
-timeout: 50000
+timeout: 100000
 ui: bdd

@@ -8,11 +8,14 @@ import chai from 'chai';
 import Address from '../../src/address';
 import Stealth from '../../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
-import { AssertionError } from 'assert';
-import assert from 'assert';
+import ecurve from 'ecurve';
+import crypto from '../../src/crypto';
 
+const { BigInteger } = crypto;
+const ecparams = ecurve.getCurveByName('secp256k1');
 const expect = chai.expect;
 chai.should();
+
 
 const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
@@ -67,16 +70,26 @@ describe('End to End Deposit to 1Tomo to SC', () => {
                      * The UTXO structure 
                      * commitmentX:
                      * _commitmentYBit: '0',
-                     * _pubkeyX:
-                     * _pubkeyYBit: '1',
-                     * _amount: '39920883695728937215643250781821601832375934986290686600175182021887703344957',
-                     *_txPubX: ''
-                     *_txPubYBit: '0'
+                     * _pubkeyX: stealth_address_X, short form of a point in ECC
+                     * _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+                     * _amount: encrypt_AES(shared_ECDH, amount),
+                     *_txPubX: transation_public_key_X, short form of a point in ECC
+                     *_txPubYBit: '', // bit indicate odd or even of transation_public_key_Y
                      */
+                    const basePoint = ecparams.G; // secp256k1 standard base point
+                    let isYStealthOdd = parseInt(UTXO.returnValues._pubkeyYBit) % 2 == 1;
+                    let longFormStealth = ecparams.pointFromX(isYStealthOdd,
+                        BigInteger(UTXO.returnValues._pubkeyX));
+
+                    let isYTxPublicKeyOdd = parseInt(UTXO.returnValues._txPubYBit) % 2 == 1;
+                    let longFormTxPublicKey = ecparams.pointFromX(isYTxPublicKeyOdd, 
+                        BigInteger(UTXO.returnValues._txPubX));
+
                     let isMineUTXO = sender.checkTransactionProof(
-                        Buffer.from(web3.utils.numberToHex(UTXO.returnValues._pubkeyYBit + UTXO.returnValues._pubkeyX), "hex"),
-                        Buffer.from(web3.utils.numberToHex(UTXO.returnValues._commitmentYBit + UTXO.returnValues._commitmentX), "hex"),
+                        longFormTxPublicKey.getEncoded(false),
+                        longFormStealth.getEncoded(false),
                     )
+
                     expect(isMineUTXO).to.not.equal(null);
                     done();
                 } catch (error) {

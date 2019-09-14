@@ -7,6 +7,7 @@ import TestConfig from '../config.json';
 import chai from 'chai';
 import Address from '../../src/address';
 import Stealth from '../../src/stealth';
+import UTXO from '../../src/utxo';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import ecurve from 'ecurve';
 import crypto from '../../src/crypto';
@@ -41,7 +42,6 @@ describe('End to End Deposit to 1Tomo to SC', () => {
 
         // create proof for a transaction 
         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-
         privacyContract.methods.deposit(
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
@@ -60,37 +60,14 @@ describe('End to End Deposit to 1Tomo to SC', () => {
             })
             .then(function(receipt){
                 try {
-                    const UTXO = receipt.events.NewUTXO;
-                    console.log(UTXO)
-                    UTXO.should.be.a('object')
-                    expect(UTXO.transactionHash).to.have.lengthOf(66);
+                    receipt.events.NewUTXO.should.be.a('object')
+                    expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
 
-                    // double check the ownership
-                    /**
-                     * The UTXO structure 
-                     * commitmentX:
-                     * _commitmentYBit: '0',
-                     * _pubkeyX: stealth_address_X, short form of a point in ECC
-                     * _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-                     * _amount: encrypt_AES(shared_ECDH, amount),
-                     *_txPubX: transation_public_key_X, short form of a point in ECC
-                     *_txPubYBit: '', // bit indicate odd or even of transation_public_key_Y
-                     */
-                    const basePoint = ecparams.G; // secp256k1 standard base point
-                    let isYStealthOdd = parseInt(UTXO.returnValues._pubkeyYBit) % 2 == 1;
-                    let longFormStealth = ecparams.pointFromX(isYStealthOdd,
-                        BigInteger(UTXO.returnValues._pubkeyX));
-
-                    let isYTxPublicKeyOdd = parseInt(UTXO.returnValues._txPubYBit) % 2 == 1;
-                    let longFormTxPublicKey = ecparams.pointFromX(isYTxPublicKeyOdd, 
-                        BigInteger(UTXO.returnValues._txPubX));
-
-                    let isMineUTXO = sender.checkTransactionProof(
-                        longFormTxPublicKey.getEncoded(false),
-                        longFormStealth.getEncoded(false),
-                    )
+                    let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
+                    let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
 
                     expect(isMineUTXO).to.not.equal(null);
+                    expect(isMineUTXO.amount).to.equal('1000000000000000000');
                     done();
                 } catch (error) {
                     done(error);

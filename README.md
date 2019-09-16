@@ -14,12 +14,14 @@ Additional requests/features please contact anhnt@tomochain.com
 [![js-standard-style](https://raw.githubusercontent.com/feross/standard/master/badge.png)](https://github.com/feross/standard)
 
 ### TODO
-- Review the randomHex function -> not sure the performance and how randomic it is
-- Use babel for development
-- Fully support browser 
-- Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
-- Minify the build
-- Shorten the address
+- [] Instant use class for depositing, calculating balance, withdrawing, private send(mixing utxo inside)
+- [] Review the randomHex function -> not sure the performance and how randomic it is
+- [x] Use babel for development
+- [] Fully support browser 
+- [] Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
+- [] Minify the build
+- [] Deploy to npm
+- [x] Shorten the address
 
 Usage
 -----

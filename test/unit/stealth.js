@@ -8,7 +8,7 @@ var fixtures = require('./fixtures')
 /* global describe, it */
 // trinity: mocha
 
-describe('stealth', function () {
+describe('#stealth', function () {
     fixtures.valid.forEach(function (f) {
         describe('fromString()', function () {
             it('should convert from base58-check string to object', function () {

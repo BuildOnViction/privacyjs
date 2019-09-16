@@ -6,7 +6,7 @@ const elliptic = require('elliptic');
 const ec = new elliptic.ec('secp256k1');
 const Base58 = require('bs58');
 
-describe('address', function () {
+describe('#address', function () {
     describe('#generateKeys()', function () {
         const key = ec.genKeyPair();
         const privateKey = key.getPrivate('hex');

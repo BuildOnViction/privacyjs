@@ -2,7 +2,6 @@ diff: true
 extension:
   - js
 spec: ./test/**/*.js # the positional arguments!
-opts: ./test/mocha.opts
 package: ./package.json
 reporter: spec
 slow: 75

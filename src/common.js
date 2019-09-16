@@ -44,7 +44,6 @@ function validHex(hex) {
  * @returns {string} keccak256 of input
  */atob
 function fastHash(input) {
-    assert(input.length % 2 === 0 && validHex(input), 'Invalid Hex input for hashing Keccak256');
     return keccak256(input);
 }
 
@@ -58,10 +57,23 @@ function base64tohex(base64) {
     return HEX.toUpperCase();
 }
 
+/**
+ * bconcat makes a buffer from a buffer list
+ * @param {array} arr List Buffer want to concat
+ * @returns {Buffer} concated buffer
+ */
+function bconcat (arr) {
+    arr = arr.map(function (item) {
+      return Buffer.isBuffer(item) ? item : new Buffer([item])
+    });
+    return Buffer.concat(arr)
+}
+
 module.exports = {
     hextobin,
     bintohex,
     validHex,
     fastHash,
-    base64tohex
+    base64tohex,
+    bconcat
 };

@@ -1,7 +1,6 @@
 {
   "valid": [
     {
-      "__COMMENT__": "The following private keys are are sha256 hashes of 'test 1', 'test 2', 'test 3' respectively.",
       "receiverView": {
         "privKey": "ce05dac381329702f65ec1dff6c2f94138651f18f05f2721df52b76472673537",
         "pubKey": "027efe51ae6501ce0b094f9dc71cd4c5ddff83d0225781f0ac4d30b68a7767730c"

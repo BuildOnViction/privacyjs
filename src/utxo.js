@@ -65,7 +65,7 @@ class UTXO {
         return receiver.checkTransactionProof(
             longFormTxPublicKey.getEncoded(false),
             longFormStealth.getEncoded(false),
-            web3.utils.hexToUtf8(web3.utils.numberToHex(this.amount))
+            web3.utils.numberToHex(this.amount).slice(2) // ignore 0x in prefix
         )
     }
 

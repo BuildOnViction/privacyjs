@@ -57,8 +57,8 @@ const scanAllUTXO = async() => {
             utxo = await getUTXO(index);
             let utxoInstance = new UTXO(utxo);
             let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
-            console.log(isMine);
-            if (isMine) {
+            
+            if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
                 balance += isMine.amount;
             }
             index++;

@@ -8,9 +8,11 @@ import chai from 'chai';
 import Address from '../../src/address';
 import Stealth from '../../src/stealth';
 import UTXO from '../../src/utxo';
+import common from '../../src/common';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import ecurve from 'ecurve';
 import crypto from '../../src/crypto';
+import base58 from 'bs58';
 
 const { BigInteger } = crypto;
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -42,13 +44,14 @@ describe('End to End Deposit to 1Tomo to SC', () => {
 
         // create proof for a transaction 
         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+
         privacyContract.methods.deposit(
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
             Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
             Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
             Web3.utils.hexToNumberString(proof.mask),
-            Web3.utils.hexToNumberString(web3.utils.toHex(proof.encryptedAmount)) // encrypt of amount using ECDH
+            Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
         )
             .send({
                 from: WALLETS[0].address,

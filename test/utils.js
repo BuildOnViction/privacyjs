@@ -36,7 +36,7 @@ module.exports.deposit = (amount) => {
             Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
         )
             .send({
-                from: WALLETS[0].address,
+                from: SENDER_WALLET.address,
                 value: amount
             })
             .on('error', function (error) {
@@ -45,6 +45,33 @@ module.exports.deposit = (amount) => {
             .then(function (receipt) {
                 try {
                     resolve(receipt.events.NewUTXO.returnValues);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+    });
+}
+
+
+var privacyAddressContract = new web3.eth.Contract(TestConfig.PRIVACYADD_MAPPING_ABI, TestConfig.PRIVACYADD_MAPPING_SMART_CONTRACT, {
+    from: SENDER_WALLET.address, // default from address
+    gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
+    gas: '1000000'
+});
+
+module.exports.registerPrivacyAddress = (privateKey) => {
+    return new Promise((resolve, reject) => {
+        let privacyAddress = Address.generateKeys(privateKey).pubAddr;
+        privacyAddressContract.methods.register(privacyAddress)
+            .send({
+                from: SENDER_WALLET.address,
+            })
+            .on('error', function (error) {
+                reject(error);
+            })
+            .then(function (receipt) {
+                try {
+                    resolve(receipt);
                 } catch (error) {
                     reject(error);
                 }

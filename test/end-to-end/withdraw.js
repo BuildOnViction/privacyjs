@@ -34,34 +34,40 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 describe('withdraw 0.5Tomo to SC', () => {
     // make sure we run deposit first to get some balance
     it('Successful withdraw from privacy account', (done) => {
-        // deposit 10 TOMO first the get the UTXO
-        TestUtils.deposit(1000000000000000000).then((utxo) => {
-            let UTXOIns = new UTXO(utxo);
-            let derSign = UTXOIns.sign(SENDER_WALLET.privateKey);
-            let amount = 500000000000000000; // 0.5 tomo
+        // register privacy address, deposit 10 TOMO first the get the UTXO
+        Promise.all([
+            TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
+            TestUtils.deposit(1000000000000000000)]).then((utxo) => {
+                let UTXOIns = new UTXO(utxo);
+                let utxoIndex = utxo.events.NewUTXO.returnValues
+                let derSign = UTXOIns.sign(SENDER_WALLET.privateKey);
+                let amount = 500000000000000000; // 0.5 tomo
 
-            privacyContract.methods.withdrawFunds(
-                amount,
-                derSign
-            )
-                .send({
-                    from: WALLETS[0].address,
-                    value: amount
-                })
-                .on('error', function(error) {
-                    console.log(error);
-                    done(error);
-                })
-                .then(function(receipt){
-                    try {
-                        done();
-                    } catch (error) {
+                privacyContract.methods.withdrawFunds(
+                    utxoIndex,
+                    [spend, leftCommitment],
+                    derSign,
+                    SENDER_WALLET.address,
+                    amount
+                )
+                    .send({
+                        from: SENDER_WALLET.address,
+                        value: amount
+                    })
+                    .on('error', function (error) {
+                        console.log(error);
                         done(error);
-                    }
-                });
-        })
-        .catch((ex) => {
-            done(ex);
-        })
+                    })
+                    .then(function (receipt) {
+                        try {
+                            done();
+                        } catch (error) {
+                            done(error);
+                        }
+                    });
+            })
+            .catch((ex) => {
+                done(ex);
+            })
     });
 });

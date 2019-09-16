@@ -1,7 +1,7 @@
 const assert = require('assert');
 const bs58 = require('bs58');
 const ecurve = require('ecurve');
-const aes256 = require('aes256');
+const aesjs = require('aes-js');
 const crypto = require('./crypto');
 const common = require('./common');
 
@@ -66,9 +66,14 @@ class Stealth{
         
         const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
 
-        const encryptedAmount = aes256.encrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)),
-            amount.toString());
-
+        // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
+        // so we generate a hash 32 bytes from 33 bytes
+        const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
+        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(5));
+        const encryptedAmount = common.bintohex(
+                                    aesCtr.encrypt(aesjs.utils.utf8.toBytes(amount.toString())));
+        
+        // generate mask for sc managing balance
         const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
 
         return {
@@ -110,9 +115,14 @@ class Stealth{
         if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
             return null;
         }
-        console.log("encryptedAmount ", encryptedAmount);
+
         if (encryptedAmount) {
-            const amount = aes256.decrypt(common.bintohex(ECDHSharedSerect.getEncoded(true)), encryptedAmount);
+            const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
+            const encryptedBytes = common.hextobin(encryptedAmount);
+    
+            const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(5));
+            const decryptedBytes = aesCtr.decrypt(encryptedBytes);
+            const amount = aesjs.utils.utf8.fromBytes(decryptedBytes);
 
             return {
                 privKey: common.bintohex(e.toBuffer(32)),

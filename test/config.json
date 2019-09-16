@@ -7,11 +7,63 @@
             "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
         },
         {
-            "privateKey": "a3e85bbc98132e58425628e9983f0141e22d07657059189efd060651655fa796"
+            "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
+            "address": "0x3d8dE6eee3b8890FB7E1f9BA7d50D1866D6c3668"
+        }
+    ],
+    "PRIVACYADD_MAPPING_SMART_CONTRACT": "0xbb32d285e4cF30d439F8106bbA926941730fbf1E",
+    "PRIVACYADD_MAPPING_ABI": [
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_normal",
+                    "type": "address"
+                }
+            ],
+            "name": "getPrivacyAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
         },
         {
-            "address": "0x64Cd3A35ca48c9C269699fC7c055912B2904859b",
-            "privateKey": "e4d65ef1569fb0eb9c37e6100a5c87b168bb35feb607b0eead332b2094802b9"
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_privacyAddress",
+                    "type": "bytes"
+                }
+            ],
+            "name": "register",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_privacy",
+                    "type": "bytes"
+                }
+            ],
+            "name": "getNormalAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
         }
     ],
     "PRIVACY_ABI": [

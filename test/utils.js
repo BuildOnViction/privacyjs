@@ -1,17 +1,8 @@
-/**
- * We test real smart contract, you can config the address in ./test/config.json
- */
-
 import Web3 from 'web3';
-import TestConfig from '../config.json';
-import chai from 'chai';
-import Address from '../../src/address';
-import Stealth from '../../src/stealth';
-import UTXO from '../../src/utxo';
+import TestConfig from './config.json';
+import Address from '../src/address';
+import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
-
-const expect = chai.expect;
-chai.should();
 
 const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
@@ -27,10 +18,8 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
     gas: '1000000'
 });
 
-describe('deposit', () => {
-    it('Successful deposit to to privacy account', (done) => {
-        let amount = 1000000000000000000; // 1 tomo
-        // generate a tx 1 tomo from normal addess to privacy address
+module.exports.deposit = (amount) => {
+    return new Promise((resolve, reject) => {
         let sender = new Stealth({
             ...Address.generateKeys(SENDER_WALLET.privateKey)
         })
@@ -47,27 +36,18 @@ describe('deposit', () => {
             Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
         )
             .send({
-                from: SENDER_WALLET.address,
+                from: WALLETS[0].address,
                 value: amount
             })
-            .on('error', function(error) {
-                console.log(error);
-                done(error);
+            .on('error', function (error) {
+                reject(error);
             })
-            .then(function(receipt){
+            .then(function (receipt) {
                 try {
-                    receipt.events.NewUTXO.should.be.a('object')
-                    expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
-                    
-                    let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
-                    let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
-
-                    expect(isMineUTXO).to.not.equal(null);
-                    expect(isMineUTXO.amount).to.equal(amount.toString());
-                    done();
+                    resolve(receipt.events.NewUTXO.returnValues);
                 } catch (error) {
-                    done(error);
+                    reject(error);
                 }
             });
     });
-});
+}

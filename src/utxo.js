@@ -3,16 +3,20 @@ import Address from './address';
 import Stealth from './stealth';
 import ecurve from 'ecurve';
 import crypto from './crypto';
+import common from './common';
+import Base58 from 'bs58';
+import { keccak256 } from 'js-sha3';
 
 const { BigInteger } = crypto;
 const ecparams = ecurve.getCurveByName('secp256k1');
+var EC = require('elliptic').ec;
 
 /**
  * TXO stands for the unspent output from bitcoin transactions.
- * Each transaction begins with coins used to balance the ledger.
+ * Each transaction begins with coins used to balance the smart contrat.
  * UTXOs are processed continuously and are responsible for beginning and ending each transaction.
- * Confirmation of transaction results in the removal of spent coins from the UTXO database.
- * But a record of the spent coins still exists on the ledger. 
+ * Confirmation of transaction results in the removal of spent coins from the UTXO smart-contract.
+ * But a record of the spent coins still exists on the smart contrat. 
  */
 
 /* UTXO structure input
@@ -35,6 +39,10 @@ const ecparams = ecurve.getCurveByName('secp256k1');
 */
 
 class UTXO {
+    /**
+     * 
+     * @param {object} utxo 
+     */
     constructor(utxo){
         this.commitmentX = utxo["0"];
         this.commitmentYBit = utxo["1"];
@@ -43,10 +51,12 @@ class UTXO {
         this.amount = utxo["4"];
         this.txPubX = utxo["5"];
         this.txPubYBit = utxo["6"];
+        this.index = utxo["7"];
     }
 
     /**
      * Check if this utxo belong to account base on a secretkey
+
      * @param {string} privateSpendKey Hex string of private spend key - in other word serectkey
      * @returns {object} amount, keys
      */
@@ -57,11 +67,11 @@ class UTXO {
         let isYStealthOdd = parseInt(this.pubkeyYBit) % 2 == 1;
         let longFormStealth = ecparams.pointFromX(isYStealthOdd,
             BigInteger(this.pubkeyX));
-
+            common.hextobin
         let isYTxPublicKeyOdd = parseInt(this.txPubYBit) % 2 == 1;
         let longFormTxPublicKey = ecparams.pointFromX(isYTxPublicKeyOdd, 
             BigInteger(this.txPubX));
-
+        
         return receiver.checkTransactionProof(
             longFormTxPublicKey.getEncoded(false),
             longFormStealth.getEncoded(false),
@@ -70,25 +80,48 @@ class UTXO {
     }
 
     /**
+     * Generate hash data as signing input to claim this utxo belongs to who owns privatekey
+     * @param {string} privateKey privatekey of account owns this utxo
+     * @returns {string} delegate data of utxo
+     */
+    getHashData(privateKey) {
+        let lfCommitment = ecparams.pointFromX(parseInt(this.commitmentYBit) % 2 == 1,
+            BigInteger(this.commitmentX));
+        let longFormStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 == 1,
+                BigInteger(this.pubkeyX));
+        let privacyAddress = Address.generateKeys(privateKey).pubAddr;
+
+        return keccak256(
+            common.bconcat([
+                lfCommitment.getEncoded(false),
+                longFormStealth.getEncoded(false),
+                Base58.decode(privacyAddress)
+            ])
+        );
+    }
+
+    /**
      * create signature of an UTXO to send to smart-contract to withdraw
      * TODO: future we need to implement ring-signatureCT (monero-like) to prove 
      * @param {string} privateKey
      * @results {array} DER encoded signature in array
      */
-    signUTXO(privateKey) {
+    sign(privateKey) {
+        var secp256k1 = new EC('secp256k1');
 
+        // Generate keys
+        var key = secp256k1.keyFromPrivate(privateKey);
+
+        var context = this.getHashData(privateKey);
+
+        var signature = key.sign(context);
+        
+        // Export DER encoded signature in Array
+        this.derSign = signature.toDER();
+        
+        return this.derSign;
     }
 
-    /**
-     * Withdraw this UTXO
-     * decode the amount of this UTXO, create signature 
-     */
-    withdraw() {
-    }
-
-    sendTo(privacyAddress) {
-
-    }
 }
 
 module.exports = UTXO;

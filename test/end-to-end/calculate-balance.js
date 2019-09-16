@@ -71,8 +71,8 @@ const scanAllUTXO = async() => {
     return balance;
 }
 
-describe('Get List All UTXO and count balance', () => {
-    it('#scanAllUTXO', (done) => {
+describe('Get list all utxo and count balance', () => {
+    it('#scanAllUTXO and sum balance', (done) => {
         // scan all UTXO
         scanAllUTXO().then((balance) => {
             expect(balance > 0).to.be.equal(true);

@@ -6,7 +6,7 @@ tomoprivacy
 - `Person commitment`: Pederson commitment is cryptographic commitment scheme equivalent to secretly writing a secret message m in a sealed, tamper-evident, individually numbered (or/and countersigned) envelope kept by who wrote the message. The envelope's content can't be changed by any means, and the message does not leak any information.
 - `Bullet proof`: Range proofs is a type of zero-knowledge proof used for proving that a secret is within a value range without revealing the precise value of the secret. Bulletproofs is a new non-interactive zero-knowledge proof protocol with very short proofs and without a trusted setup; the proof size is only logarithmic in the witness size. Bulletproofs are especially well suited for efficient range proofs on committed values: they enable proving that a committed value is in a range using only (2 logn + 9) group and field elements, where n is the bit length of the range. Proof generation and verification times are linear in n.
 - `Transaction public key`: equal blinding factor * G (the standard secp256k1 base point)
-- `Stealth Address`: Fork from https://github.com/cryptocoinjs/stealth (EdDSA - ed25519) customize to use ECDSA - secp256k1. The key and address are in different format. We remove the optional bit, prefix network bytes, just use private spend key, private view key and checksum, encode by base58.
+- `Stealth Address`: in other word - oneTimeAddress or tomo privacy address
 
 
 Additional requests/features please contact anhnt@tomochain.com

@@ -71,8 +71,8 @@
   },
   "scripts": {
     "lint": "eslint src",
-    "test": "mocha --config './.mocharc.yaml' --recursive  --require @babel/register",
-    "test-file": "mocha --require @babel/register -g ",
+    "test": "mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
+    "test-case": "mocha --require @babel/register --exit -g ",
     "test:watch": "mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
     "test:cover": "nyc npm test",
     "coveralls": "cat ./coverage/lcov.info | coveralls",

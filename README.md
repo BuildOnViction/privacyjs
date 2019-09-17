@@ -19,7 +19,7 @@ Additional requests/features please contact anhnt@tomochain.com
 - [x] Use babel for development
 - [] Fully support browser 
 - [] Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
-- [] Minify the build
+- [x] Minify the build
 - [] Deploy to npm
 - [x] Shorten the address
 
@@ -30,6 +30,8 @@ First, you should really read this excellent resource:
 - https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-introduction
 - https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-part-2-stealth-addresses
 - https://cryptonote.org/whitepaper.pdf - Cryptonote white paper
+
+*** The fun part of privacy is the client must calculate all the things. Any wrong calculation results in money loss :) ***
 
 #### If you're the payer (sender), assume you got secret key - private spend key
 
@@ -79,8 +81,191 @@ if (result == null) {
 }
 ```
 
-API
+#### Deposit into your private account
+```js
+let amount = 1000000000000000000; // 1 tomo
+// generate a tx 1 tomo from normal addess to privacy address
+let sender = new Stealth({
+    ...Address.generateKeys(privateKey)
+})
+
+// create proof for a transaction 
+let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+
+privacyContract.methods.deposit(
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
+    Web3.utils.hexToNumberString(proof.mask),
+    Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+)
+    .send({
+        from: SENDER_WALLET.address,
+        value: amount // in plain number
+    })
+    .on('error', function(error) {
+        done(error);
+    })
+    .then(function(receipt){
+      // you would get an utxo inside receipt.events receipt.events.NewUTXO
+      // with following field
+      /**
+       *  0 - commitmentX:
+        * 1 - _commitmentYBit: '0',
+        * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
+        * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+        * 4 - _amount: encrypt_AES(shared_ECDH, amount),
+        *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
+        * 6 - _txPubYBit
+        * 7 - _index
+      */
+    });
+```
+
+#### Calculate balance
+You should always listen to event newUTXO and save your index in cookies or localstorage
+When user uses this feature on new device you need to scan all belongings
+and get utxo detail
+
+```js
+function getUTXO(index) {
+    return new Promise((resolve, reject) => {
+        privacyContract.methods.getUTXO(index)
+                .call({
+                    from: WALLETS[0].address
+                })
+                .then(function (utxo) {
+                    return resolve(utxo);
+                }).catch(exception => {
+                    reject(exception);
+                })
+    });
+}
+
+const scanAllUTXO = async() => {
+    let index = 0;
+    var utxo = {};
+    var balance = 0;
+
+    do {
+        try {
+            utxo = await getUTXO(index);
+            let utxoInstance = new UTXO(utxo);
+            let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
+            
+            if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
+                balance += isMine.amount;
+            }
+            index++;
+        } catch(exception) {
+            utxo = null;
+            break;
+        }
+    } while (utxo);
+
+    return balance;
+}
+```
+
+### Private Send
+You do the same thing like deposite but
+1. Creating proof by receiver's public view key and receiver's public spend key
+2. select the list utxo's index you want to send
+3. select the encrypted money amount you wanna send
+
+```js
+// you got privacy address of receiver
+// create a steath from privacy address
+let receiver = Stealth.fromString(privacy_address_of_receiver);
+let proof = sender.genTransactionProof(amount, receiver.pubSpendKey, receiver.pubViewKey);
+privacyContract.methods.privatesend(
+    [utxo1, utxo2, utxo3],
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
+    Web3.utils.hexToNumberString(proof.mask),
+    Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+)
+    .send({
+        from: SENDER_WALLET.address
+    })
+    .on('error', function(error) {
+        done(error);
+    })
+    .then(function(receipt){
+      // you would get an utxo inside receipt.events receipt.events.NewUTXO
+      // with following field
+      /**
+       *  0 - commitmentX:
+        * 1 - _commitmentYBit: '0',
+        * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
+        * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+        * 4 - _amount: encrypt_AES(shared_ECDH, amount),
+        *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
+        * 6 - _txPubYBit
+        * 7 - _index
+      */
+    });
+```
+
+### Withdraw
+Right now we just support withdraw from a single utxo. That mean if you want
+to withdraw more, you have to calculate yourself base on utxo info.
+Need 5 parameters
+1. index - utxo's index, integer number
+2. _amounts - a two elements array includes:
+  1 - amount want to spend in plain number ie 5.5,
+  2 - encrypted by secretKey (in inside src/stealth.js for more detail) of remaining amount in this utxo
+3. the signature of the utxo using ECDSA
+4. commitment of remain amount in this utxo = utxo's mask + remain_money*H
+
+```js
+let amount = 1000000000000000000; // 1 tomo
+// generate a tx 1 tomo from normal addess to privacy address
+let sender = new Stealth({
+    ...Address.generateKeys(privateKey)
+})
+
+// create proof for a transaction 
+let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+
+privacyContract.methods.withdrawFunds(
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
+    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
+    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
+    Web3.utils.hexToNumberString(proof.mask),
+    Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+)
+    .send({
+        from: SENDER_WALLET.address,
+        value: amount
+    })
+    .on('error', function(error) {
+        done(error);
+    })
+    .then(function(receipt){
+      // you would get an utxo inside receipt.events receipt.events.NewUTXO
+      // with following field
+      /**
+       *  0 - commitmentX:
+        * 1 - _commitmentYBit: '0',
+        * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
+        * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+        * 4 - _amount: encrypt_AES(shared_ECDH, amount),
+        *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
+        * 6 - _txPubYBit
+      */
+    });
+```
+
+TEST
 ---
+- [x] Unit test - done
+- Smock test - not implemented yet
+- [x] End to end test on tomochain testnet - cover main flow deposit, withdraw, sendtoprivate
 
 License
 -------

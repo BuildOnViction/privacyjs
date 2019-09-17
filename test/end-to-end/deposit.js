@@ -1,5 +1,5 @@
 /**
- * We test real smart contract, you can config the address in ./test/config.json
+ * End To End tests using tomochain testnet deployed smart-contract, change config in ./test/config.json ./test/config.json
  */
 
 import Web3 from 'web3';

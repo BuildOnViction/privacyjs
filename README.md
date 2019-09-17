@@ -11,8 +11,6 @@ tomoprivacy
 
 Additional requests/features please contact anhnt@tomochain.com
 
-[![js-standard-style](https://raw.githubusercontent.com/feross/standard/master/badge.png)](https://github.com/feross/standard)
-
 ### TODO
 - [] Instant use class for depositing, calculating balance, withdrawing, private send(mixing utxo inside)
 - [] Review the randomHex function -> not sure the performance and how randomic it is
@@ -31,7 +29,7 @@ First, you should really read this excellent resource:
 - https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-part-2-stealth-addresses
 - https://cryptonote.org/whitepaper.pdf - Cryptonote white paper
 
-*** The fun part of privacy is the client must calculate all the things. Any wrong calculation results in money loss :) ***
+***The fun part of privacy is the client must calculate all the things. Any wrong calculation results in money loss :)***
 
 #### If you're the payer (sender), assume you got secret key - private spend key
 
@@ -221,45 +219,7 @@ Need 5 parameters
 3. the signature of the utxo using ECDSA
 4. commitment of remain amount in this utxo = utxo's mask + remain_money*H
 
-```js
-let amount = 1000000000000000000; // 1 tomo
-// generate a tx 1 tomo from normal addess to privacy address
-let sender = new Stealth({
-    ...Address.generateKeys(privateKey)
-})
-
-// create proof for a transaction 
-let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-
-privacyContract.methods.withdrawFunds(
-    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-    Web3.utils.hexToNumberString(proof.mask),
-    Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
-)
-    .send({
-        from: SENDER_WALLET.address,
-        value: amount
-    })
-    .on('error', function(error) {
-        done(error);
-    })
-    .then(function(receipt){
-      // you would get an utxo inside receipt.events receipt.events.NewUTXO
-      // with following field
-      /**
-       *  0 - commitmentX:
-        * 1 - _commitmentYBit: '0',
-        * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
-        * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-        * 4 - _amount: encrypt_AES(shared_ECDH, amount),
-        *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
-        * 6 - _txPubYBit
-      */
-    });
-```
+***Comming Soon***
 
 TEST
 ---

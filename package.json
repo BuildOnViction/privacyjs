@@ -40,7 +40,8 @@
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "js-sha3": "^0.8.0",
-    "truffle-hdwallet-provider": "^1.0.17"
+    "truffle-hdwallet-provider": "^1.0.17",
+    "web3": "^1.2.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
@@ -66,8 +67,7 @@
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "sinon": "^7.1.1",
-    "web3": "^1.2.1"
+    "sinon": "^7.1.1"
   },
   "scripts": {
     "lint": "eslint src",

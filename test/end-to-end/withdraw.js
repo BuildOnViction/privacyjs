@@ -1,5 +1,5 @@
 /**
- * We test real smart contract, you can config the address in ./test/config.json
+ * End To End tests using tomochain testnet deployed smart-contract, change config in ./test/config.json ./test/config.json
  */
 
 import Web3 from 'web3';
@@ -37,7 +37,8 @@ describe('withdraw 0.5Tomo to SC', () => {
         // register privacy address, deposit 10 TOMO first the get the UTXO
         Promise.all([
             TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
-            TestUtils.deposit(1000000000000000000)]).then((utxo) => {
+            TestUtils.deposit(1000000000000000000)]).then((result) => {
+                let utxo = result[1];
                 let UTXOIns = new UTXO(utxo);
                 let utxoIndex = utxo.events.NewUTXO.returnValues
                 let derSign = UTXOIns.sign(SENDER_WALLET.privateKey);

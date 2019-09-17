@@ -11,7 +11,7 @@ var fixtures = require('./fixtures')
 describe('#stealth', function () {
     fixtures.valid.forEach(function (f) {
         describe('fromString()', function () {
-            it('should convert from base58-check string to object', function () {
+            it('should convert from base58-check string to a stealth', function () {
                 var stealth = Stealth.fromString(f.base58)
 
                 assert.equal(stealth.pubSpendKey.toString('hex'), f.receiverSpend.pubKey)

@@ -148,7 +148,6 @@ class Stealth{
         const receiverPubViewKey = Point.decodeFrom(ecparams, this.pubViewKey);
         const blindingFactor = BigInteger.fromBuffer(new Buffer(crypto.randomHex(32), 'hex'));
         const ECDHSharedSerect = receiverPubViewKey.multiply(blindingFactor);
-
         const commitment = basePoint.multiply(blindingFactor).add(ECDHSharedSerect.add(amount));
 
         return commitment.getEncoded(true);

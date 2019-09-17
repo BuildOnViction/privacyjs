@@ -26,7 +26,14 @@
     ],
     "plugins": [
       "@babel/plugin-transform-runtime"
-    ]
+    ],
+    "env": {
+      "production": {
+        "presets": [
+          "minify"
+        ]
+      }
+    }
   },
   "eslintConfig": {
     "parser": "babel-eslint",
@@ -51,6 +58,8 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/register": "^7.0.0",
     "babel-eslint": "^10.0.3",
+    "babel-minify": "^0.5.1",
+    "babel-preset-minify": "^0.5.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chain": "^0.1.3",
@@ -75,8 +84,9 @@
     "test-case": "mocha --require @babel/register --exit -g ",
     "test:watch": "mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
     "test:cover": "nyc npm test",
-    "coveralls": "cat ./coverage/lcov.info | coveralls",
-    "build": "node tools/build",
+    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "build": "node tools/build && npm run minify",
+    "minify": "minify ./dist/*.js --out-dir ./dist/",
     "prepublish": "npm run build"
   }
 }

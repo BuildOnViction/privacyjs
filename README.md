@@ -10,7 +10,7 @@ tomoprivacy
 
 
 Additional requests/features please contact anhnt@tomochain.com
-
+[![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
 ### TODO
 - [] Instant use class for depositing, calculating balance, withdrawing, private send(mixing utxo inside)
 - [] Review the randomHex function -> not sure the performance and how randomic it is

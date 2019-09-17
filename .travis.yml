@@ -1,7 +1,7 @@
 language: node_js
 node_js:
-  - 0.8
+  - v8
 env:
   - TEST_SUITE=test
   - TEST_SUITE=coveralls
-script: "npm run-script $TEST_SUITE"
+script: "sudo apt-get install build-essential && npm run-script $TEST_SUITE"

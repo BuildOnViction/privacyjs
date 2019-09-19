@@ -47,13 +47,12 @@
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "js-sha3": "^0.8.0",
-    "truffle-hdwallet-provider": "^1.0.17",
-    "web3": "^1.2.1"
+    "utf8": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
-    "@babel/node": "^7.0.0",
+    "@babel/node": "^7.6.1",
     "@babel/plugin-transform-runtime": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "@babel/register": "^7.0.0",
@@ -71,14 +70,18 @@
     "eslint-plugin-import": "^2.2.0",
     "istanbul": "^1.1.0-alpha.1",
     "mocha": "^6.0.0",
+    "nodemon": "^1.19.2",
     "nyc": "^13.1.0",
     "rollup": "^0.67.3",
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "sinon": "^7.1.1"
+    "sinon": "^7.1.1",
+    "truffle-hdwallet-provider": "^1.0.17",
+    "web3": "^1.2.1"
   },
   "scripts": {
+    "start": "nodemon --exec babel-node index.js",
     "lint": "eslint src",
     "test": "mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
     "test-case": "mocha --require @babel/register --exit -g ",

@@ -3,6 +3,7 @@ import TestConfig from './config.json';
 import Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
+import common from '../src/common';
 
 const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
@@ -56,13 +57,15 @@ module.exports.deposit = (amount) => {
 var privacyAddressContract = new web3.eth.Contract(TestConfig.PRIVACYADD_MAPPING_ABI, TestConfig.PRIVACYADD_MAPPING_SMART_CONTRACT, {
     from: SENDER_WALLET.address, // default from address
     gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-    gas: '1000000'
+    gas: '2000000'
 });
 
 module.exports.registerPrivacyAddress = (privateKey) => {
     return new Promise((resolve, reject) => {
         let privacyAddress = Address.generateKeys(privateKey).pubAddr;
-        privacyAddressContract.methods.register(privacyAddress)
+        privacyAddressContract.methods.register(
+            common.hextobin(web3.utils.toHex(privacyAddress))
+        )
             .send({
                 from: SENDER_WALLET.address,
             })

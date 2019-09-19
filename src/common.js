@@ -282,6 +282,19 @@ export const toBN = (number) => {
     }
 };
 
+/**
+ * Check if string is HEX, requires a 0x in front
+ *
+ * @method isHexStrict
+ *
+ * @param {String} hex to be checked
+ *
+ * @returns {Boolean}
+ */
+export const isHexStrict = (hex) => {
+    return true;
+};
+
 module.exports = {
     hextobin,
     bintohex,

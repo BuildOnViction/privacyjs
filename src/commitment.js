@@ -50,7 +50,7 @@ class Commitment{
      * Generate Pedersen-commitment from transaction public key - this use will be use when you don't have 
      * mask - normally base on utxo return from smart-contract
      * @param {number} amount You want to hide
-     * @param {object} txpub Object includes X and Ybit returns from utxo
+     * @param {object} txpub Object includes X and YBit returns from utxo
      * @param {Buffer} privateViewKey Hex string private view key
      * @param {boolean} expected output in long-form or short-form, encoded = true -> short-form, encoded = false -> long-form
      * @returns {object} commitment = hs(txpub*private_view_key)*G + amount*H
@@ -86,10 +86,8 @@ class Commitment{
      * @returns {boolean} true if this is my signed commitment elsewise return false
      */
     static verifyCommitment (amount, mask, commitment) {
-        let lfCommitment = ecparams.pointFromX(parseInt(commitment.Ybit) % 2 == 1,
+        let lfCommitment = ecparams.pointFromX(parseInt(commitment.YBit) % 2 == 1,
             BigInteger(commitment.X));
-        console.log("this.genCommitment(amount, mask).toString('hex') ", this.genCommitment(amount, mask).toString('hex'));
-        console.log("lfCommitment.getEncoded(true).toString('hex') ", lfCommitment.getEncoded(true).toString('hex'));
         return this.genCommitment(amount, mask).toString('hex') === lfCommitment.getEncoded(true).toString('hex')
     }
 }

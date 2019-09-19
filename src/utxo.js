@@ -21,7 +21,7 @@ var EC = require('elliptic').ec;
 
 /* UTXO structure input
     * 0 - _commitmentX:
-    * 1 - _commitmentYBit: '0',
+    * 1 - _commitmentYBit: ,
     * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
     * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
     * 4 - _amount: encrypt_AES(shared_ECDH, amount),

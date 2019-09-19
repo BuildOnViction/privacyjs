@@ -16,7 +16,7 @@ const web3 = new Web3(provider);
 var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
     from: SENDER_WALLET.address, // default from address
     gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-    gas: '1000000'
+    gas: '2000000'
 });
 
 module.exports.deposit = (amount) => {
@@ -41,6 +41,7 @@ module.exports.deposit = (amount) => {
                 value: amount
             })
             .on('error', function (error) {
+                console.log
                 reject(error);
             })
             .then(function (receipt) {

@@ -68,10 +68,11 @@ class Stealth{
         // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
         // so we generate a hash 32 bytes from 33 bytes
         const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
-        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(5));
+
+        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
         const encryptedAmount = common.bintohex(
                                     aesCtr.encrypt(aesjs.utils.utf8.toBytes(amount.toString())));
-        
+       
         // generate mask for sc managing balance
         const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
 
@@ -117,12 +118,13 @@ class Stealth{
 
         if (encryptedAmount) {
             const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
+            
             const encryptedBytes = common.hextobin(encryptedAmount);
     
-            const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(5));
+            const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
             const decryptedBytes = aesCtr.decrypt(encryptedBytes);
             const amount = aesjs.utils.utf8.fromBytes(decryptedBytes);
-
+            
             return {
                 privKey: common.bintohex(e.toBuffer(32)),
                 pubKey: E.getEncoded(true),

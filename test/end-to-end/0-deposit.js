@@ -11,6 +11,11 @@ import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
 import HDWalletProvider from "truffle-hdwallet-provider";
 
+const ecurve = require('ecurve');
+const crypto = require('../../src/crypto');
+const ecparams = ecurve.getCurveByName('secp256k1');
+const { BigInteger } = crypto;
+
 const expect = chai.expect;
 chai.should();
 
@@ -29,65 +34,73 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 });
 
 describe('#deposit', () => {
-    it('Successful deposit to to privacy account', (done) => {
-        let amount = 1000000000000000000; // 1 tomo
-        // generate a tx 1 tomo from normal addess to privacy address
-        let sender = new Stealth({
-            ...Address.generateKeys(SENDER_WALLET.privateKey)
-        })
-
-        // create proof for a transaction 
-        let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-
-        privacyContract.methods.deposit(
-            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-            Web3.utils.hexToNumberString(proof.mask),
-            Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
-        )
-            .send({
-                from: SENDER_WALLET.address,
-                value: amount
+    for (var count = 0; count < 15; count++) {
+        it('Successful deposit to to privacy account', (done) => {
+            let amount = 1000000000000000000; // 1 tomo
+            // generate a tx 1 tomo from normal addess to privacy address
+            let sender = new Stealth({
+                ...Address.generateKeys(SENDER_WALLET.privateKey)
             })
-            .on('error', function (error) {
-                console.log(error);
-                done(error);
-            })
-            .then(function (receipt) {
-                try {
-                    receipt.events.NewUTXO.should.be.a('object')
-                    expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
+            
+            // create proof for a transaction 
+            let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
-                    let returnedValue = receipt.events.NewUTXO.returnValues;
-                    let utxoIns = new UTXO(returnedValue);
-                    let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
-
-                    expect(isMineUTXO).to.not.equal(null);
-                    expect(isMineUTXO.amount).to.equal(amount.toString());
-
-                    // validate return commitment from amount,mask
-                    expect(
-                        Commitment.verifyCommitment(
-                            amount,
-                            proof.mask,
-                            utxoIns.commitmentX,
-                            utxoIns.commitmentYBit
-                        )
-                    ).to.equal(true);
-
-                    let expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
-                    expect(
-                        Commitment.genCommitmentFromTxPub(amount, {
-                            X: utxoIns.txPubX,
-                            Ybit: utxoIns.txPubYBit
-                        }, sender.privViewKey).toString('hex') === expectedCommitment
-                    ).to.equal(true);
-                    done();
-                } catch (error) {
+            privacyContract.methods.deposit(
+                Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
+                Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
+                Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
+                Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
+                Web3.utils.hexToNumberString(proof.mask),
+                Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+            )
+                .send({
+                    from: SENDER_WALLET.address,
+                    value: amount
+                })
+                .on('error', function (error) {
+                    console.log(error);
                     done(error);
-                }
-            });
-    });
+                })
+                .then(function (receipt) {
+                    try {
+                        receipt.events.NewUTXO.should.be.a('object')
+                        expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
+
+                        let returnedValue = receipt.events.NewUTXO.returnValues;
+                        let utxoIns = new UTXO(returnedValue);
+                        let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
+
+                        expect(isMineUTXO).to.not.equal(null);
+                        expect(isMineUTXO.amount).to.equal(amount.toString());
+
+                        let lfTx = ecparams.pointFromX(parseInt(utxoIns.txPubYBit) % 2 == 1,
+                            BigInteger(utxoIns.txPubX)).getEncoded(false);
+
+                        // validate return commitment from amount,mask
+                        expect(
+                            Commitment.verifyCommitment(
+                                amount,
+                                proof.mask,
+                                {
+                                    X: utxoIns.commitmentX,
+                                    YBit: utxoIns.commitmentYBit
+                                }
+                            )
+                        ).to.equal(true);
+
+                        let expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
+
+                        expect(
+                            Commitment.genCommitmentFromTxPub(amount, {
+                                X: utxoIns.txPubX,
+                                YBit: utxoIns.txPubYBit
+                            }, sender.privViewKey).toString('hex') === expectedCommitment
+                        ).to.equal(true);
+                        done();
+                    } catch (error) {
+                        done(error);
+                    }
+                });
+        });
+    }
 });

@@ -20,14 +20,15 @@ var EC = require('elliptic').ec;
  */
 
 /* UTXO structure input
-    * 0 - commitmentX:
+    * 0 - _commitmentX:
     * 1 - _commitmentYBit: '0',
     * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
     * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
     * 4 - _amount: encrypt_AES(shared_ECDH, amount),
     *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
     * 6 - _txPubYBit
-    
+    * 7 - _index
+    * 
     EX: 
     '0': '18155385148682453381171818128120365169772552264272945929233713987750616246610',
     '1': '3',
@@ -36,6 +37,7 @@ var EC = require('elliptic').ec;
     '4': '30068922563895814107606905823132927972759867595009162926879225955533868852029',
     '5': '27246925684297394305550515166422186690892865966252478222982343298519032345022',
     '6': '2'
+    '7': 13
 */
 
 class UTXO {
@@ -56,7 +58,6 @@ class UTXO {
 
     /**
      * Check if this utxo belong to account base on a secretkey
-
      * @param {string} privateSpendKey Hex string of private spend key - in other word serectkey
      * @returns {object} amount, keys
      */
@@ -75,7 +76,7 @@ class UTXO {
         return receiver.checkTransactionProof(
             longFormTxPublicKey.getEncoded(false),
             longFormStealth.getEncoded(false),
-            web3.utils.numberToHex(this.amount).slice(2) // ignore 0x in prefix
+            common.numberToHex(this.amount).slice(2) // ignore 0x in prefix
         )
     }
 

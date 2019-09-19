@@ -65,7 +65,6 @@ class Stealth{
         const onetimeAddress = receiverPubSpendKey.add(F).getEncoded(false);
         
         const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
-
         // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
         // so we generate a hash 32 bytes from 33 bytes
         const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
@@ -86,8 +85,8 @@ class Stealth{
 
     /**
      * checkTransactionProof check if this user owns the UTXO or not
-     * @param {string} onetimeAddress UTXO's steal address
-     * @param {string} txPublicKey UTXO's transaction public key
+     * @param {Buffer} onetimeAddress UTXO's steal address
+     * @param {Buffer} txPublicKey UTXO's transaction public key
      * @param {string} encryptedAmount optional = aes256(sharedSecret, amount)
      * @returns {object} amount
      */
@@ -138,30 +137,6 @@ class Stealth{
     }
 
     /**
-     * Generate Pedersen-commitment for hiding amount in  transaction,
-     * used in Smart-contract to verify money flow
-     * @param {number} amount You want to hide
-     * @returns {object} commitment
-     */
-    genCommitment (amount) {
-        const basePoint = ecparams.G; // secp256k1 standard base point
-        const receiverPubViewKey = Point.decodeFrom(ecparams, this.pubViewKey);
-        const blindingFactor = BigInteger.fromBuffer(new Buffer(crypto.randomHex(32), 'hex'));
-        const ECDHSharedSerect = receiverPubViewKey.multiply(blindingFactor);
-        const commitment = basePoint.multiply(blindingFactor).add(ECDHSharedSerect.add(amount));
-
-        return commitment.getEncoded(true);
-    }
-
-    /**
-     * Verify Pedersen-commitment
-     * @param {string} amount You want to hide
-     */
-    verifyCommitment () {
-        return true;
-    }
-
-    /**
      * Build Stealth address from privacy address of receiver - normally for sender
      * stealth address = 33 bytes (public spend key) + 33 bytes(public view key) +
      * 4 bytes (checksum)
@@ -185,11 +160,7 @@ class Stealth{
 
         return Stealth.fromBuffer(buffer.slice(0, -4));
     }
+    
 }
-
-// function bconcat(arr) {
-//     arr = arr.map(item => (Buffer.isBuffer(item) ? item : new Buffer([item])));
-//     return Buffer.concat(arr);
-// }
 
 module.exports = Stealth;

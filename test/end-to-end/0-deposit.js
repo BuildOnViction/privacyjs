@@ -7,6 +7,7 @@ import TestConfig from '../config.json';
 import chai from 'chai';
 import Address from '../../src/address';
 import Stealth from '../../src/stealth';
+import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
 import HDWalletProvider from "truffle-hdwallet-provider";
 
@@ -24,10 +25,10 @@ const web3 = new Web3(provider);
 var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
     from: SENDER_WALLET.address, // default from address
     gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-    gas: '1000000'
+    gas: '2000000'
 });
 
-describe('privatesend', () => {
+describe('#deposit', () => {
     it('Successful deposit to to privacy account', (done) => {
         let amount = 1000000000000000000; // 1 tomo
         // generate a tx 1 tomo from normal addess to privacy address
@@ -50,20 +51,39 @@ describe('privatesend', () => {
                 from: SENDER_WALLET.address,
                 value: amount
             })
-            .on('error', function(error) {
+            .on('error', function (error) {
                 console.log(error);
                 done(error);
             })
-            .then(function(receipt){
+            .then(function (receipt) {
                 try {
                     receipt.events.NewUTXO.should.be.a('object')
                     expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
-                    
-                    let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
+
+                    let returnedValue = receipt.events.NewUTXO.returnValues;
+                    let utxoIns = new UTXO(returnedValue);
                     let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
 
                     expect(isMineUTXO).to.not.equal(null);
                     expect(isMineUTXO.amount).to.equal(amount.toString());
+
+                    // validate return commitment from amount,mask
+                    expect(
+                        Commitment.verifyCommitment(
+                            amount,
+                            proof.mask,
+                            utxoIns.commitmentX,
+                            utxoIns.commitmentYBit
+                        )
+                    ).to.equal(true);
+
+                    let expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
+                    expect(
+                        Commitment.genCommitmentFromTxPub(amount, {
+                            X: utxoIns.txPubX,
+                            Ybit: utxoIns.txPubYBit
+                        }, sender.privViewKey).toString('hex') === expectedCommitment
+                    ).to.equal(true);
                     done();
                 } catch (error) {
                     done(error);

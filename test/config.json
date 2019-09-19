@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xDE3bCEf412f738cf8D48B8c0A656c5698A099Efc",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x3d597C1b4d5A868Ba85c48C73AE229042867404a",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -71,6 +71,25 @@
             "constant": false,
             "inputs": [
                 {
+                    "name": "b",
+                    "type": "bytes1[]"
+                }
+            ],
+            "name": "bytesToUint",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
                     "name": "_pubkeyX",
                     "type": "uint256"
                 },
@@ -127,16 +146,24 @@
             "constant": false,
             "inputs": [
                 {
+                    "name": "_utxoIndex",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_amounts",
+                    "type": "uint256[]"
+                },
+                {
+                    "name": "_rs",
+                    "type": "bytes1[][]"
+                },
+                {
                     "name": "recipient",
                     "type": "address"
                 },
                 {
-                    "name": "_amount",
-                    "type": "uint256"
-                },
-                {
-                    "name": "proof",
-                    "type": "bytes1[]"
+                    "name": "_commitmentAfter",
+                    "type": "uint256[]"
                 }
             ],
             "name": "withdrawFunds",
@@ -187,6 +214,11 @@
                     "indexed": false,
                     "name": "_txPubYBit",
                     "type": "uint8"
+                },
+                {
+                    "indexed": false,
+                    "name": "_index",
+                    "type": "uint256"
                 }
             ],
             "name": "NewUTXO",

@@ -9,6 +9,9 @@ const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
 const { BigInteger } = crypto;
 
+// The initialization vector (must be 16 bytes) for ctr aes256 encrypt/decrypt
+// const aesIv = [27, 34, 23, 26, 33, 31, 24, 22, 19, 30, 49, 11, 36, 35, 59, 21];
+
 class Stealth {
     constructor(config) {
         // required
@@ -35,7 +38,6 @@ class Stealth {
             pubSpendKey,
         });
     }
-
 
     /**
      * genTransactionProof generates one-time address (stealth address) and
@@ -67,9 +69,9 @@ class Stealth {
         const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
         // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
         // so we generate a hash 32 bytes from 33 bytes
-        const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
+        const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
 
-        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
+        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey);
         const encryptedAmount = common.bintohex(
             aesCtr.encrypt(aesjs.utils.utf8.toBytes(amount.toString())),
         );
@@ -118,11 +120,10 @@ class Stealth {
         }
 
         if (encryptedAmount) {
-            const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
+            const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
 
             const encryptedBytes = common.hextobin(encryptedAmount);
-
-            const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
+            const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey);
             const decryptedBytes = aesCtr.decrypt(encryptedBytes);
             const amount = aesjs.utils.utf8.fromBytes(decryptedBytes);
 

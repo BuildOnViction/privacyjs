@@ -47,6 +47,7 @@
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "js-sha3": "^0.8.0",
+    "number-to-bn": "^1.7.0",
     "utf8": "^3.0.0"
   },
   "devDependencies": {
@@ -83,12 +84,12 @@
   "scripts": {
     "start": "nodemon --exec babel-node index.js",
     "lint": "eslint src",
-    "test": "mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
-    "test-case": "mocha --require @babel/register --exit -g ",
-    "test:watch": "mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
-    "test:cover": "nyc npm test",
-    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
-    "build": "node tools/build && npm run minify",
+    "test": "npm run lint && mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
+    "test-case": "npm run lint && mocha --require @babel/register --exit -g ",
+    "test:watch": "npm run lint &&  mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
+    "test:cover": "npm run lint &&  nyc npm test",
+    "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "build": "npm run lint && node tools/build && npm run minify",
     "minify": "minify ./dist/*.js --out-dir ./dist/",
     "prepublish": "npm run build"
   }

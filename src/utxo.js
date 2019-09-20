@@ -75,7 +75,7 @@ class UTXO {
         return receiver.checkTransactionProof(
             longFormTxPublicKey.getEncoded(false),
             longFormStealth.getEncoded(false),
-            numberToHex(this.amount).slice(2), // ignore 0x in prefix
+            numberToHex(this.amount), // ignore 0x in prefix
         );
     }
 

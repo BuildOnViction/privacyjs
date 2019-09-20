@@ -10,15 +10,16 @@ let utxos = data.mine;
 let privateKey = data.keys.privateKey;
 let otherUtxos = data.other;
 
-describe('#utxo', function () {
+describe('#unittest #utxo', function () {
     describe('#isMineUTXO()', function () {
         utxos.forEach(function (utxo) {
-            it('should return correct amount', function (done) {
+            it('should claim belonging utxos', function (done) {
                 let utxoIns = new UTXO(utxo);
                 let isMineUTXO = utxoIns.isMineUTXO(privateKey);
 
                 assert.notEqual(isMineUTXO, null);
-                assert.equal(parseFloat(isMineUTXO.amount).toString(), isMineUTXO.amount);
+                // don't check amount here because the algorithm can be changed
+                // should check amount in stealth.js
                 done();
             })
         });

@@ -46,7 +46,7 @@ describe('withdraw 0.5Tomo from SC', () => {
         Promise.all([
             TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
             TestUtils.deposit(1000000000000000000)]).then((result) => {
-                // console.log("result ", result);
+                console.log("result ", result);
                 let utxo = result[1];
                 let UTXOIns = new UTXO(utxo);
                 let utxoIndex = utxo._index
@@ -65,6 +65,10 @@ describe('withdraw 0.5Tomo from SC', () => {
                     X: UTXOIns.txPubX,
                     YBit: UTXOIns.txPubYBit
                 }, sender.privViewKey, false);
+
+                let withDrawnCommitment = Commitment.genCommitment(amount, "00", false);
+                let sum = Commitment.addCommitment(commitment, withDrawnCommitment);
+                console.log("sum = ", sum.toString('hex'));
 
                 console.log(utxoIndex,
                     '500000000000000000', hexToNumberString(proof.encryptedAmount),

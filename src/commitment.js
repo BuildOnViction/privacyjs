@@ -84,6 +84,12 @@ class Commitment {
         return commitment.getEncoded(encoded);
     }
 
+    static addCommitment(comm1, comm2) {
+        const point1 = Point.decodeFrom(ecparams, comm1);
+        const point2 = Point.decodeFrom(ecparams, comm2);
+        return point1.add(point2);
+    }
+
     /**
      * Verify Pedersen-commitment
      * @param {number} amount You want to hide

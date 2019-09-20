@@ -62,7 +62,7 @@ describe('#unittest #utxo', function () {
             // 3) object with two hex-string properties (r and s); or
             // 4) object with two buffer properties (r and s)
 
-            let verifyingSignature = new Buffer(signature); // case 2
+            let verifyingSignature = new Buffer(signature.toDER()); // case 2
 
             // Verify signature
             assert.equal(verifingKey.verify(msgHash, verifyingSignature), true);

@@ -27,7 +27,14 @@ module.exports.deposit = (amount) => {
 
         // create proof for a transaction 
         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-
+        console.log(Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
+            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
+            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
+            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
+            Web3.utils.hexToNumberString(proof.mask),
+            Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+        );
+        
         privacyContract.methods.deposit(
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve

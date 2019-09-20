@@ -9,7 +9,7 @@ const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
 const { BigInteger } = crypto;
 
-class Stealth{
+class Stealth {
     constructor(config) {
         // required
         this.pubViewKey = typeof config.pubViewKey === 'string' ? new Buffer(config.pubViewKey, 'hex') : config.pubViewKey;
@@ -26,10 +26,10 @@ class Stealth{
     static fromBuffer(buffer) {
         const pkLen = 33;
         let pos = 0;
-    
+
         const pubSpendKey = buffer.slice(pos, pos += pkLen);
         const pubViewKey = buffer.slice(pos, pos += pkLen);
-    
+
         return new Stealth({
             pubViewKey,
             pubSpendKey,
@@ -48,7 +48,7 @@ class Stealth{
      * (public spend key/public view key of receiver)
      * @returns {object} onetimeAddress and txPublicKey
      */
-    genTransactionProof (amount, pubSpendKey, pubViewKey) {
+    genTransactionProof(amount, pubSpendKey, pubViewKey) {
         const hs = crypto.hmacSha256; // hasing function return a scalar
         const basePoint = ecparams.G; // secp256k1 standard base point
         const receiverPubViewKey = Point.decodeFrom(ecparams, pubViewKey || this.pubViewKey);
@@ -63,7 +63,7 @@ class Stealth{
         const F = basePoint.multiply(f);
 
         const onetimeAddress = receiverPubSpendKey.add(F).getEncoded(false);
-        
+
         const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
         // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
         // so we generate a hash 32 bytes from 33 bytes
@@ -71,8 +71,9 @@ class Stealth{
 
         const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
         const encryptedAmount = common.bintohex(
-                                    aesCtr.encrypt(aesjs.utils.utf8.toBytes(amount.toString())));
-       
+            aesCtr.encrypt(aesjs.utils.utf8.toBytes(amount.toString())),
+        );
+
         // generate mask for sc managing balance
         const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
 
@@ -80,7 +81,7 @@ class Stealth{
             onetimeAddress,
             txPublicKey,
             encryptedAmount,
-            mask
+            mask,
         };
     }
 
@@ -91,7 +92,7 @@ class Stealth{
      * @param {string} encryptedAmount optional = aes256(sharedSecret, amount)
      * @returns {object} amount
      */
-    checkTransactionProof (txPublicKey, onetimeAddress, encryptedAmount) {
+    checkTransactionProof(txPublicKey, onetimeAddress, encryptedAmount) {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
 
@@ -111,20 +112,20 @@ class Stealth{
         const E = ecparams.G.multiply(e);
 
         const onetimeAddressCalculated = E.getEncoded(false);
-        
+
         if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
             return null;
         }
 
         if (encryptedAmount) {
             const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(true));
-            
+
             const encryptedBytes = common.hextobin(encryptedAmount);
-    
+
             const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey, new aesjs.Counter(10));
             const decryptedBytes = aesCtr.decrypt(encryptedBytes);
             const amount = aesjs.utils.utf8.fromBytes(decryptedBytes);
-            
+
             return {
                 privKey: common.bintohex(e.toBuffer(32)),
                 pubKey: E.getEncoded(true),
@@ -134,7 +135,7 @@ class Stealth{
 
         return {
             privKey: common.bintohex(e.toBuffer(32)),
-            pubKey: E.getEncoded(true)
+            pubKey: E.getEncoded(true),
         };
     }
 
@@ -145,7 +146,7 @@ class Stealth{
      * @param {string}  str Privacy address of receiver
      * @returns {Object} Stealth instance
      */
-    static fromString (str) {
+    static fromString(str) {
         // uncompress base58 address
         const buffer = new Buffer(bs58.decode(str));
 
@@ -162,7 +163,6 @@ class Stealth{
 
         return Stealth.fromBuffer(buffer.slice(0, -4));
     }
-    
 }
 
 module.exports = Stealth;

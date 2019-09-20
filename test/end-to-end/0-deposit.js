@@ -34,7 +34,7 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 });
 
 describe('#deposit', () => {
-    for (var count = 0; count < 15; count++) {
+    for (var count = 0; count < 1; count++) {
         it('Successful deposit to to privacy account', (done) => {
             let amount = 1000000000000000000; // 1 tomo
             // generate a tx 1 tomo from normal addess to privacy address

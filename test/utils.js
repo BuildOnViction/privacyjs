@@ -3,7 +3,7 @@ import TestConfig from './config.json';
 import Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
-import common from '../src/common';
+import { hextobin } from '../src/common';
 
 const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
@@ -65,7 +65,7 @@ module.exports.registerPrivacyAddress = (privateKey) => {
     return new Promise((resolve, reject) => {
         let privacyAddress = Address.generateKeys(privateKey).pubAddr;
         privacyAddressContract.methods.register(
-            common.hextobin(web3.utils.toHex(privacyAddress))
+            hextobin(web3.utils.toHex(privacyAddress))
         )
             .send({
                 from: SENDER_WALLET.address,

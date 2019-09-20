@@ -357,15 +357,15 @@ export const numberToHex = (value) => {
     if (isNull(value) || typeof value === 'undefined') {
         return value;
     }
-
-    if (!isFinite(value) && !isHexStrict(value)) {
-        throw new Error(`Given input "${value}" is not a number.`);
-    }
-
     const number = toBN(value);
     const result = number.toString(16);
+    const hexString = number.lt(new BN(0)) ? `-${result.substr(1)}` : `${result}`;
 
-    return number.lt(new BN(0)) ? `-0x${result.substr(1)}` : `0x${result}`;
+    if (hexString.length % 2 === 1) {
+        return `0${hexString}`;
+    }
+
+    return hexString;
 };
 
 /**

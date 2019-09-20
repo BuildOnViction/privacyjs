@@ -37,12 +37,13 @@ class Commitment {
      */
     static genCommitment(amount, mask, encoded = true) {
         const basePointG = ecparams.G;
+
         const commitment = basePointG.multiply(
             BigInteger.fromHex(mask),
         )
             .add(basePointH.multiply(
                 BigInteger.fromHex(
-                    common.numberToHex(amount).slice(2),
+                    common.numberToHex(amount),
                 ),
             ));
 

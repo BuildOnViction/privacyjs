@@ -11,6 +11,7 @@ import Address from '../../src/address';
 import Commitment from '../../src/commitment';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import TestUtils from '../utils';
+import { hexToNumberString } from '../../src/common';
 
 const expect = chai.expect;
 chai.should();
@@ -45,41 +46,58 @@ describe('withdraw 0.5Tomo from SC', () => {
         Promise.all([
             TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
             TestUtils.deposit(1000000000000000000)]).then((result) => {
-                console.log("result ", result);
+                // console.log("result ", result);
                 let utxo = result[1];
                 let UTXOIns = new UTXO(utxo);
                 let utxoIndex = utxo._index
-                let derSign = UTXOIns.sign(SENDER_WALLET.privateKey);
+                let signature = UTXOIns.sign(SENDER_WALLET.privateKey);
                 let amount = 500000000000000000; // 0.5 tomo
                 
                 // create proof for a transaction, we deposit 1 tomo, withdraw 0.5 so amount here = 0.5 tomo
                 let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
                 
-                console.log("proof.encryptedAmount ", proof.encryptedAmount)
-                privacyContract.methods.withdrawFunds(
-                    utxoIndex,
-                    [500000000000000000, 16237732103012451899913639141037139769701578],
-                    derSign,
+                // console.log("proof.encryptedAmount ", proof.encryptedAmount)
+                if (proof.encryptedAmount.length % 2 == 1) {
+                    proof.encryptedAmount = '0' + proof.encryptedAmount;
+                }
+
+                let commitment = Commitment.genCommitmentFromTxPub(amount, {
+                    X: UTXOIns.txPubX,
+                    YBit: UTXOIns.txPubYBit
+                }, sender.privViewKey, false);
+
+                console.log(utxoIndex,
+                    '500000000000000000', hexToNumberString(proof.encryptedAmount),
+                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
                     SENDER_WALLET.address,
                     // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
-                    [ ...Commitment.genCommitmentFromTxPub(amount, {
-                        X: UTXOIns.txPubX,
-                        YBit: UTXOIns.txPubYBit
-                    }, sender.privViewKey)]
+                    [
+                        commitment.toString('hex').substr(2, 64), // the X part of curve 
+                        commitment.toString('hex').substr(-64), // the Y part of curve
+                    ]);
+
+                privacyContract.methods.withdrawFunds(
+                    utxoIndex,
+                    '500000000000000000', hexToNumberString(proof.encryptedAmount),
+                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
+                    SENDER_WALLET.address,
+                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
+                    [
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
+                    ]
                 )
-                    .call({
+                    .send({
                         from: SENDER_WALLET.address
                     })
-                    .on('error', function (error) {
+                    .then(function (receipt) {
+                        console.log("receipt ", receipt);
+                        done();
+                        
+                    })
+                    .catch(function (error) {
                         console.log(error);
                         done(error);
-                    })
-                    .then(function (receipt) {
-                        try {
-                            done();
-                        } catch (error) {
-                            done(error);
-                        }
                     });
             })
             .catch((ex) => {

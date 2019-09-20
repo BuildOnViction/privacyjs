@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x51e9d3111CDa165AbFbe88264fA9e1C94373f6ea",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x50f5b2068D6852dfB2b77C0faC640bA7c4FBa99A",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -72,7 +72,7 @@
             "inputs": [
                 {
                     "name": "b",
-                    "type": "bytes1[]"
+                    "type": "bytes32"
                 }
             ],
             "name": "bytesToUint",
@@ -150,12 +150,16 @@
                     "type": "uint256"
                 },
                 {
-                    "name": "_amounts",
-                    "type": "uint256[]"
+                    "name": "_amount1",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_amount2",
+                    "type": "uint256"
                 },
                 {
                     "name": "_rs",
-                    "type": "bytes1[][]"
+                    "type": "bytes32[2]"
                 },
                 {
                     "name": "recipient",
@@ -163,7 +167,7 @@
                 },
                 {
                     "name": "_commitmentAfter",
-                    "type": "uint256[]"
+                    "type": "uint256[2]"
                 }
             ],
             "name": "withdrawFunds",

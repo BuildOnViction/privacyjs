@@ -117,9 +117,9 @@ class UTXO {
         const signature = key.sign(context);
 
         // Export DER encoded signature in Array
-        this.derSign = signature.toDER();
+        // this.derSign = signature.toDER();
 
-        return this.derSign;
+        return signature;
     }
 }
 

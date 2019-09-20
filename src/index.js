@@ -9,5 +9,5 @@ module.exports = {
     address,
     ...common,
     ...crypto,
-    utxo
+    utxo,
 };

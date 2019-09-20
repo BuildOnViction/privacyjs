@@ -1,9 +1,12 @@
 import Web3 from 'web3';
+import chai from 'chai';
 import TestConfig from './config.json';
 import Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import { hextobin } from '../src/common';
+
+chai.should();
 
 const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
@@ -27,21 +30,14 @@ module.exports.deposit = (amount) => {
 
         // create proof for a transaction 
         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-        console.log(Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-            Web3.utils.hexToNumberString(proof.mask),
-            Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
-        );
         
         privacyContract.methods.deposit(
-            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-            Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-            Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-            Web3.utils.hexToNumberString(proof.mask),
-            Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+            '0x' + proof.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+            '0x' + proof.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+            '0x' + proof.txPublicKey.toString('hex').substr(2, 64), // the X part of curve
+            '0x' + proof.txPublicKey.toString('hex').substr(-64), // the Y par of curve,
+            '0x' + proof.mask,
+            '0x' + proof.encryptedAmount// encrypt of amount using ECDH
         )
             .send({
                 from: SENDER_WALLET.address,
@@ -52,8 +48,12 @@ module.exports.deposit = (amount) => {
                 reject(error);
             })
             .then(function (receipt) {
+                receipt.events.NewUTXO.should.be.a('object');
                 try {
-                    resolve(receipt.events.NewUTXO.returnValues);
+                    resolve({
+                        utxo: receipt.events.NewUTXO.returnValues,
+                        proof
+                    });
                 } catch (error) {
                     reject(error);
                 }

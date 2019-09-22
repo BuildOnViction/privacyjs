@@ -8,6 +8,7 @@ let ec = new EC('secp256k1');
 let data = require('./utxos');
 let utxos = data.mine;
 let privateKey = data.keys.privateKey;
+let targetAddress = data.keys.address;
 let otherUtxos = data.other;
 
 describe('#unittest #utxo', function () {
@@ -41,7 +42,7 @@ describe('#unittest #utxo', function () {
             let key = ec.keyFromPrivate(privateKey);
             let utxoIns = new UTXO(utxos[0]);
             var msgHash = utxoIns.getHashData(privateKey);
-            let signature = utxoIns.sign(privateKey);
+            let signature = utxoIns.sign(privateKey, targetAddress);
 
             let pubPoint = key.getPublic();
             let x = pubPoint.getX();

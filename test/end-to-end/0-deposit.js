@@ -47,16 +47,6 @@ describe('#deposit', () => {
 
                 let expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
                 
-                console.log(` Commitment.genCommitmentFromTxPub short `, Commitment.genCommitmentFromTxPub(amount, {
-                    X: utxoIns.txPubX,
-                    YBit: utxoIns.txPubYBit
-                }, sender.privViewKey, true).toString('hex'));
-
-                console.log(` Commitment.genCommitmentFromTxPub long `, Commitment.genCommitmentFromTxPub(amount, {
-                    X: utxoIns.txPubX,
-                    YBit: utxoIns.txPubYBit
-                }, sender.privViewKey, false).toString('hex'));
-
                 expect(
                     Commitment.genCommitmentFromTxPub(amount, {
                         X: utxoIns.txPubX,

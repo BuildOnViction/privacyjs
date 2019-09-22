@@ -50,7 +50,7 @@ describe('withdraw 0.5Tomo from SC', () => {
                 let utxo = result[1].utxo;
                 let UTXOIns = new UTXO(utxo);
                 let utxoIndex = utxo._index
-                let signature = UTXOIns.sign(SENDER_WALLET.privateKey);
+                let signature = UTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
                 let amount = 500000000000000000; // 0.5 tomo
                 
                 // create proof for a transaction, we deposit 1 tomo, withdraw 0.5 so amount here = 0.5 tomo
@@ -65,7 +65,18 @@ describe('withdraw 0.5Tomo from SC', () => {
                     X: UTXOIns.txPubX,
                     YBit: UTXOIns.txPubYBit
                 }, sender.privViewKey, false);
-
+                
+                console.log(utxoIndex,
+                    '500000000000000000', hexToNumberString(proof.encryptedAmount),
+                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
+                    SENDER_WALLET.address,
+                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
+                    [
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
+                    ]
+                );
+                
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
                     '500000000000000000', hexToNumberString(proof.encryptedAmount),

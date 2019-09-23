@@ -1,5 +1,7 @@
-import { keccak256 as Hash } from 'js-sha3';
+/* eslint-disable no-prototype-builtins */
+import { keccak256 as Hash, sha3_256 as sha3 } from 'js-sha3';
 import numberToBN from 'number-to-bn';
+import * as _ from 'lodash';
 import isBoolean from 'lodash/isBoolean';
 import isString from 'lodash/isString';
 import isNumber from 'lodash/isNumber';
@@ -516,31 +518,6 @@ export const isTopic = (topic) => {
 };
 
 /**
- * Hashes values to a keccak256 hash using keccak 256
- *
- * To hash a HEX string the hex must have 0x in front.
- *
- * @method keccak256
- * @return {String} the keccak256 string
- */
-const KECCAK256_NULL_S = '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470';
-
-export const keccak256 = (value) => {
-    if (isHexStrict(value) && /^0x/i.test(value.toString())) {
-        value = hexToBytes(value);
-    }
-
-    const returnValue = Hash(value); // jshint ignore:line
-
-    if (returnValue === KECCAK256_NULL_S) {
-        return null;
-    }
-    return returnValue;
-};
-// expose the under the hood keccak256
-keccak256._Hash = Hash;
-
-/**
  * Gets the r,s,v values from a signature
  *
  * @method getSignatureParameters
@@ -566,4 +543,208 @@ export const getSignatureParameters = (signature) => {
         s,
         v,
     };
+};
+
+const _elementaryName = function (name) {
+    if (name.startsWith('int[')) {
+        return 'int256' + name.slice(3);
+    }
+    if (name === 'int') {
+        return 'int256';
+    }
+    if (name.startsWith('uint[')) {
+        return 'uint256' + name.slice(4);
+    }
+    if (name === 'uint') {
+        return 'uint256';
+    }
+    if (name.startsWith('fixed[')) {
+        return 'fixed128x128' + name.slice(5);
+    }
+    if (name === 'fixed') {
+        return 'fixed128x128';
+    }
+    if (name.startsWith('ufixed[')) {
+        return 'ufixed128x128' + name.slice(6);
+    }
+    if (name === 'ufixed') {
+        return 'ufixed128x128';
+    }
+    return name;
+};
+
+// Parse N from type<N>
+const _parseTypeN = function (type) {
+    const typesize = /^\D+(\d+).*$/.exec(type);
+    return typesize ? parseInt(typesize[1], 10) : null;
+};
+
+// Parse N from type[<N>]
+const _parseTypeNArray = function (type) {
+    const arraySize = /^\D+\d*\[(\d+)\]$/.exec(type);
+    return arraySize ? parseInt(arraySize[1], 10) : null;
+};
+
+const _parseNumber = function (arg) {
+    const type = typeof arg;
+    if (type === 'string') {
+        if (isHexStrict(arg)) {
+            return new BN(arg.replace(/0x/i, ''), 16);
+        }
+        return new BN(arg, 10);
+    }
+    if (type === 'number') {
+        return new BN(arg);
+    }
+
+    if (isBigNumber(arg)) {
+        return new BN(arg.toString(10));
+    }
+
+    if (isBN(arg)) {
+        return arg;
+    }
+
+    throw new Error(arg + ' is not a number');
+};
+
+const _solidityPack = function (type, value, arraySize) {
+    let size;
+    let num;
+    type = _elementaryName(type);
+
+    if (type === 'bytes') {
+        if (value.replace(/^0x/i, '').length % 2 !== 0) {
+            throw new Error('Invalid bytes characters ' + value.length);
+        }
+
+        return value;
+    } if (type === 'string') {
+        return utf8ToHex(value);
+    } if (type === 'bool') {
+        return value ? '01' : '00';
+    } if (type.startsWith('address')) {
+        if (arraySize) {
+            size = 64;
+        } else {
+            size = 40;
+        }
+
+        if (!isAddress(value)) {
+            throw new Error(value + ' is not a valid address, or the checksum is invalid.');
+        }
+
+        return leftPad(value.toLowerCase(), size);
+    }
+
+    size = _parseTypeN(type);
+
+    if (type.startsWith('bytes')) {
+        if (!size) {
+            throw new Error('bytes[] not yet supported in solidity');
+        }
+
+        // must be 32 byte slices when in an array
+        if (arraySize) {
+            size = 32;
+        }
+
+        if (size < 1 || size > 32 || size < value.replace(/^0x/i, '').length / 2) {
+            throw new Error('Invalid bytes' + size + ' for ' + value);
+        }
+
+        return rightPad(value, size * 2);
+    } if (type.startsWith('uint')) {
+        if ((size % 8) || (size < 8) || (size > 256)) {
+            throw new Error('Invalid uint' + size + ' size');
+        }
+
+        num = _parseNumber(value);
+        if (num.bitLength() > size) {
+            throw new Error('Supplied uint exceeds width: ' + size + ' vs ' + num.bitLength());
+        }
+
+        if (num.lt(new BN(0))) {
+            throw new Error('Supplied uint ' + num.toString() + ' is negative');
+        }
+
+        return size ? leftPad(num.toString('hex'), size / 8 * 2) : num;
+    } if (type.startsWith('int')) {
+        if ((size % 8) || (size < 8) || (size > 256)) {
+            throw new Error('Invalid int' + size + ' size');
+        }
+
+        num = _parseNumber(value);
+        if (num.bitLength() > size) {
+            throw new Error('Supplied int exceeds width: ' + size + ' vs ' + num.bitLength());
+        }
+
+        if (num.lt(new BN(0))) {
+            return num.toTwos(size).toString('hex');
+        }
+        return size ? leftPad(num.toString('hex'), size / 8 * 2) : num;
+    }
+    // FIXME: support all other types
+    throw new Error('Unsupported or invalid type: ' + type);
+};
+
+const _processSoliditySha3Args = function (arg) {
+    /* jshint maxcomplexity:false */
+
+    if (_.isArray(arg)) {
+        throw new Error('Autodetection of array types is not supported.');
+    }
+
+    let type; let
+        value = '';
+    let hexArg; let
+        arraySize;
+
+    // if type is given
+    if (_.isObject(arg) && (arg.hasOwnProperty('v') || arg.hasOwnProperty('t') || arg.hasOwnProperty('value') || arg.hasOwnProperty('type'))) {
+        type = arg.hasOwnProperty('t') ? arg.t : arg.type;
+        value = arg.hasOwnProperty('v') ? arg.v : arg.value;
+
+    // otherwise try to guess the type
+    } else {
+        type = toHex(arg, true);
+        value = toHex(arg);
+
+        if (!type.startsWith('int') && !type.startsWith('uint')) {
+            type = 'bytes';
+        }
+    }
+
+    if ((type.startsWith('int') || type.startsWith('uint')) && typeof value === 'string' && !/^(-)?0x/i.test(value)) {
+        value = new BN(value);
+    }
+
+    // get the array size
+    if (_.isArray(value)) {
+        arraySize = _parseTypeNArray(type);
+        if (arraySize && value.length !== arraySize) {
+            throw new Error(type + ' is not matching the given array ' + JSON.stringify(value));
+        } else {
+            arraySize = value.length;
+        }
+    }
+
+    if (_.isArray(value)) {
+        hexArg = value.map(val => _solidityPack(type, val, arraySize).toString('hex').replace('0x', ''));
+        return hexArg.join('');
+    }
+    hexArg = _solidityPack(type, value, arraySize);
+    return hexArg.toString('hex').replace('0x', '');
+};
+
+/**
+ * Hashes solidity values to a sha3 hash using keccak 256
+ *
+ * @method soliditySha3
+ * @return {Object} the sha3
+ */
+export const soliditySha3 = function (...args) {
+    const hexArgs = _.map(...args, _processSoliditySha3Args);
+
+    return sha3('0x' + hexArgs.join(''));
 };

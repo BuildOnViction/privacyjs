@@ -1,9 +1,15 @@
 import ecurve from 'ecurve';
-import { keccak256 } from 'js-sha3';
+import Web3 from 'web3';
+// import { keccak256 } from 'js-sha3';
 import Address from './address';
 import Stealth from './stealth';
 import crypto from './crypto';
-import { numberToHex, bconcat, hextobin } from './common';
+import {
+    numberToHex,
+    bconcat,
+    hextobin,
+    bintohex,
+} from './common';
 
 const { BigInteger } = crypto;
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -89,12 +95,13 @@ class UTXO {
         const longFormStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 === 1,
             BigInteger(this.pubkeyX));
 
-        return keccak256(
-            bconcat([
+        // return keccak256(
+        return Web3.utils.soliditySha3(
+            bintohex(bconcat([
                 lfCommitment.getEncoded(false),
                 longFormStealth.getEncoded(false),
                 hextobin(targetAddress),
-            ]),
+            ])),
         );
     }
 

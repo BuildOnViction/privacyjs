@@ -11,7 +11,7 @@ import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
 
-const atob = require('atob') || window.atob;
+// const atob = require('atob') || window.atob;
 /**
  * hextobin converts string to Buffer
  * @param {string} hex Hex string wants to conver to buffer
@@ -56,15 +56,15 @@ export const validHex = (hex) => {
  */
 export const fastHash = input => Hash(input);
 
-export const base64tohex = (base64) => {
-    const raw = atob(base64);
-    let HEX = '';
-    for (let i = 0; i < raw.length; i++) {
-        const _hex = raw.charCodeAt(i).toString(16);
-        HEX += (_hex.length === 2 ? _hex : `0${_hex}`);
-    }
-    return HEX.toUpperCase();
-};
+// export const base64tohex = (base64) => {
+//     const raw = atob(base64);
+//     let HEX = '';
+//     for (let i = 0; i < raw.length; i++) {
+//         const _hex = raw.charCodeAt(i).toString(16);
+//         HEX += (_hex.length === 2 ? _hex : `0${_hex}`);
+//     }
+//     return HEX.toUpperCase();
+// };
 
 /**
  * bconcat makes a buffer from a buffer list

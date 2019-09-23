@@ -87,7 +87,7 @@ function randomHex(size, callback) {
     }
 }
 
-module.exports = {
+export default {
     BigInteger,
     ecparams,
     hash160,

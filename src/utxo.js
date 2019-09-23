@@ -130,4 +130,4 @@ class UTXO {
     }
 }
 
-module.exports = UTXO;
+export default UTXO;

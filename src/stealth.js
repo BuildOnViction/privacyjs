@@ -1,9 +1,10 @@
+import crypto from './crypto';
+import * as common from './common';
+
 const assert = require('assert');
 const bs58 = require('bs58');
 const ecurve = require('ecurve');
 const aesjs = require('aes-js');
-const crypto = require('./crypto');
-const common = require('./common');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
@@ -166,4 +167,4 @@ class Stealth {
     }
 }
 
-module.exports = Stealth;
+export default Stealth;

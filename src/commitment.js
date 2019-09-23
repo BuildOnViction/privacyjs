@@ -1,6 +1,7 @@
+import crypto from './crypto';
+import * as common from './common';
+
 const ecurve = require('ecurve');
-const crypto = require('./crypto');
-const common = require('./common');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;

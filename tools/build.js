@@ -6,7 +6,6 @@ const rollup = require('rollup');
 const babel = require('rollup-plugin-babel');
 const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
-const minify = require("babel-minify");
 const pkg = require('../package.json');
 
 let promise = Promise.resolve();
@@ -31,12 +30,12 @@ promise = promise.then(() => del(['dist/*']));
       commonjs(),
     ],
   }))
-  .then(bundle => bundle.write({
-    file: `dist/${format === 'cjs' ? 'index' : `index.${format}`}.js`,
-    format,
-    sourceMap: false,
-    name: format === 'umd' ? pkg.name : undefined,
-  }));
+    .then(bundle => bundle.write({
+      file: `dist/${format === 'cjs' ? 'index' : `index.${format}`}.js`,
+      format,
+      sourceMap: true,
+      name: format === 'umd' ? pkg.name : undefined,
+    }));
 });
 
 // Copy package.json and LICENSE.txt

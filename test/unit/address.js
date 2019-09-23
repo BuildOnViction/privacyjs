@@ -1,5 +1,5 @@
 var assert = require('assert')
-const common = require('../../src');
+const common = require('../../src/common');
 const address= require('../../src/address');
 
 const elliptic = require('elliptic');

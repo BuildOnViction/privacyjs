@@ -68,18 +68,6 @@ describe('withdraw 0.5Tomo from SC', () => {
 
                 let withDrawnCommitment = Commitment.genCommitment(amount, "00", false);
                 let sum = Commitment.addCommitment(commitment, withDrawnCommitment);
-                console.log("sum = ", sum.toString('hex'));
-
-                console.log(utxoIndex,
-                    '500000000000000000', hexToNumberString(proof.encryptedAmount),
-                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
-                    SENDER_WALLET.address,
-                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
-                    [
-                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
-                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
-                    ]
-                );
                 
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,

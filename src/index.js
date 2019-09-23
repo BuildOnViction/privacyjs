@@ -1,13 +1,13 @@
-const stealth = require('./stealth');
-const address = require('./address');
-const common = require('./common');
-const crypto = require('./crypto');
-const utxo = require('./utxo');
+import stealth from './stealth';
+import address from './address';
+import * as common from './common';
+import crypto from './crypto';
+import utxo from './utxo';
 
 module.exports = {
     stealth,
     address,
-    ...common,
-    ...crypto,
+    common,
+    crypto,
     utxo,
 };

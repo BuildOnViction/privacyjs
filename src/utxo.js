@@ -1,5 +1,5 @@
 import ecurve from 'ecurve';
-import Web3 from 'web3';
+// import Web3 from 'web3';
 // import { keccak256 } from 'js-sha3';
 import Address from './address';
 import Stealth from './stealth';
@@ -9,6 +9,7 @@ import {
     bconcat,
     hextobin,
     bintohex,
+    soliditySha3,
 } from './common';
 
 const { BigInteger } = crypto;
@@ -96,7 +97,8 @@ class UTXO {
             BigInteger(this.pubkeyX));
 
         // return keccak256(
-        return Web3.utils.soliditySha3(
+        // return Web3.utils.soliditySha3(
+        return soliditySha3(
             bintohex(bconcat([
                 lfCommitment.getEncoded(false),
                 longFormStealth.getEncoded(false),

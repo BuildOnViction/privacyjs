@@ -62,7 +62,6 @@ const scanAllUTXO = async() => {
                 utxos.push(utxo);
             }
             if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
-                console.log(utxo);
                 balance += isMine.amount;
             }
             index++;
@@ -73,9 +72,9 @@ const scanAllUTXO = async() => {
 
         // we can't scan all utxo, it would take minutes on testnet and days on mainet
         // in testnet the encryption algorithm can be changed :( 
-        // if (utxos.length > 5) {
-        //     break;
-        // }
+        if (utxos.length > 5) {
+            break;
+        }
     } while (utxo);
 
     return balance;
@@ -85,7 +84,7 @@ describe('Get list all utxo and count balance', () => {
     it('#scanAllUTXO and sum balance', (done) => {
         // scan all UTXO
         scanAllUTXO().then((balance) => {
-            // expect(balance > 0).to.be.equal(true);
+            expect(balance > 0).to.be.equal(true);
             done();
         }).catch(ex => {
             done(ex);

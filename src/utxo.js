@@ -1,10 +1,9 @@
 import ecurve from 'ecurve';
-import Base58 from 'bs58';
 import { keccak256 } from 'js-sha3';
 import Address from './address';
 import Stealth from './stealth';
 import crypto from './crypto';
-import { numberToHex, bconcat } from './common';
+import { numberToHex, bconcat, hextobin } from './common';
 
 const { BigInteger } = crypto;
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -81,21 +80,20 @@ class UTXO {
 
     /**
      * Generate hash data as signing input to claim this utxo belongs to who owns privatekey
-     * @param {string} privateKey privatekey of account owns this utxo
+     * @param {string} targetAddress targetAddress who you're sending this utxo for
      * @returns {string} delegate data of utxo
      */
-    getHashData(privateKey) {
+    getHashData(targetAddress) {
         const lfCommitment = ecparams.pointFromX(parseInt(this.commitmentYBit) % 2 === 1,
             BigInteger(this.commitmentX));
         const longFormStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 === 1,
             BigInteger(this.pubkeyX));
-        const privacyAddress = Address.generateKeys(privateKey).pubAddr;
 
         return keccak256(
             bconcat([
                 lfCommitment.getEncoded(false),
                 longFormStealth.getEncoded(false),
-                Base58.decode(privacyAddress),
+                hextobin(targetAddress),
             ]),
         );
     }
@@ -106,13 +104,13 @@ class UTXO {
      * @param {string} privateKey
      * @results {array} DER encoded signature in array
      */
-    sign(privateKey) {
+    sign(privateKey, targetAddress) {
         const secp256k1 = new EC('secp256k1');
 
         // Generate keys
         const key = secp256k1.keyFromPrivate(privateKey);
 
-        const context = this.getHashData(privateKey);
+        const context = this.getHashData(targetAddress);
 
         const signature = key.sign(context);
 

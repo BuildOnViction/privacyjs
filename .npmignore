@@ -1,2 +1,6 @@
 test/
 .travis.yml
+src/
+tools/
+coverage/
+

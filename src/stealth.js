@@ -1,4 +1,5 @@
 import crypto from './crypto';
+import Commitment from './commitment';
 import * as common from './common';
 
 const assert = require('assert');
@@ -85,6 +86,7 @@ class Stealth {
             txPublicKey,
             encryptedAmount,
             mask,
+            commitment: Commitment.genCommitment(amount, mask, false),
         };
     }
 

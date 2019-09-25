@@ -9,6 +9,7 @@ const addressUtils = {};
 
 /**
  * Generate public key from a private key
+ * // TODO: remove elliptic and replace by privatekey*base_point
  * @param {string} Any private key
  * @returns {string} Public key in hex string using ECDSA
  */

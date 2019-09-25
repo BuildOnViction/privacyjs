@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x031dd3242e58949a9eb25ac9f956681acb970561",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x5D03BB76BdF65a6CEF3e96F3aD37D0874f3B21A7",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -129,7 +129,7 @@
                 },
                 {
                     "name": "_outputs",
-                    "type": "uint256[][2]"
+                    "type": "uint256[]"
                 },
                 {
                     "name": "_amounts",
@@ -268,7 +268,7 @@
                 {
                     "indexed": false,
                     "name": "_hash",
-                    "type": "uint256"
+                    "type": "bytes32"
                 }
             ],
             "name": "HashSign",

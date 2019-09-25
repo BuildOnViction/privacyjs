@@ -45,54 +45,15 @@ describe('privatesend', () => {
             ...Address.generateKeys(RECEIVER_WALLET.privateKey)
         });
 
-        var proofOfMe = sender.genTransactionProof(2.5*TOMO, sender.pubSpendKey, sender.pubViewKey);
-
         var proofOfReceiver = sender.genTransactionProof(0.5*TOMO, receiver.pubSpendKey, receiver.pubViewKey)
 
+        /**
+         * We must recalculate mask base on 
+         * remain_mask = sum(mask of all utxos) - mask_proof_receiver
+         */
+        
         // create 3 utxos, let this test independents to deposit test
         TestUtils.depositNTimes(3, TOMO).then((utxos) => {
-            // console.log(_.map(utxos, ut => {
-            //     return ut.utxo._index
-            // }),
-            // [
-            //     '0x' + proofOfMe.commitment.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfMe.commitment.toString('hex').substr(-64), // the Y part of curve
-            //     '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
-            //     '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfMe.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
-            //     '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
-            //     '0x' + proofOfMe.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfMe.txPublicKey.toString('hex').substr(-64), // the Y part of curve
-            //     '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
-            //     '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(-64), // the Y part of curve
-            // ],
-            // [
-            //     '0x' + proofOfMe.encryptedAmount, // encrypt of amount using ECDH],
-            //     '0x' + proofOfReceiver.encryptedAmount// encrypt of amount using ECDH],
-            // ]);
-            console.log(_.map(utxos, ut => {
-                return ut.utxo._index
-            }),
-            [
-                '0x' + proofOfMe.commitment.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfMe.commitment.toString('hex').substr(-64), // the Y part of curve
-                '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
-                '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfMe.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
-                '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
-                '0x' + proofOfMe.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfMe.txPublicKey.toString('hex').substr(-64), // the Y part of curve
-                '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
-                '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(-64), // the Y part of curve
-            ],
-            [
-                '0x' + proofOfMe.encryptedAmount, // encrypt of amount using ECDH],
-                '0x' + proofOfReceiver.encryptedAmount// encrypt of amount using ECDH],
-            ]);
             privacyContract.methods.privateSend(
                 _.map(utxos, ut => {
                     return ut.utxo._index

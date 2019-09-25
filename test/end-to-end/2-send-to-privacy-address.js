@@ -1,73 +1,137 @@
-// /**
-//  * End To End tests using tomochain testnet deployed smart-contract, change config in ./test/config.json ./test/config.json
-//  */
+/**
+ * End To End tests using tomochain testnet deployed smart-contract, change config in ./test/config.json ./test/config.json
+ */
 
-// import Web3 from 'web3';
-// import TestConfig from '../config.json';
-// import chai from 'chai';
-// import Address from '../../src/address';
-// import Stealth from '../../src/stealth';
-// import UTXO from '../../src/utxo';
-// import HDWalletProvider from "truffle-hdwallet-provider";
+import Web3 from 'web3';
+import TestConfig from '../config.json';
+import chai from 'chai';
+import Address from '../../src/address';
+import Stealth from '../../src/stealth';
+import TestUtils from '../utils';
+import HDWalletProvider from "truffle-hdwallet-provider";
+import * as _ from 'lodash';
 
-// const expect = chai.expect;
-// chai.should();
+const expect = chai.expect;
+chai.should();
 
-// const WALLETS = TestConfig.WALLETS;
-// const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const WALLETS = TestConfig.WALLETS;
+const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const RECEIVER_WALLET = WALLETS[1]; // hold around 1 mil tomo
 
-// //load single private key as string
-// let provider = new HDWalletProvider(SENDER_WALLET.privateKey, TestConfig.RPC_END_POINT);
+//load single private key as string
+let provider = new HDWalletProvider(SENDER_WALLET.privateKey, TestConfig.RPC_END_POINT);
 
-// const web3 = new Web3(provider);
+const web3 = new Web3(provider);
 
-// var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
-//     from: SENDER_WALLET.address, // default from address
-//     gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-//     gas: '1000000'
-// });
+var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
+    from: SENDER_WALLET.address, // default from address
+    gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
+    gas: '1000000'
+});
 
-// describe('privatesend', () => {
-//     it('Successful deposit to to privacy account', (done) => {
-//         let amount = 1000000000000000000; // 1 tomo
-//         // generate a tx 1 tomo from normal addess to privacy address
-//         let sender = new Stealth({
-//             ...Address.generateKeys(SENDER_WALLET.privateKey)
-//         })
+const TOMO = 1000000000000000000;
+/**
+ * To private send we need to do
+ * 1. Ta
+ */
+describe('privatesend', () => {
+    it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
+        let amount = 3*TOMO;
+        let sender = new Stealth({
+            ...Address.generateKeys(SENDER_WALLET.privateKey)
+        });
 
-//         // create proof for a transaction 
-//         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+        let receiver = new Stealth({
+            ...Address.generateKeys(RECEIVER_WALLET.privateKey)
+        });
 
-//         privacyContract.methods.deposit(
-//             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-//             Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-//             Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-//             Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-//             Web3.utils.hexToNumberString(proof.mask),
-//             Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
-//         )
-//             .send({
-//                 from: SENDER_WALLET.address,
-//                 value: amount
-//             })
-//             .on('error', function(error) {
-//                 console.log(error);
-//                 done(error);
-//             })
-//             .then(function(receipt){
-//                 try {
-//                     receipt.events.NewUTXO.should.be.a('object')
-//                     expect(receipt.events.NewUTXO.transactionHash).to.have.lengthOf(66);
+        var proofOfMe = sender.genTransactionProof(2.5*TOMO, sender.pubSpendKey, sender.pubViewKey);
+
+        var proofOfReceiver = sender.genTransactionProof(0.5*TOMO, receiver.pubSpendKey, receiver.pubViewKey)
+
+        // create 3 utxos, let this test independents to deposit test
+        TestUtils.depositNTimes(3, TOMO).then((utxos) => {
+            // console.log(_.map(utxos, ut => {
+            //     return ut.utxo._index
+            // }),
+            // [
+            //     '0x' + proofOfMe.commitment.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfMe.commitment.toString('hex').substr(-64), // the Y part of curve
+            //     '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
+            //     '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfMe.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+            //     '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+            //     '0x' + proofOfMe.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfMe.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+            //     '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+            //     '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+            // ],
+            // [
+            //     '0x' + proofOfMe.encryptedAmount, // encrypt of amount using ECDH],
+            //     '0x' + proofOfReceiver.encryptedAmount// encrypt of amount using ECDH],
+            // ]);
+            console.log(_.map(utxos, ut => {
+                return ut.utxo._index
+            }),
+            [
+                '0x' + proofOfMe.commitment.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfMe.commitment.toString('hex').substr(-64), // the Y part of curve
+                '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
+                '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfMe.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+                '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+                '0x' + proofOfMe.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfMe.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+                '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+                '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+            ],
+            [
+                '0x' + proofOfMe.encryptedAmount, // encrypt of amount using ECDH],
+                '0x' + proofOfReceiver.encryptedAmount// encrypt of amount using ECDH],
+            ]);
+            privacyContract.methods.privateSend(
+                _.map(utxos, ut => {
+                    return ut.utxo._index
+                }),
+                [
+                    '0x' + proofOfMe.commitment.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfMe.commitment.toString('hex').substr(-64), // the Y part of curve
+                    '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
+                    '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfMe.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+                    '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfReceiver.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+                    '0x' + proofOfMe.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfMe.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+                    '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(2, 64), // the X part of curve 
+                    '0x' + proofOfReceiver.txPublicKey.toString('hex').substr(-64), // the Y part of curve
+                ],
+                [
+                    '0x' + proofOfMe.encryptedAmount, // encrypt of amount using ECDH],
+                    '0x' + proofOfReceiver.encryptedAmount// encrypt of amount using ECDH],
+                ]
+            )
+                .send({
+                    from: SENDER_WALLET.address // in real case, generate an dynamic accont to put here
+                })
+                .then(function (receipt) {
+                    console.log("receipt ", receipt);
+                    done();
                     
-//                     let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
-//                     let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    done(error);
+                });
+        })
+        .catch(function(err){
+            done(err);
+        });
 
-//                     expect(isMineUTXO).to.not.equal(null);
-//                     expect(isMineUTXO.amount).to.equal(amount.toString());
-//                     done();
-//                 } catch (error) {
-//                     done(error);
-//                 }
-//             });
-//     });
-// });
+    });
+});

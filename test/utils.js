@@ -5,6 +5,7 @@ import Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import { hextobin } from '../src/common';
+import numberToBN from 'number-to-bn';
 
 chai.should();
 
@@ -22,7 +23,7 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
     gas: '2000000'
 });
 
-module.exports.deposit = (amount) => {
+const deposit = (amount) => {
     return new Promise((resolve, reject) => {
         let sender = new Stealth({
             ...Address.generateKeys(SENDER_WALLET.privateKey)
@@ -61,6 +62,16 @@ module.exports.deposit = (amount) => {
     });
 }
 
+module.exports.depositNTimes = async (N, amount) => {
+    // const amountEachTransfer = numberToBN(amount).div(N).toString(10);
+    // console.log("amountEachTransfer ", amountEachTransfer);
+    const utxos = [];
+    for (let index = 0; index < N; index++) {
+        utxos.push(await deposit(amount));
+    }
+    return utxos;
+}
+
 
 var privacyAddressContract = new web3.eth.Contract(TestConfig.PRIVACYADD_MAPPING_ABI, TestConfig.PRIVACYADD_MAPPING_SMART_CONTRACT, {
     from: SENDER_WALLET.address, // default from address
@@ -89,3 +100,5 @@ module.exports.registerPrivacyAddress = (privateKey) => {
             });
     });
 }
+
+module.exports.deposit = deposit;

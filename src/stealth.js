@@ -79,13 +79,16 @@ class Stealth {
         );
 
         // generate mask for sc managing balance
-        const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
-
+        const mask = hs(ECDHSharedSerect.getEncoded(true)); // for smart contract only
+        const encryptedMask = common.bintohex(
+            aesCtr.encrypt(mask),
+        );
         return {
             onetimeAddress,
             txPublicKey,
             encryptedAmount,
-            mask,
+            mask: mask.toString('hex'),
+            encryptedMask,
             commitment: Commitment.genCommitment(amount, mask, false),
         };
     }

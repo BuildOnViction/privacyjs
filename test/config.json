@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x5D03BB76BdF65a6CEF3e96F3aD37D0874f3B21A7",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x9acd0F8966F483255fB6aa5E05B9c1ae94dC2c3a",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -112,6 +112,10 @@
                 {
                     "name": "_amount",
                     "type": "uint256"
+                },
+                {
+                    "name": "_encodedMask",
+                    "type": "uint256"
                 }
             ],
             "name": "deposit",
@@ -186,16 +190,6 @@
             "inputs": [
                 {
                     "indexed": false,
-                    "name": "_commitmentX",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "name": "_commitmentYBit",
-                    "type": "uint8"
-                },
-                {
-                    "indexed": false,
                     "name": "_pubkeyX",
                     "type": "uint256"
                 },
@@ -222,6 +216,11 @@
                 {
                     "indexed": false,
                     "name": "_index",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "name": "_mask",
                     "type": "uint256"
                 }
             ],
@@ -302,7 +301,7 @@
                 },
                 {
                     "name": "",
-                    "type": "uint256"
+                    "type": "uint256[2]"
                 },
                 {
                     "name": "",
@@ -391,6 +390,10 @@
                     ],
                     "name": "txPub",
                     "type": "tuple"
+                },
+                {
+                    "name": "mask",
+                    "type": "uint256"
                 }
             ],
             "payable": false,

@@ -38,7 +38,7 @@ class Commitment {
      */
     static genCommitment(amount, mask, encoded = true) {
         const basePointG = ecparams.G;
-
+        console.log('genCommitment mask ', mask);
         const commitment = basePointG.multiply(
             BigInteger.fromHex(mask),
         )

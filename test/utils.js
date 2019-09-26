@@ -23,6 +23,8 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
     gas: '2000000'
 });
 
+// we deposit a lot, actually all cases need deposit first
+// to make sure we all have data in case mocha doesnt run deposit first
 const deposit = (amount) => {
     return new Promise((resolve, reject) => {
         let sender = new Stealth({
@@ -31,21 +33,21 @@ const deposit = (amount) => {
 
         // create proof for a transaction 
         let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-        
+
         privacyContract.methods.deposit(
             '0x' + proof.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
             '0x' + proof.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
             '0x' + proof.txPublicKey.toString('hex').substr(2, 64), // the X part of curve
             '0x' + proof.txPublicKey.toString('hex').substr(-64), // the Y par of curve,
             '0x' + proof.mask,
-            '0x' + proof.encryptedAmount// encrypt of amount using ECDH
+            '0x' + proof.encryptedAmount,// encrypt of amount using ECDH,
+            '0x' + proof.encryptedMask
         )
             .send({
                 from: SENDER_WALLET.address,
                 value: amount
             })
             .on('error', function (error) {
-                console.log
                 reject(error);
             })
             .then(function (receipt) {

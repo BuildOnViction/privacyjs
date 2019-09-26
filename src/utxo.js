@@ -25,24 +25,14 @@ const EC = require('elliptic').ec;
  */
 
 /* UTXO structure input
-    * 0 - _commitmentX:
-    * 1 - _commitmentYBit: ,
-    * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
-    * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-    * 4 - _amount: encrypt_AES(shared_ECDH, amount),
-    *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
-    * 6 - _txPubYBit
-    * 7 - _index
+    * 0 - _pubkeyX: stealth_address_X, short form of a point in ECC
+    * 1 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+    * 2 - _amount: encrypt_AES(shared_ECDH, amount),
+    *_3 - _txPubX: transation_public_key_X, short form of a point in ECC
+    * 4 - _txPubYBit
+    * 5 - _index
+    * 6 - _mask
     *
-    EX:
-    '0': '18155385148682453381171818128120365169772552264272945929233713987750616246610',
-    '1': '3',
-    '2': '105402281739543703241605506454141998113174872495611241696092003547383306768736',
-    '3': '3',
-    '4': '30068922563895814107606905823132927972759867595009162926879225955533868852029',
-    '5': '27246925684297394305550515166422186690892865966252478222982343298519032345022',
-    '6': '2'
-    '7': 13
 */
 
 class UTXO {
@@ -51,14 +41,15 @@ class UTXO {
      * @param {object} utxo
      */
     constructor(utxo) {
-        this.commitmentX = utxo['0'];
-        this.commitmentYBit = utxo['1'];
-        this.pubkeyX = utxo['2'];
-        this.pubkeyYBit = utxo['3'];
-        this.amount = utxo['4'];
-        this.txPubX = utxo['5'];
-        this.txPubYBit = utxo['6'];
-        this.index = utxo['7'];
+        // this.commitmentX = utxo['0'];
+        // this.commitmentYBit = utxo['1'];
+        this.pubkeyX = utxo['0'];
+        this.pubkeyYBit = utxo['1'];
+        this.amount = utxo['2'];
+        this.txPubX = utxo['3'];
+        this.txPubYBit = utxo['4'];
+        this.index = utxo['5'];
+        this.mask = utxo['6'];
     }
 
     /**
@@ -127,6 +118,32 @@ class UTXO {
         // this.derSign = signature.toDER();
 
         return signature;
+    }
+
+    /**
+     * From direct getUTXO rpc
+     * //TODO uniform return data
+     * the data structure is a bit different to the event data when deposit
+     * ['4'] store the encryptedAmount and encryptedMask perspectively
+     * UTXO structure input
+     * 0 - _commitmentX:
+     * 1 - _commitmentYBit: ,
+     * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
+     * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+     * 4 - [_amount, mask]: encrypt_AES(shared_ECDH, amount),
+     *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
+     * 6 - _txPubYBit
+     */
+    static fromRPCGetUTXO(utxo, index) {
+        return new UTXO({
+            0: utxo['2'],
+            1: utxo['3'],
+            2: utxo['4'][0],
+            3: utxo['5'],
+            4: utxo['6'],
+            5: index || -1,
+            6: utxo['4'][1],
+        });
     }
 }
 

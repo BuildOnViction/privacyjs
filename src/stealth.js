@@ -50,9 +50,14 @@ class Stealth {
      * If there is input publickeys -> make transaction for other
      * If there is no input -> deposit yourself to privacy account
      * (public spend key/public view key of receiver)
+     * @param {number} amount Plain money
+     * @param {string} pubSpendKey Public spend key in hex (without 0x)
+     * @param {string} pubViewKey Public view key in hex (without 0x)
+     * @param {string} pubViewKey Public view key in hex (without 0x)
+     * @param {string=} predefinedMask Optional, in case you got mask already and don't want to generate again
      * @returns {object} onetimeAddress and txPublicKey
      */
-    genTransactionProof(amount, pubSpendKey, pubViewKey) {
+    genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask) {
         const hs = crypto.hmacSha256; // hasing function return a scalar
         const basePoint = ecparams.G; // secp256k1 standard base point
         const receiverPubViewKey = Point.decodeFrom(ecparams, pubViewKey || this.pubViewKey);
@@ -79,14 +84,22 @@ class Stealth {
         );
 
         // generate mask for sc managing balance
-        const mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
+        let mask;
+        if (!predefinedMask) {
+            mask = hs(ECDHSharedSerect.getEncoded(true)); // for smart contract only
+        } else {
+            mask = common.hextobin(predefinedMask);
+        }
 
         return {
             onetimeAddress,
             txPublicKey,
             encryptedAmount,
-            mask,
-            commitment: Commitment.genCommitment(amount, mask, false),
+            mask: mask.toString('hex'),
+            commitment: Commitment.genCommitment(amount, common.bintohex(mask), false),
+            encryptedMask: common.bintohex(
+                aesCtr.encrypt(mask),
+            ),
         };
     }
 

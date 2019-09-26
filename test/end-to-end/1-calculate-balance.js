@@ -55,17 +55,19 @@ const scanAllUTXO = async() => {
     do {
         try {
             utxo = await getUTXO(index);
-            let utxoInstance = new UTXO(utxo);
+            let utxoInstance = UTXO.fromRPCGetUTXO(utxo);
             let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
 
             if (isMine) {
                 utxos.push(utxo);
             }
+
             if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
-                balance += isMine.amount;
+                balance += parseFloat(isMine.amount);
             }
             index++;
         } catch(exception) {
+            // console.log(exception);
             utxo = null;
             break;
         }
@@ -80,7 +82,7 @@ const scanAllUTXO = async() => {
     return balance;
 }
 
-describe('Get list all utxo and count balance', () => {
+describe('#balance', () => {
     it('#scanAllUTXO and sum balance', (done) => {
         // scan all UTXO
         scanAllUTXO().then((balance) => {

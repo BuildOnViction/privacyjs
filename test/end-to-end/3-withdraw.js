@@ -84,7 +84,6 @@ describe('withdraw 0.5Tomo from SC', () => {
                         from: SENDER_WALLET.address
                     })
                     .then(function (receipt) {
-                        console.log("receipt ", receipt);
                         done();
                         
                     })

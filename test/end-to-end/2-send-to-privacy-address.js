@@ -38,12 +38,9 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 });
 
 const TOMO = 1000000000000000000;
-/**
- * To private send we need to do
- * 1. Ta
- */
+
 describe('privatesend', () => {
-    for (var count = 0; count < 3; count++) {
+    for (var count = 0; count < 5; count++) {
         it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
             let amount = 3*TOMO;
             let sender = new Stealth({
@@ -54,6 +51,8 @@ describe('privatesend', () => {
                 ...Address.generateKeys(RECEIVER_WALLET.privateKey)
             });
 
+            // console.log("ecparams.p ", ecparams.p);
+
             // create 3 utxos, let this test independents to deposit test
             TestUtils.depositNTimes(3, TOMO).then((utxos) => {
                 let sumOfSpendingMasks = new BN('0', 16);
@@ -61,7 +60,7 @@ describe('privatesend', () => {
                 let generatedCommitments = [];
                 const spendingUtxosIndex = _.map(utxos, result => {
                     generatedCommitments.push(result.proof.commitment);
-                    sumOfSpendingMasks = sumOfSpendingMasks.add(new BN(result.proof.mask, 16));
+                    sumOfSpendingMasks.iadd(new BN(result.proof.mask, 16)).umod(new BN(ecparams.p.toHex(), 16));
                     UTXOs.push(new UTXO(result.utxo));
                     return result.utxo._index
                 });
@@ -80,7 +79,7 @@ describe('privatesend', () => {
                 );
                 
                 expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(expectedCommitments.getEncoded(true).toString('hex'));
-                // expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
+                expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
                 privacyContract.methods.privateSend(
                     spendingUtxosIndex,
                     [

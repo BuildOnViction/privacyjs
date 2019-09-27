@@ -55,7 +55,10 @@ const scanAllUTXO = async() => {
     do {
         try {
             utxo = await getUTXO(index);
-            let utxoInstance = UTXO.fromRPCGetUTXO(utxo);
+            let utxoInstance = new UTXO({
+                ...utxo,
+                "7": index
+            });
             let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
 
             if (isMine) {

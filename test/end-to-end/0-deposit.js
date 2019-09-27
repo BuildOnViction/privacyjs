@@ -22,7 +22,7 @@ let sender = new Stealth({
 })
 
 describe('#deposit', () => {
-    for (var count = 0; count < 1; count++) {
+    for (var count = 0; count < 5; count++) {
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 let returnedValue = result.utxo;
@@ -38,18 +38,17 @@ describe('#deposit', () => {
                 // make sure decoded mask = generated mask
                 expect(isMineUTXO.mask).to.equal(proof.mask);
                 
-                // Deprecated: commitment no longer returns
                 // validate return commitment from amount,mask - 
-                // expect(
-                //     Commitment.verifyCommitment(
-                //         amount,
-                //         proof.mask,
-                //         {
-                //             X: utxoIns.commitmentX,
-                //             YBit: utxoIns.commitmentYBit
-                //         }
-                //     )
-                // ).to.equal(true);
+                expect(
+                    Commitment.verifyCommitment(
+                        amount,
+                        proof.mask,
+                        {
+                            X: utxoIns.commitmentX,
+                            YBit: utxoIns.commitmentYBit
+                        }
+                    )
+                ).to.equal(true);
 
                 let expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
                 

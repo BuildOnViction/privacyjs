@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x9acd0F8966F483255fB6aa5E05B9c1ae94dC2c3a",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xdCBD2376BeC7cBdc951267Dd2512A5A38906C5a1",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -190,6 +190,16 @@
             "inputs": [
                 {
                     "indexed": false,
+                    "name": "_commitmentX",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "name": "_commitmentYBit",
+                    "type": "uint8"
+                },
+                {
+                    "indexed": false,
                     "name": "_pubkeyX",
                     "type": "uint256"
                 },
@@ -201,7 +211,7 @@
                 {
                     "indexed": false,
                     "name": "_amount",
-                    "type": "uint256"
+                    "type": "uint256[2]"
                 },
                 {
                     "indexed": false,
@@ -217,14 +227,21 @@
                     "indexed": false,
                     "name": "_index",
                     "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "name": "_mask",
-                    "type": "uint256"
                 }
             ],
             "name": "NewUTXO",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "_inputIDs",
+                    "type": "uint256[]"
+                }
+            ],
+            "name": "Inputs",
             "type": "event"
         },
         {

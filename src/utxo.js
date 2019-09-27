@@ -25,13 +25,14 @@ const EC = require('elliptic').ec;
  */
 
 /* UTXO structure input
-    * 0 - _pubkeyX: stealth_address_X, short form of a point in ECC
-    * 1 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-    * 2 - _amount: encrypt_AES(shared_ECDH, amount),
-    *_3 - _txPubX: transation_public_key_X, short form of a point in ECC
-    * 4 - _txPubYBit
-    * 5 - _index
-    * 6 - _mask
+    * 0 - _commitmentX: transation_public_key_X, short form of a point in ECC
+    * 1 - _commitmentYBit: odd or even bit
+    * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
+    * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
+    * 4 - [_amount, mask]: encrypt_AES(shared_ECDH, amount),
+    * 5 - _txPubX: transation_public_key_X, short form of a point in ECC
+    * 6 - _txPubYBit
+    * 7 - _index
     *
 */
 
@@ -41,15 +42,15 @@ class UTXO {
      * @param {object} utxo
      */
     constructor(utxo) {
-        // this.commitmentX = utxo['0'];
-        // this.commitmentYBit = utxo['1'];
-        this.pubkeyX = utxo['0'];
-        this.pubkeyYBit = utxo['1'];
-        this.amount = numberToHex(utxo['2']);
-        this.txPubX = utxo['3'];
-        this.txPubYBit = utxo['4'];
-        this.index = utxo['5'];
-        this.mask = numberToHex(utxo['6']);
+        this.commitmentX = utxo['0'];
+        this.commitmentYBit = utxo['1'];
+        this.pubkeyX = utxo['2'];
+        this.pubkeyYBit = utxo['3'];
+        this.amount = numberToHex(utxo['4'][0]);
+        this.mask = numberToHex(utxo['4'][1]);
+        this.txPubX = utxo['5'];
+        this.txPubYBit = utxo['6'];
+        this.index = utxo['7'];
     }
 
     /**

@@ -92,15 +92,16 @@ class Stealth {
             mask = common.hextobin(predefinedMask);
         }
 
+        const aesCtrMask = new aesjs.ModeOfOperation.ctr(aesKey);
+        const encryptedMask = aesCtrMask.encrypt(common.hextobin(mask.toString('hex')));
+
         return {
             onetimeAddress,
             txPublicKey,
             encryptedAmount,
             mask: mask.toString('hex'),
             commitment: Commitment.genCommitment(amount, common.bintohex(mask), false),
-            encryptedMask: common.bintohex(
-                aesCtr.encrypt(mask),
-            ),
+            encryptedMask: common.bintohex(encryptedMask),
         };
     }
 
@@ -108,10 +109,11 @@ class Stealth {
      * checkTransactionProof check if this user owns the UTXO or not
      * @param {Buffer} onetimeAddress UTXO's steal address
      * @param {Buffer} txPublicKey UTXO's transaction public key
-     * @param {string} encryptedAmount optional = aes256(sharedSecret, amount)
+     * @param {string=} encryptedAmount optional = aes256(sharedSecret, amount)
+     * @param {string=} encryptedMask optional = aes256(sharedSecret, mask)
      * @returns {object} amount
      */
-    checkTransactionProof(txPublicKey, onetimeAddress, encryptedAmount) {
+    checkTransactionProof(txPublicKey, onetimeAddress, encryptedAmount, encryptedMask) {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
 
@@ -136,25 +138,32 @@ class Stealth {
             return null;
         }
 
-        if (encryptedAmount) {
-            const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
+        const returnValue = {
+            privKey: common.bintohex(e.toBuffer(32)),
+            pubKey: E.getEncoded(true),
+        };
 
+        const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
+        if (encryptedAmount) {
             const encryptedBytes = common.hextobin(encryptedAmount);
             const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey);
             const decryptedBytes = aesCtr.decrypt(encryptedBytes);
             const amount = aesjs.utils.utf8.fromBytes(decryptedBytes);
 
-            return {
-                privKey: common.bintohex(e.toBuffer(32)),
-                pubKey: E.getEncoded(true),
-                amount,
-            };
+            returnValue.amount = amount;
         }
 
-        return {
-            privKey: common.bintohex(e.toBuffer(32)),
-            pubKey: E.getEncoded(true),
-        };
+        if (encryptedMask) {
+            const encryptedBytesMask = common.hextobin(encryptedMask);
+            const aesCtrMask = new aesjs.ModeOfOperation.ctr(aesKey);
+            const decryptedBytesMask = aesCtrMask.decrypt(encryptedBytesMask);
+            const mask = common.bintohex(decryptedBytesMask);
+
+            returnValue.mask = mask;
+        }
+
+
+        return returnValue;
     }
 
     /**

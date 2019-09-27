@@ -401,11 +401,6 @@ export const bytesToHex = (bytes) => {
  */
 export const hexToBytes = (hex) => {
     hex = hex.toString(16);
-
-    if (!isHexStrict(hex)) {
-        throw new Error(`Given value "${hex}" is not a valid hex string.`);
-    }
-
     hex = hex.replace(/^0x/i, '');
     hex = hex.length % 2 ? `0${hex}` : hex;
 

@@ -89,15 +89,17 @@ class Commitment {
      * @param {object - UTXO} UTXO instance
      * @param {string} privateKey privatekey for decode amount, ecdh and prove those utxo
      * belonging
+     * @returns {Point} result from sum
      */
     static sumCommitmentsFromUTXOs(inputUtxos, privateKey) {
-        let sumInput;
+        let sumInput = null;
         for (let index = 0; index < inputUtxos.length; index++) {
             const UTXOIns = inputUtxos[index];
             const decodedData = UTXOIns.isMineUTXO(privateKey);
             const basePointG = ecparams.G;
+
             const commitment = basePointG.multiply(
-                BigInteger.fromHex(UTXOIns.mask),
+                BigInteger.fromHex(decodedData.mask),
             )
                 .add(basePointH.multiply(
                     BigInteger.fromHex(
@@ -108,7 +110,27 @@ class Commitment {
             if (!sumInput) {
                 sumInput = commitment;
             } else {
-                sumInput = commitment.add(sumInput);
+                sumInput = sumInput.add(commitment);
+            }
+        }
+
+        return sumInput;
+    }
+
+    /**
+     * Sum commitments calculated from generateProof
+     * @param {array} commitments array in full length
+     * @returns {Point} result from sum
+     */
+    static sumCommitments(commitments) {
+        let sumInput = null;
+        for (let index = 0; index < commitments.length; index++) {
+            const commitment = Point.decodeFrom(ecparams, commitments[index]);
+
+            if (!sumInput) {
+                sumInput = commitment;
+            } else {
+                sumInput = sumInput.add(commitment);
             }
         }
 

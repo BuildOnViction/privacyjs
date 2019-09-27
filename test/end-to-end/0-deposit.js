@@ -22,18 +22,22 @@ let sender = new Stealth({
 })
 
 describe('#deposit', () => {
-    for (var count = 0; count < 5; count++) {
+    for (var count = 0; count < 1; count++) {
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 let returnedValue = result.utxo;
                 let proof = result.proof;
 
                 let utxoIns = new UTXO(returnedValue);
+
                 let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
 
                 expect(isMineUTXO).to.not.equal(null);
                 expect(isMineUTXO.amount).to.equal(amount.toString());
 
+                // make sure decoded mask = generated mask
+                expect(isMineUTXO.mask).to.equal(proof.mask);
+                
                 // Deprecated: commitment no longer returns
                 // validate return commitment from amount,mask - 
                 // expect(

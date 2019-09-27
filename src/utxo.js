@@ -45,7 +45,7 @@ class UTXO {
         // this.commitmentYBit = utxo['1'];
         this.pubkeyX = utxo['0'];
         this.pubkeyYBit = utxo['1'];
-        this.amount = utxo['2'];
+        this.amount = numberToHex(utxo['2']);
         this.txPubX = utxo['3'];
         this.txPubYBit = utxo['4'];
         this.index = utxo['5'];
@@ -72,7 +72,8 @@ class UTXO {
         return receiver.checkTransactionProof(
             longFormTxPublicKey.getEncoded(false),
             longFormStealth.getEncoded(false),
-            numberToHex(this.amount), // ignore 0x in prefix
+            this.amount,
+            this.mask,
         );
     }
 

@@ -7,11 +7,17 @@ import TestConfig from '../config.json';
 import chai from 'chai';
 import {toBN} from '../../src/common';
 import Address from '../../src/address';
+import Commitment from '../../src/commitment';
 import Stealth from '../../src/stealth';
 import TestUtils from '../utils';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import * as _ from 'lodash';
 import BN from 'bn.js';
+import UTXO from '../../src/utxo.js';
+
+const ecurve = require('ecurve');
+const ecparams = ecurve.getCurveByName('secp256k1');
+const { Point } = ecurve;
 
 const expect = chai.expect;
 chai.should();
@@ -50,9 +56,10 @@ describe('privatesend', () => {
         // create 3 utxos, let this test independents to deposit test
         TestUtils.depositNTimes(3, TOMO).then((utxos) => {
             let sumOfSpendingMasks = new BN('0', 16);
-
+            let UTXOs = []; 
             const spendingUtxosIndex = _.map(utxos, result => {
                 sumOfSpendingMasks = sumOfSpendingMasks.add(toBN(result.utxo._mask));
+                UTXOs.push(new UTXO(result.utxo));
                 return result.utxo._index
             });
 
@@ -60,8 +67,16 @@ describe('privatesend', () => {
 
             const myRemainMask = sumOfSpendingMasks.sub(new BN(proofOfReceiver.mask, 16)).toString(16);
 
-            var proofOfMe = sender.genTransactionProof(2.5*TOMO, sender.pubSpendKey, sender.pubViewKey, myRemainMask);
+            let proofOfMe = sender.genTransactionProof(2.5*TOMO, sender.pubSpendKey, sender.pubViewKey, myRemainMask);
 
+            // sum up commitment to make sure input utxo commitments = output utxos commitment
+            let inputCommitments = Commitment.sumCommitmentsFromUTXOs(UTXOs, SENDER_WALLET.privateKey);
+            let outputCommitments = Point.decodeFrom(ecparams, proofOfReceiver.commitment).add(
+                Point.decodeFrom(ecparams, proofOfMe.commitment)
+            );
+
+            console.log("inputCommitments ", inputCommitments.getEncoded(true).toString('hex'));
+            console.log("outputCommitments ", outputCommitments.getEncoded(true).toString('hex'));
             privacyContract.methods.privateSend(
                 spendingUtxosIndex,
                 [

@@ -65,8 +65,6 @@ describe('withdraw 0.5Tomo from SC', () => {
                     X: UTXOIns.txPubX,
                     YBit: UTXOIns.txPubYBit
                 }, sender.privViewKey, false);
-
-                let withDrawnCommitment = Commitment.genCommitment(amount, "00", false);
                 
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
@@ -83,7 +81,6 @@ describe('withdraw 0.5Tomo from SC', () => {
                         from: SENDER_WALLET.address
                     })
                     .then(function (receipt) {
-                        console.log("receipt ", receipt);
                         done();
                         
                     })

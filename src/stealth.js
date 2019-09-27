@@ -1,4 +1,5 @@
 import crypto from './crypto';
+// eslint-disable-next-line import/no-cycle
 import Commitment from './commitment';
 import * as common from './common';
 

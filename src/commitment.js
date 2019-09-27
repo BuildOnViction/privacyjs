@@ -38,7 +38,6 @@ class Commitment {
      */
     static genCommitment(amount, mask, encoded = true) {
         const basePointG = ecparams.G;
-        console.log('genCommitment mask ', mask);
         const commitment = basePointG.multiply(
             BigInteger.fromHex(mask),
         )
@@ -85,10 +84,35 @@ class Commitment {
         return commitment.getEncoded(encoded);
     }
 
-    static addCommitment(comm1, comm2) {
-        const point1 = Point.decodeFrom(ecparams, comm1);
-        const point2 = Point.decodeFrom(ecparams, comm2);
-        return point1.add(point2);
+    /**
+     * Sum commitments from a set of UTXO instance
+     * @param {object - UTXO} UTXO instance
+     * @param {string} privateKey privatekey for decode amount, ecdh and prove those utxo
+     * belonging
+     */
+    static sumCommitmentsFromUTXOs(inputUtxos, privateKey) {
+        let sumInput;
+        for (let index = 0; index < inputUtxos.length; index++) {
+            const UTXOIns = inputUtxos[index];
+            const decodedData = UTXOIns.isMineUTXO(privateKey);
+            const basePointG = ecparams.G;
+            const commitment = basePointG.multiply(
+                BigInteger.fromHex(UTXOIns.mask),
+            )
+                .add(basePointH.multiply(
+                    BigInteger.fromHex(
+                        common.numberToHex(decodedData.amount),
+                    ),
+                ));
+
+            if (!sumInput) {
+                sumInput = commitment;
+            } else {
+                sumInput = commitment.add(sumInput);
+            }
+        }
+
+        return sumInput;
     }
 
     /**

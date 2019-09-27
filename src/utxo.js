@@ -49,7 +49,7 @@ class UTXO {
         this.txPubX = utxo['3'];
         this.txPubYBit = utxo['4'];
         this.index = utxo['5'];
-        this.mask = utxo['6'];
+        this.mask = numberToHex(utxo['6']);
     }
 
     /**
@@ -142,7 +142,7 @@ class UTXO {
             3: utxo['5'],
             4: utxo['6'],
             5: index || -1,
-            6: utxo['4'][1],
+            6: numberToHex(utxo['4'][1]),
         });
     }
 }

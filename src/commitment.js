@@ -110,7 +110,6 @@ class Commitment {
             if (!sumInput) {
                 sumInput = commitment;
             } else {
-                console.log('cmm sum ', sumInput.getEncoded(false).toString('hex'));
                 sumInput = sumInput.add(commitment);
             }
         }

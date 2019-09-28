@@ -30,6 +30,15 @@ const WALLETS = TestConfig.WALLETS;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 const RECEIVER_WALLET = WALLETS[1]; // hold around 1 mil tomo
 
+const PEDERSON_COMMITMENT_H = [
+    '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+    '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
+];
+
+const basePointH = new Point.fromAffine(ecparams,
+    new BigInteger(PEDERSON_COMMITMENT_H[0], 16),
+    new BigInteger(PEDERSON_COMMITMENT_H[1], 16));
+
 //load single private key as string
 let provider = new HDWalletProvider(SENDER_WALLET.privateKey, TestConfig.RPC_END_POINT);
 
@@ -44,7 +53,7 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 const TOMO = 1000000000000000000;
 
 describe('privatesend', () => {
-    for (var count = 0; count < 1; count++) {
+    for (var count = 0; count < 20; count++) {
         it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
             let amount = 3*TOMO;
             let sender = new Stealth({
@@ -64,74 +73,51 @@ describe('privatesend', () => {
                 let generatedCommitments = [];
                 const spendingUtxosIndex = _.map(utxos, result => {
                     generatedCommitments.push(result.proof.commitment);
-                    console.log(result.proof.commitment.toString('hex'));
                     sumOfSpendingMasks = sumOfSpendingMasks.add(BigInteger.fromHex(result.proof.mask)).mod(ecparams.p);
                     UTXOs.push(new UTXO(result.utxo));
                     return result.utxo._index
                 });
 
                 let randomMask = ec.genKeyPair().getPrivate('hex');
-                // const proofOfReceiver = sender.genTransactionProof(0.5*TOMO, receiver.pubSpendKey, receiver.pubViewKey);
                 const proofOfReceiver = sender.genTransactionProof(0.5*TOMO, receiver.pubSpendKey, receiver.pubViewKey, randomMask);
-                console.log('sumOfSpendingMasks ', sumOfSpendingMasks.mod(ecparams.p).toHex());
 
-                const myRemainMask = sumOfSpendingMasks
+                // const myRemainMask = sumOfSpendingMasks
+                //                         .add(ecparams.p)
+                //                         .subtract(BigInteger.fromHex(proofOfReceiver.mask).mod(ecparams.p))
+                //                         .mod(ecparams.p)
+                //                         .toHex();
+                const myRemainMask = ecparams.p
                                         .add(ecparams.p)
                                         .subtract(BigInteger.fromHex(proofOfReceiver.mask).mod(ecparams.p))
-                                        .mod(ecparams.p)
+                                        .subtract(sumOfSpendingMasks)
+                                        // .mod(ecparams.p)
                                         .toHex();
+                //                         .subtract(ecparams.p)
+                //                         .subtract(BigInteger.fromHex(proofOfReceiver.mask).mod(ecparams.p))
+                //                         .mod(ecparams.p)
+                //                         .toHex();
 
-                console.log('myRemainMask ', myRemainMask);
-                console.log('proofOfReceiver ', proofOfReceiver.mask);
                 let proofOfMe = sender.genTransactionProof(2.5*TOMO, sender.pubSpendKey, sender.pubViewKey, myRemainMask);
 
                 // sum up commitment to make sure input utxo commitments = output utxos commitment
                 let inputCommitments = Commitment.sumCommitmentsFromUTXOs(UTXOs, SENDER_WALLET.privateKey);
                 let expectedCommitments = Commitment.sumCommitments(generatedCommitments);
-                // let outputCommitments = Point.decodeFrom(ecparams, proofOfReceiver.commitment).add(
-                //     Point.decodeFrom(ecparams, proofOfMe.commitment)
-                // );
-                let outputCommitments = ecparams.G.multiply(BigInteger.fromHex(myRemainMask)).add(
-                    ecparams.G.multiply(BigInteger.fromHex(randomMask))
-                );
-                console.log("---------------------------------------------");
-                console.log('Sum in ', ecparams.G.multiply(sumOfSpendingMasks).getEncoded(true));
-                console.log(ecparams.G.multiply(
-                    BigInteger.fromHex(proofOfReceiver.mask)
-                        .add(BigInteger.fromHex(proofOfMe.mask))
-                ).getEncoded(false).toString('hex'));
-                console.log(ecparams.G.multiply(
-                    BigInteger.fromHex(proofOfReceiver.mask)
-                        .add(BigInteger.fromHex(proofOfMe.mask)).mod(ecparams.p)
-                ).getEncoded(false).toString('hex'));
+                let outputCommitments = Point.decodeFrom(ecparams, proofOfMe.commitment)
+                                            .add(
+                                                Point.decodeFrom(ecparams, proofOfReceiver.commitment)
+                                            );
 
                 expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(expectedCommitments.getEncoded(true).toString('hex'));
-                
-                let NpointOfReceiver = ecparams.G.multiply(
-                    BigInteger.fromHex(proofOfReceiver.mask)
-                );
+                expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
+                const pfm = inputCommitments.add(
+                    Point.decodeFrom(ecparams, proofOfReceiver.commitment).negate()
+                ).getEncoded(false);
 
-                let sendToSCCM = inputCommitments.add(
-                    NpointOfReceiver.negate()
-                );
-
-                
-                expect(ecparams.isOnCurve(sendToSCCM)).to.equal(true);
-                expect(sendToSCCM.add(NpointOfReceiver).getEncoded(true).toString('hex')).to.equal(inputCommitments.getEncoded(true).toString('hex'));
-                
-                console.log("---------------------------------------------");
-                console.log('Sum out ', outputCommitments.getEncoded(false).toString('hex'));
-                console.log('Sum in ', inputCommitments.getEncoded(false).toString('hex'));
-                console.log(sendToSCCM.getEncoded(false).toString('hex'));
-                console.log(proofOfReceiver.commitment.toString('hex'));
-                
-                console.log("---------------------------------------------");
-                // expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
                 privacyContract.methods.privateSend(
                     spendingUtxosIndex,
                     [
-                        '0x' + sendToSCCM.getEncoded(false).toString('hex').substr(2, 64), // the X part of curve 
-                        '0x' + sendToSCCM.getEncoded(false).toString('hex').substr(-64), // the Y part of curve
+                        '0x' + pfm.toString('hex').substr(2, 64), // the X part of curve 
+                        '0x' + pfm.toString('hex').substr(-64), // the Y part of curve
                         '0x' + proofOfReceiver.commitment.toString('hex').substr(2, 64), // the X part of curve 
                         '0x' + proofOfReceiver.commitment.toString('hex').substr(-64), // the Y part of curve
                         '0x' + proofOfMe.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 

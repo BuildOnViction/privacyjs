@@ -44,7 +44,7 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 const TOMO = 1000000000000000000;
 
 describe('privatesend', () => {
-    for (var count = 0; count < 5; count++) {
+    for (var count = 0; count < 1; count++) {
         it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
             let amount = 3*TOMO;
             let sender = new Stealth({
@@ -64,6 +64,7 @@ describe('privatesend', () => {
                 let generatedCommitments = [];
                 const spendingUtxosIndex = _.map(utxos, result => {
                     generatedCommitments.push(result.proof.commitment);
+                    console.log(result.proof.commitment.toString('hex'));
                     sumOfSpendingMasks = sumOfSpendingMasks.add(BigInteger.fromHex(result.proof.mask)).mod(ecparams.p);
                     UTXOs.push(new UTXO(result.utxo));
                     return result.utxo._index
@@ -98,12 +99,11 @@ describe('privatesend', () => {
                 console.log(ecparams.G.multiply(
                     BigInteger.fromHex(proofOfReceiver.mask)
                         .add(BigInteger.fromHex(proofOfMe.mask))
-                ).getEncoded(true));
+                ).getEncoded(false).toString('hex'));
                 console.log(ecparams.G.multiply(
                     BigInteger.fromHex(proofOfReceiver.mask)
                         .add(BigInteger.fromHex(proofOfMe.mask)).mod(ecparams.p)
-                ).getEncoded(true));
-                console.log('Sum out ', outputCommitments.getEncoded(true));
+                ).getEncoded(false).toString('hex'));
 
                 expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(expectedCommitments.getEncoded(true).toString('hex'));
                 
@@ -119,9 +119,13 @@ describe('privatesend', () => {
                 expect(ecparams.isOnCurve(sendToSCCM)).to.equal(true);
                 expect(sendToSCCM.add(NpointOfReceiver).getEncoded(true).toString('hex')).to.equal(inputCommitments.getEncoded(true).toString('hex'));
                 
-                console.log(sendToSCCM.affineX.toHex());
-                console.log(sendToSCCM.affineY.toHex());
-
+                console.log("---------------------------------------------");
+                console.log('Sum out ', outputCommitments.getEncoded(false).toString('hex'));
+                console.log('Sum in ', inputCommitments.getEncoded(false).toString('hex'));
+                console.log(sendToSCCM.getEncoded(false).toString('hex'));
+                console.log(proofOfReceiver.commitment.toString('hex'));
+                
+                console.log("---------------------------------------------");
                 // expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
                 privacyContract.methods.privateSend(
                     spendingUtxosIndex,
@@ -150,8 +154,18 @@ describe('privatesend', () => {
                         from: SENDER_WALLET.address // in real case, generate an dynamic accont to put here
                     })
                     .then(function (receipt) {
-                        console.log("receipt ", receipt.events.InputSum.returnValues);
-                        console.log("receipt ", receipt.events.OutputSum.returnValues);
+                        receipt.events.InputSum.forEach(vl => {
+                            console.log('input ', numberToHex(vl.returnValues["0"]));
+                            console.log('input ', numberToHex(vl.returnValues["1"]));
+                        });
+
+                        receipt.events.OutputSum.forEach(vl => {
+                            console.log('output ', numberToHex(vl.returnValues["0"]));
+                            console.log('output ', numberToHex(vl.returnValues["1"]));
+                        });
+
+                        // console.log("receipt ", receipt.events.InputSum[0].returnValues);
+                        // console.log("receipt ", receipt.events.OutputSum[0].returnValues);
 
                         // const insumCM = Point.fromAffine(ecparams, BigInteger.fromHex(numberToHex(receipt.events.InputSum.returnValues["0"])), 
                         // BigInteger.fromHex(numberToHex(receipt.events.InputSum.returnValues["1"])));
@@ -160,10 +174,10 @@ describe('privatesend', () => {
                         // BigInteger.fromHex(numberToHex(receipt.events.OutputSum.returnValues["1"])));
 
                         // console.log("---------------------------------------------");
-                        console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["0"]));
-console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["1"]))
-                        console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["0"]));
-                        console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["1"]));
+                        // console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["0"]));
+                        // console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["1"]))
+                        // console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["0"]));
+                        // console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["1"]));
                         console.log("---------------------------------------------");
                         done();
                         

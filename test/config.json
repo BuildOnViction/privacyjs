@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xdc6EAe877d791d10Df53983ddA03D224b316880C",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x55389b1c67ab2BA2939256E1ac1af250E59C197B",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",

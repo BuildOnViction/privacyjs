@@ -151,4 +151,4 @@ class Commitment {
     }
 }
 
-module.exports = Commitment;
+export default Commitment;

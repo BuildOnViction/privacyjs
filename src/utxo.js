@@ -25,14 +25,10 @@ const EC = require('elliptic').ec;
  */
 
 /* UTXO structure input
-    * 0 - _commitmentX: transation_public_key_X, short form of a point in ECC
-    * 1 - _commitmentYBit: odd or even bit
-    * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
-    * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-    * 4 - [_amount, mask]: encrypt_AES(shared_ECDH, amount),
-    * 5 - _txPubX: transation_public_key_X, short form of a point in ECC
-    * 6 - _txPubYBit
-    * 7 - _index
+    * 0 - [commitmentX, pubkeyX, txPubX],
+    * 1 - [commitmentYBit, pubkeyYBit, txPubYBit],
+    * 2 - [amount, mask],
+    * 3 - _index
     *
 */
 
@@ -42,15 +38,15 @@ class UTXO {
      * @param {object} utxo
      */
     constructor(utxo) {
-        this.commitmentX = utxo['0'];
-        this.commitmentYBit = utxo['1'];
-        this.pubkeyX = utxo['2'];
-        this.pubkeyYBit = utxo['3'];
-        this.amount = numberToHex(utxo['4'][0]);
-        this.mask = numberToHex(utxo['4'][1]);
-        this.txPubX = utxo['5'];
-        this.txPubYBit = utxo['6'];
-        this.index = utxo['7'];
+        this.commitmentX = utxo['0']['0'];
+        this.commitmentYBit = utxo['1']['0'];
+        this.pubkeyX = utxo['0']['1'];
+        this.pubkeyYBit = utxo['1']['1'];
+        this.amount = numberToHex(utxo['2'][0]);
+        this.mask = numberToHex(utxo['2'][1]);
+        this.txPubX = utxo['0']['2'];
+        this.txPubYBit = utxo['1']['2'];
+        this.index = utxo['3'];
     }
 
     /**
@@ -120,32 +116,6 @@ class UTXO {
         // this.derSign = signature.toDER();
 
         return signature;
-    }
-
-    /**
-     * From direct getUTXO rpc
-     * //TODO uniform return data
-     * the data structure is a bit different to the event data when deposit
-     * ['4'] store the encryptedAmount and encryptedMask perspectively
-     * UTXO structure input
-     * 0 - _commitmentX:
-     * 1 - _commitmentYBit: ,
-     * 2 - _pubkeyX: stealth_address_X, short form of a point in ECC
-     * 3 - _pubkeyYBit: '', // bit indicate odd or even of stealth_address_Y
-     * 4 - [_amount, mask]: encrypt_AES(shared_ECDH, amount),
-     *_5 - _txPubX: transation_public_key_X, short form of a point in ECC
-     * 6 - _txPubYBit
-     */
-    static fromRPCGetUTXO(utxo, index) {
-        return new UTXO({
-            0: utxo['2'],
-            1: utxo['3'],
-            2: utxo['4'][0],
-            3: utxo['5'],
-            4: utxo['6'],
-            5: index || -1,
-            6: numberToHex(utxo['4'][1]),
-        });
     }
 }
 

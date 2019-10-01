@@ -66,6 +66,8 @@ describe('withdraw 0.5Tomo from SC', () => {
                     YBit: UTXOIns.txPubYBit
                 }, sender.privViewKey, false);
                 
+                // console.log([...signature.r.toBuffer()], [...signature.s.toBuffer()]);
+                
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
                     '500000000000000000', hexToNumberString(proof.encryptedAmount),

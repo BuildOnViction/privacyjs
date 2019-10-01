@@ -22,7 +22,7 @@ let sender = new Stealth({
 })
 
 describe('#deposit', () => {
-    for (var count = 0; count < 5; count++) {
+    for (var count = 0; count < 1; count++) {
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 let returnedValue = result.utxo;

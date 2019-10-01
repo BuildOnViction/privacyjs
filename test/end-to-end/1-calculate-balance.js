@@ -55,20 +55,26 @@ const scanAllUTXO = async() => {
     do {
         try {
             utxo = await getUTXO(index);
-            let utxoInstance = new UTXO({
-                ...utxo,
-                "7": index
-            });
-            let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
-
-            if (isMine) {
-                utxos.push(utxo);
+            console.log(index, utxo);
+            if (utxo["3"] === false) {
+                let utxoInstance = new UTXO({
+                    ...utxo,
+                    "3": index
+                });
+                let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
+    
+                if (isMine) {
+                    utxos.push(utxo);
+                }
+    
+                if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
+                    balance += parseFloat(isMine.amount);
+                }
+                index++;
+            } else {
+                index++;   
             }
-
-            if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
-                balance += parseFloat(isMine.amount);
-            }
-            index++;
+            
         } catch(exception) {
             // console.log(exception);
             utxo = null;

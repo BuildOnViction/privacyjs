@@ -1,13 +1,15 @@
-import stealth from './stealth';
-import address from './address';
+import Stealth from './stealth';
+import Commitment from './commitment';
+import Address from './address';
 import * as common from './common';
-import crypto from './crypto';
-import utxo from './utxo';
+import Crypto from './crypto';
+import UTXO from './utxo';
 
 module.exports = {
-    stealth,
-    address,
+    Stealth,
+    Address,
     common,
-    crypto,
-    utxo,
+    Crypto,
+    UTXO,
+    Commitment,
 };

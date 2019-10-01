@@ -130,33 +130,7 @@ describe('privatesend', () => {
                         from: SENDER_WALLET.address // in real case, generate an dynamic accont to put here
                     })
                     .then(function (receipt) {
-                        receipt.events.InputSum.forEach(vl => {
-                            console.log('input ', numberToHex(vl.returnValues["0"]));
-                            console.log('input ', numberToHex(vl.returnValues["1"]));
-                        });
-
-                        receipt.events.OutputSum.forEach(vl => {
-                            console.log('output ', numberToHex(vl.returnValues["0"]));
-                            console.log('output ', numberToHex(vl.returnValues["1"]));
-                        });
-
-                        // console.log("receipt ", receipt.events.InputSum[0].returnValues);
-                        // console.log("receipt ", receipt.events.OutputSum[0].returnValues);
-
-                        // const insumCM = Point.fromAffine(ecparams, BigInteger.fromHex(numberToHex(receipt.events.InputSum.returnValues["0"])), 
-                        // BigInteger.fromHex(numberToHex(receipt.events.InputSum.returnValues["1"])));
-
-                        // const outsumCM = Point.fromAffine(ecparams, BigInteger.fromHex(numberToHex(receipt.events.OutputSum.returnValues["0"])), 
-                        // BigInteger.fromHex(numberToHex(receipt.events.OutputSum.returnValues["1"])));
-
-                        // console.log("---------------------------------------------");
-                        // console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["0"]));
-                        // console.log("In sum return ", numberToHex(receipt.events.InputSum.returnValues["1"]))
-                        // console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["0"]));
-                        // console.log("Out sum return ", numberToHex(receipt.events.OutputSum.returnValues["1"]));
-                        console.log("---------------------------------------------");
                         done();
-                        
                     })
                     .catch(function (error) {
                         console.log(error);

@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.2.5",
+  "version": "0.2.7",
   "description": "Privacy utils for tomochain crypto in javascript.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -47,6 +47,7 @@
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "js-sha3": "^0.8.0",
+    "lodash": "^4.17.15",
     "number-to-bn": "^1.7.0",
     "utf8": "^3.0.0"
   },

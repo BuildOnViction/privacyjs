@@ -95,6 +95,8 @@ class Commitment {
         let sumInput = null;
         for (let index = 0; index < inputUtxos.length; index++) {
             const UTXOIns = inputUtxos[index];
+
+            // todo - need to check decodeddata before continuing
             const decodedData = UTXOIns.isMineUTXO(privateKey);
             const basePointG = ecparams.G;
 

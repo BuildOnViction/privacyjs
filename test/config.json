@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x55389b1c67ab2BA2939256E1ac1af250E59C197B",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x49b5184288A450Ae02e32F9CD9288cfF42F63ff8",
     "WALLETS": [
         {
             "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -190,38 +190,18 @@
             "inputs": [
                 {
                     "indexed": false,
-                    "name": "_commitmentX",
-                    "type": "uint256"
+                    "name": "_Xs",
+                    "type": "uint256[3]"
                 },
                 {
                     "indexed": false,
-                    "name": "_commitmentYBit",
-                    "type": "uint8"
-                },
-                {
-                    "indexed": false,
-                    "name": "_pubkeyX",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "name": "_pubkeyYBit",
-                    "type": "uint8"
+                    "name": "_YBits",
+                    "type": "uint8[3]"
                 },
                 {
                     "indexed": false,
                     "name": "_amount",
                     "type": "uint256[2]"
-                },
-                {
-                    "indexed": false,
-                    "name": "_txPubX",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "name": "_txPubYBit",
-                    "type": "uint8"
                 },
                 {
                     "indexed": false,
@@ -302,19 +282,11 @@
             "outputs": [
                 {
                     "name": "",
-                    "type": "uint256"
+                    "type": "uint256[3]"
                 },
                 {
                     "name": "",
-                    "type": "uint8"
-                },
-                {
-                    "name": "",
-                    "type": "uint256"
-                },
-                {
-                    "name": "",
-                    "type": "uint8"
+                    "type": "uint8[3]"
                 },
                 {
                     "name": "",
@@ -322,11 +294,7 @@
                 },
                 {
                     "name": "",
-                    "type": "uint256"
-                },
-                {
-                    "name": "",
-                    "type": "uint8"
+                    "type": "bool"
                 }
             ],
             "payable": false,
@@ -411,6 +379,10 @@
                 {
                     "name": "mask",
                     "type": "uint256"
+                },
+                {
+                    "name": "isSpent",
+                    "type": "bool"
                 }
             ],
             "payable": false,

@@ -51,17 +51,19 @@ describe('withdraw 0.5Tomo from SC', () => {
                 let UTXOIns = new UTXO(utxo);
                 let utxoIndex = utxo._index
                 let signature = UTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
-                let amount = 500000000000000000; // 0.5 tomo
+                let amount = 400000000000000000; 
                 
                 // create proof for a transaction, we deposit 1 tomo, withdraw 0.5 so amount here = 0.5 tomo
-                let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+                let proof = sender.genTransactionProof(
+                    amount
+                , sender.pubSpendKey, sender.pubViewKey);
                 
                 // console.log("proof.encryptedAmount ", proof.encryptedAmount)
                 if (proof.encryptedAmount.length % 2 == 1) {
                     proof.encryptedAmount = '0' + proof.encryptedAmount;
                 }
 
-                let commitment = Commitment.genCommitmentFromTxPub(amount, {
+                let commitment = Commitment.genCommitmentFromTxPub(600000000000000000, {
                     X: UTXOIns.txPubX,
                     YBit: UTXOIns.txPubYBit
                 }, sender.privViewKey, false);
@@ -70,7 +72,7 @@ describe('withdraw 0.5Tomo from SC', () => {
                 
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
-                    '500000000000000000', hexToNumberString(proof.encryptedAmount),
+                    amount.toString(), hexToNumberString(proof.encryptedAmount),
                     [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
                     SENDER_WALLET.address,
                     // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
@@ -89,6 +91,121 @@ describe('withdraw 0.5Tomo from SC', () => {
                     .catch(function (error) {
                         console.log(error);
                         done(error);
+                    });
+            })
+            .catch((ex) => {
+                done(ex);
+            })
+    });
+
+    it('Successful withdraw from privacy account', (done) => {
+        // register privacy address, deposit 10 TOMO first the get the UTXO
+        Promise.all([
+            TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
+            TestUtils.deposit(1000000000000000000)]).then((result) => {
+                // console.log("result ", result);
+                let utxo = result[1].utxo;
+                let UTXOIns = new UTXO(utxo);
+                let utxoIndex = utxo._index
+                let signature = UTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
+                let amount = 1000000000000000000; 
+                
+                // create proof for a transaction, we deposit 1 tomo, withdraw 0.5 so amount here = 0.5 tomo
+                let proof = sender.genTransactionProof(
+                    amount
+                , sender.pubSpendKey, sender.pubViewKey);
+                
+                // console.log("proof.encryptedAmount ", proof.encryptedAmount)
+                if (proof.encryptedAmount.length % 2 == 1) {
+                    proof.encryptedAmount = '0' + proof.encryptedAmount;
+                }
+
+                let commitment = Commitment.genCommitmentFromTxPub(0, {
+                    X: UTXOIns.txPubX,
+                    YBit: UTXOIns.txPubYBit
+                }, sender.privViewKey, false);
+                
+                // console.log([...signature.r.toBuffer()], [...signature.s.toBuffer()]);
+                
+                privacyContract.methods.withdrawFunds(
+                    utxoIndex,
+                    amount.toString(), hexToNumberString(proof.encryptedAmount),
+                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
+                    SENDER_WALLET.address,
+                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
+                    [
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
+                    ]
+                )
+                    .send({
+                        from: SENDER_WALLET.address
+                    })
+                    .then(function (receipt) {
+                        done();
+                        
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        done(error);
+                    });
+            })
+            .catch((ex) => {
+                done(ex);
+            })
+    });
+
+    it('Should not successfully withdraw from privacy account', (done) => {
+        // register privacy address, deposit 10 TOMO first the get the UTXO
+        Promise.all([
+            TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
+            TestUtils.deposit(1000000000000000000)]).then((result) => {
+                // console.log("result ", result);
+                let utxo = result[1].utxo;
+                let UTXOIns = new UTXO(utxo);
+                let utxoIndex = utxo._index
+                let signature = UTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
+                let amount = 2000000000000000000;
+                
+                // create proof for a transaction, we deposit 1 tomo, withdraw 0.5 so amount here = 0.5 tomo
+                let proof = sender.genTransactionProof(
+                    amount
+                , sender.pubSpendKey, sender.pubViewKey);
+                
+                // console.log("proof.encryptedAmount ", proof.encryptedAmount)
+                if (proof.encryptedAmount.length % 2 == 1) {
+                    proof.encryptedAmount = '0' + proof.encryptedAmount;
+                }
+
+                let commitment = Commitment.genCommitmentFromTxPub(0, {
+                    X: UTXOIns.txPubX,
+                    YBit: UTXOIns.txPubYBit
+                }, sender.privViewKey, false);
+                
+                // console.log([...signature.r.toBuffer()], [...signature.s.toBuffer()]);
+                
+                privacyContract.methods.withdrawFunds(
+                    utxoIndex,
+                    amount.toString(), hexToNumberString(proof.encryptedAmount),
+                    [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
+                    SENDER_WALLET.address,
+                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
+                    [
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
+                        Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
+                    ]
+                )
+                    .send({
+                        from: SENDER_WALLET.address
+                    })
+                    .then(function (receipt) {
+                        done({
+                            error: true,
+                            msg: 'doesnt not expect successfully'
+                        });
+                    })
+                    .catch(function (error) {
+                        done();
                     });
             })
             .catch((ex) => {

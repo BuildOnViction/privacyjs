@@ -55,7 +55,7 @@ const scanAllUTXO = async() => {
     do {
         try {
             utxo = await getUTXO(index);
-            console.log(index, utxo);
+
             if (utxo["3"] === false) {
                 let utxoInstance = new UTXO({
                     ...utxo,

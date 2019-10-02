@@ -5,5 +5,5 @@ spec: ./test/**/*.js # the positional arguments!
 package: ./package.json
 reporter: spec
 slow: 75
-timeout: 100000
+timeout: 1000000
 ui: bdd

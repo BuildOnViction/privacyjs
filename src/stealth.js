@@ -174,6 +174,40 @@ class Stealth {
         return returnValue;
     }
 
+    encryptedAmount(txPublicKey, onetimeAddress, newAmount) {
+        assert(this.privViewKey, 'privViewKey required');
+        assert(this.privSpendKey, 'privSpendKey required');
+
+        if (txPublicKey.length !== 65) return null;
+
+        const hs = crypto.hmacSha256;
+
+        const B = Point.decodeFrom(ecparams, txPublicKey);
+
+        const ECDHSharedSerect = B.multiply(BigInteger.fromBuffer(this.privViewKey));
+
+        const d = hs(ECDHSharedSerect.getEncoded(true));
+        const e = BigInteger.fromBuffer(this.privSpendKey)
+            .add(BigInteger.fromBuffer(d))
+            .mod(ecparams.n);
+
+        const E = ecparams.G.multiply(e);
+
+        const onetimeAddressCalculated = E.getEncoded(false);
+
+        if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
+            return null;
+        }
+
+        const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
+        const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey);
+        const encryptedAmount = common.bintohex(
+            aesCtr.encrypt(aesjs.utils.utf8.toBytes(newAmount.toString())),
+        );
+
+        return encryptedAmount;
+    }
+
     /**
      * Build Stealth address from privacy address of receiver - normally for sender
      * stealth address = 33 bytes (public spend key) + 33 bytes(public view key) +

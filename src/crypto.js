@@ -23,9 +23,9 @@ function sha256x2(buffer) {
 
 /**
  * Random a hex string with size bytes, no prefix 0x, add it yourself if needed
- * @param {number} Number of bytes, notice a hex = 4 bit = 0.5 byte,
+ * @param {number} size Number of bytes, notice a hex = 4 bit = 0.5 byte,
  * a common private key (length 64) = 32 bytes
- * @param {function} Callback
+ * @param {function} callback
  * @returns {string} Hex string without prefix 0x
  */
 function randomHex(size, callback) {

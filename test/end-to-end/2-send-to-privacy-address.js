@@ -189,7 +189,7 @@ describe('privatesend', () => {
         done();
     });
 
-    for (var count = 0; count < 1; count++) {
+    for (var count = 0; count < 10; count++) {
         it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
             runtest(done);
         });

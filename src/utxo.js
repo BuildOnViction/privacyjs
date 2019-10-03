@@ -36,6 +36,7 @@ class UTXO {
     /**
      *
      * @param {object} utxo
+     * @param {privateKey} Optional
      */
     constructor(utxo) {
         this.commitmentX = utxo['0']['0'];
@@ -47,6 +48,15 @@ class UTXO {
         this.txPubX = utxo['0']['2'];
         this.txPubYBit = utxo['1']['2'];
         this.index = utxo['3'];
+
+        this.lfStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 === 1,
+            BigInteger(this.pubkeyX));
+
+        this.lfTxPublicKey = ecparams.pointFromX(parseInt(this.txPubYBit) % 2 === 1,
+            BigInteger(this.txPubX));
+
+        this.lfCommitment = ecparams.pointFromX(parseInt(this.commitmentYBit) % 2 === 1,
+            BigInteger(this.commitmentX));
     }
 
     /**
@@ -58,17 +68,10 @@ class UTXO {
         const receiver = new Stealth({
             ...Address.generateKeys(privateSpendKey),
         });
-        const isYStealthOdd = parseInt(this.pubkeyYBit) % 2 === 1;
-        const longFormStealth = ecparams.pointFromX(isYStealthOdd,
-            BigInteger(this.pubkeyX));
-
-        const isYTxPublicKeyOdd = parseInt(this.txPubYBit) % 2 === 1;
-        const longFormTxPublicKey = ecparams.pointFromX(isYTxPublicKeyOdd,
-            BigInteger(this.txPubX));
 
         return receiver.checkTransactionProof(
-            longFormTxPublicKey.getEncoded(false),
-            longFormStealth.getEncoded(false),
+            this.lfTxPublicKey.getEncoded(false),
+            this.lfStealth.getEncoded(false),
             this.amount,
             this.mask,
         );
@@ -80,17 +83,12 @@ class UTXO {
      * @returns {string} delegate data of utxo
      */
     getHashData(targetAddress) {
-        const lfCommitment = ecparams.pointFromX(parseInt(this.commitmentYBit) % 2 === 1,
-            BigInteger(this.commitmentX));
-        const longFormStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 === 1,
-            BigInteger(this.pubkeyX));
-
         // return keccak256(
         // return Web3.utils.soliditySha3(
         return soliditySha3(
             bintohex(bconcat([
-                lfCommitment.getEncoded(false),
-                longFormStealth.getEncoded(false),
+                this.lfCommitment.getEncoded(false),
+                this.lfStealth.getEncoded(false),
                 hextobin(targetAddress),
             ])),
         );

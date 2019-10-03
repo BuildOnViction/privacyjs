@@ -57,7 +57,7 @@ class Commitment {
      * @param {number} amount You want to hide
      * @param {object} txpub Object includes X and YBit returns from utxo
      * @param {Buffer} privateViewKey Hex string private view key
-     * @param {boolean} expected output in long-form or short-form,
+     * @param {boolean} encoded output in long-form or short-form,
      * encoded = true -> short-form, encoded = false -> long-form
      * @returns {object} commitment = hs(txpub*private_view_key)*G + amount*H
      */

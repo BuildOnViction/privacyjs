@@ -13,8 +13,9 @@ import TestUtils from '../utils';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import * as _ from 'lodash';
 import BN from 'bn.js';
+import { scanUTXOs } from '../utils';
 var BigInteger = require('bigi')
-import UTXO from '../../src/utxo.js';
+import UTXO from '../../src/utxo';
 
 const ecurve = require('ecurve');
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -52,66 +53,8 @@ var privacyContract = new web3.eth.Contract(TestConfig.PRIVACY_ABI, TestConfig.P
 
 const TOMO = 1000000000000000000;
 
-// todo - move to util
-function getUTXO(index) {
-    return new Promise((resolve, reject) => {
-        privacyContract.methods.getUTXO(index)
-            .call({
-                from: WALLETS[0].address
-            })
-            .then(function (utxo) {
-                return resolve(utxo);
-            }).catch(exception => {
-                reject(exception);
-            })
-    });
-}
-
-const scanReceiverUTXO = async () => {
-    let index = 0;
-    var utxo = {};
-    var balance = 0;
-    var utxos = [];
-    do {
-        try {
-            utxo = await getUTXO(index);
-
-            if (utxo["3"] === false) {
-                let utxoInstance = new UTXO({
-                    ...utxo,
-                    "3": index
-                });
-                let isMine = utxoInstance.isMineUTXO(RECEIVER_WALLET.privateKey);
-
-                if (isMine) {
-                    utxos.push(utxo);
-                }
-
-                if (isMine && parseFloat(isMine.amount).toString() == isMine.amount) {
-                    balance += parseFloat(isMine.amount);
-                }
-                index++;
-            } else {
-                index++;
-            }
-
-        } catch (exception) {
-            // console.log(exception);
-            utxo = null;
-            break;
-        }
-
-        // we can't scan all utxo, it would take minutes on testnet and days on mainet
-        // in testnet the encryption algorithm can be changed :( 
-        // if (utxos.length > 5) {
-        //     break;
-        // }
-    } while (utxo);
-
-    return balance;
-}
-
 var receiverBalance = 0;
+var receiverUtxos = [];
 
 const runtest = function(done) {
     let sender = new Stealth({
@@ -148,16 +91,22 @@ const runtest = function(done) {
         // sum up commitment to make sure input utxo commitments = output utxos commitment
         let inputCommitments = Commitment.sumCommitmentsFromUTXOs(UTXOs, SENDER_WALLET.privateKey);
         let expectedCommitments = Commitment.sumCommitments(generatedCommitments);
-        let outputCommitments = Point.decodeFrom(ecparams, proofOfMe.commitment)
-            .add(
-                Point.decodeFrom(ecparams, proofOfReceiver.commitment)
-            );
+        // let outputCommitments = Point.decodeFrom(ecparams, proofOfMe.commitment)
+        //     .add(
+        //         Point.decodeFrom(ecparams, proofOfReceiver.commitment)
+        //     );
 
         expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(expectedCommitments.getEncoded(true).toString('hex'));
         // expect(inputCommitments.getEncoded(true).toString('hex')).to.equal(outputCommitments.getEncoded(true).toString('hex'));
         const pfm = inputCommitments.add(
             Point.decodeFrom(ecparams, proofOfReceiver.commitment).negate()
         ).getEncoded(false);
+        
+        console.log('steal of me ', Point.decodeFrom(ecparams, proofOfMe.onetimeAddress).getEncoded(true).toString('hex'));
+        console.log('steal of receiver ', Point.decodeFrom(ecparams, proofOfReceiver.onetimeAddress).getEncoded(true).toString('hex'));
+
+        console.log('txPublicKey of me ', Point.decodeFrom(ecparams, proofOfMe.txPublicKey).getEncoded(true).toString('hex'));
+        console.log('txPublicKey of receiver ', Point.decodeFrom(ecparams, proofOfReceiver.txPublicKey).getEncoded(true).toString('hex'));
 
         privacyContract.methods.privateSend(
             spendingUtxosIndex,
@@ -187,30 +136,37 @@ const runtest = function(done) {
             })
             .then(function (receipt) {
                 const returnUTXOs = receipt.events.NewUTXO.map(utxo => {
-                    console.log("utxo ", utxo);
+                    // console.log("utxo ", utxo);
                     return utxo.returnValues;
                 });
+                console.log("-----------------------------");
                 console.log(returnUTXOs);
+                console.log("-----------------------------");
+
                 // make sure at least one utxo belonging to receiver, one for sender
                 // and encrypted amount correct
-                for (var utxoIndex = 0; utxoIndex < returnUTXOs.length ; utxoIndex++) {
-                    const UTXOIns = new UTXO(returnUTXOs[utxoIndex]);
-                    expect(UTXOIns.isMineUTXO(SENDER_WALLET.privateKey) ||
-                        UTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey)
-                    )
-                    .to.be.equal(true);
-                }
+                const senderUTXOIns = new UTXO(returnUTXOs[0]);
+                const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+
+                var decodedSenderUTXO = senderUTXOIns.isMineUTXO(SENDER_WALLET.privateKey);
+                var decodedReceiverUTXO = receiverUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey);
                 
-                // expect the receiver got the money
-                scanReceiverUTXO().then((balance) => {
-                    console.log("balance ", balance);
-                    console.log("receiverBalance ", receiverBalance);
-                    expect(balance > receiverBalance).to.be.equal(true);
-                    receiverBalance = balance;
-                    done();
-                }).catch(function(err){
-                    done(err);
-                });
+                console.log("senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey) ", senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey));
+                console.log("receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey) ", receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey));
+
+                console.log("senderUTXOIns.isMineUTXO(SENDER_WALLET.privateKey) ", decodedSenderUTXO);
+                console.log("receiverUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey) ", decodedReceiverUTXO);
+
+                expect(senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey)).to.be.equal(null);
+                expect(receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey)).to.be.equal(null);
+
+                expect(decodedSenderUTXO).to.not.be.equal(null);
+                expect(decodedReceiverUTXO).to.not.be.equal(null);
+
+                expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
+                expect(decodedReceiverUTXO.amount === (0.5 * TOMO).toString()).to.be.equal(true);
+
+                done() ;
             })
             .catch(function (error) {
                 done(error);
@@ -221,24 +177,21 @@ const runtest = function(done) {
         });
 }
 
-
 describe('privatesend', () => {
-    
-    for (var count = 0; count < 10; count++) {
-        it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
-            if (!receiverBalance) {
-                scanReceiverUTXO().then((balance) => {
-                    console.log("init balance ", balance);
-                    receiverBalance = balance;
-                    runtest(done);
-                }).catch(ex => {
-                })
-            } else {
-                runtest(done);
-            }
-            
-            
+    before(function(done) {
+        // scanUTXOs().then((ret) => {
+        //     receiverBalance = ret.balance;
+        //     receiverUtxos = ret.utxos;
+        //     done();
+        // }).catch(ex => {
+        //     done(ex);
+        // })
+        done();
+    });
 
+    for (var count = 0; count < 5; count++) {
+        it('Successful send to privacy account - spend 3, 2 news utxo', (done) => {
+            runtest(done);
         });
     }
 });

@@ -5,7 +5,7 @@ import Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import { hextobin } from '../src/common';
-import numberToBN from 'number-to-bn';
+import UTXO from '../src/utxo';
 
 chai.should();
 
@@ -74,7 +74,6 @@ module.exports.depositNTimes = async (N, amount) => {
     return utxos;
 }
 
-
 var privacyAddressContract = new web3.eth.Contract(TestConfig.PRIVACYADD_MAPPING_ABI, TestConfig.PRIVACYADD_MAPPING_SMART_CONTRACT, {
     from: SENDER_WALLET.address, // default from address
     gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
@@ -102,5 +101,77 @@ module.exports.registerPrivacyAddress = (privateKey) => {
             });
     });
 }
+
+
+// todo - move to util
+function getUTXO(index) {
+    return new Promise((resolve, reject) => {
+        privacyContract.methods.getUTXO(index)
+            .call({
+                from: WALLETS[0].address
+            })
+            .then(function (utxo) {
+                return resolve(utxo);
+            }).catch(exception => {
+                reject(exception);
+            })
+    });
+}
+
+/**
+ * scan all utxo with input privateKey to check ownership
+ * you can stop this progress until got some number
+ * @param {*} privateKey 
+ * @param {*} limit 
+ */
+const scanUTXOs = async (privateKey, limit) => {
+    let index = 0;
+    var utxo = {};
+    var balance = 0;
+    var utxos = [];
+
+    do {
+        try {
+            utxo = await getUTXO(index);
+
+            if (utxo["3"] === false) {
+                let utxoInstance = new UTXO({
+                    ...utxo,
+                    "3": index
+                });
+                let isMine = utxoInstance.isMineUTXO(privateKey);
+                
+                if (isMine) {
+                    utxos.push(utxo);
+                }
+
+                if (isMine && parseFloat(isMine.amount).toString() == isMine.amount) {
+                    balance += parseFloat(isMine.amount);
+                }
+                index++;
+            } else {
+                index++;
+            }
+
+        } catch (exception) {
+            console.log(exception);
+            utxo = null;
+            break;
+        }
+
+        // we can't scan all utxo, it would take minutes on testnet and days on mainet
+        // in testnet the encryption algorithm can be changed :( 
+        if (limit) {
+            if (utxos.length > limit) break;
+        }
+    } while (utxo);
+
+    return {
+        balance,
+        utxos
+    }
+}
+
+module.exports.scanUTXOs = scanUTXOs;
 
 module.exports.deposit = deposit;

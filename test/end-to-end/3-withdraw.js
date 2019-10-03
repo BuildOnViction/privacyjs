@@ -17,7 +17,7 @@ const expect = chai.expect;
 chai.should();
 
 const WALLETS = TestConfig.WALLETS;
-const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const SENDER_WALLET = WALLETS[1]; // hold around 1 mil tomo
 
 //load single private key as string
 let provider = new HDWalletProvider(SENDER_WALLET.privateKey, TestConfig.RPC_END_POINT);
@@ -189,7 +189,6 @@ describe('withdraw 0.5Tomo from SC', () => {
                     amount.toString(), hexToNumberString(proof.encryptedAmount),
                     [[...signature.r.toBuffer()], [...signature.s.toBuffer()]],
                     SENDER_WALLET.address,
-                    // Commitment.genCommitment(amount,proof.mask), we already know  this mask, in reality we just know txpub
                     [
                         Web3.utils.hexToNumberString(commitment.toString('hex').substr(2, 64)), // the X part of curve 
                         Web3.utils.hexToNumberString(commitment.toString('hex').substr(-64)), // the Y part of curve
@@ -199,10 +198,7 @@ describe('withdraw 0.5Tomo from SC', () => {
                         from: SENDER_WALLET.address
                     })
                     .then(function (receipt) {
-                        done({
-                            error: true,
-                            msg: 'doesnt not expect successfully'
-                        });
+                        done(new Error("Should not expected successfully withdraw "));
                     })
                     .catch(function (error) {
                         done();

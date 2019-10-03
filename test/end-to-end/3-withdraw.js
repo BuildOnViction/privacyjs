@@ -56,7 +56,6 @@ describe('withdraw from SC', () => {
                 // console.log("result ", result);
                 let originalUTXO = result[1].utxo;
                 let originUTXOIns = new UTXO(originalUTXO);
-                console.log("origin mask ", originUTXOIns.mask);
 
                 let utxoIndex = originalUTXO._index
                 let signature = originUTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
@@ -71,8 +70,6 @@ describe('withdraw from SC', () => {
                     YBit: originUTXOIns.txPubYBit
                 }, sender.privViewKey, false);
 
-                console.log('expectedCommitment short ', Point.decodeFrom(ecparams, expectedCommitment).getEncoded(true).toString('hex'));
-                console.log('expectedCommitment long ', expectedCommitment.toString('hex'));
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
                     amount.toString(), '0x' + encryptedRemain,
@@ -87,22 +84,14 @@ describe('withdraw from SC', () => {
                         from: SENDER_WALLET.address
                     })
                     .then(function (receipt) {
-                        console.log("receipt.events.NewUTXO ", receipt.events.NewUTXO);
-                        
                         let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
                         let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
                         
-                        console.log("new mask ", utxoIns.mask);
-
                         expect(isMineUTXO).to.not.equal(null);
                         expect(isMineUTXO.amount).to.equal(remain);
 
-                        // validate return commitment from amount,mask - 
                         expect(
-                            Commitment.genCommitmentFromTxPub(remain, {
-                                X: utxoIns.txPubX,
-                                YBit: utxoIns.txPubYBit
-                            }, sender.privViewKey).toString('hex') === expectedCommitment
+                            utxoIns.lfCommitment.getEncoded(false).toString('hex') === expectedCommitment.toString('hex')
                         ).to.equal(true);
                         
                         // sum up commitment and double check
@@ -119,7 +108,7 @@ describe('withdraw from SC', () => {
             })
     });
 
-    it('Successful withdraw all from utxo blance 1', (done) => {
+    it('Successful withdraw 1 out of 1 balance utxo', (done) => {
         // register privacy address, deposit 10 TOMO first the get the UTXO
         Promise.all([
             TestUtils.registerPrivacyAddress(SENDER_WALLET.privateKey),
@@ -127,7 +116,6 @@ describe('withdraw from SC', () => {
                 // console.log("result ", result);
                 let originalUTXO = result[1].utxo;
                 let originUTXOIns = new UTXO(originalUTXO);
-                console.log("origin mask ", originUTXOIns.mask);
 
                 let utxoIndex = originalUTXO._index
                 let signature = originUTXOIns.sign(SENDER_WALLET.privateKey, SENDER_WALLET.address);
@@ -142,8 +130,6 @@ describe('withdraw from SC', () => {
                     YBit: originUTXOIns.txPubYBit
                 }, sender.privViewKey, false);
 
-                console.log('expectedCommitment short ', Point.decodeFrom(ecparams, expectedCommitment).getEncoded(true).toString('hex'));
-                console.log('expectedCommitment long ', expectedCommitment.toString('hex'));
                 privacyContract.methods.withdrawFunds(
                     utxoIndex,
                     amount.toString(), '0x' + encryptedRemain,
@@ -158,22 +144,14 @@ describe('withdraw from SC', () => {
                         from: SENDER_WALLET.address
                     })
                     .then(function (receipt) {
-                        console.log("receipt.events.NewUTXO ", receipt.events.NewUTXO);
-                        
                         let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
                         let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
                         
-                        console.log("new mask ", utxoIns.mask);
-
                         expect(isMineUTXO).to.not.equal(null);
                         expect(isMineUTXO.amount).to.equal(remain);
 
-                        // validate return commitment from amount,mask - 
                         expect(
-                            Commitment.genCommitmentFromTxPub(remain, {
-                                X: utxoIns.txPubX,
-                                YBit: utxoIns.txPubYBit
-                            }, sender.privViewKey).toString('hex') === expectedCommitment
+                            utxoIns.lfCommitment.getEncoded(false).toString('hex') === expectedCommitment.toString('hex')
                         ).to.equal(true);
                         
                         // sum up commitment and double check

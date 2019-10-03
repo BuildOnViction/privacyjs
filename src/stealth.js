@@ -55,7 +55,7 @@ class Stealth {
      * @param {string} pubSpendKey Public spend key in hex (without 0x)
      * @param {string} pubViewKey Public view key in hex (without 0x)
      * @param {string} pubViewKey Public view key in hex (without 0x)
-     * @param {string=} predefinedMask Optional, in case you got mask already and don't want to generate again
+     * @param {buffer=} predefinedMask Optional, in case you got mask already and don't want to generate again
      * @returns {object} onetimeAddress and txPublicKey
      */
     genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask) {
@@ -174,6 +174,15 @@ class Stealth {
         return returnValue;
     }
 
+    /**
+     * encryptedAmount decode the ecdh secretkey and encrypted for new amount
+     * we would use this many times for withdraw money from utxo
+     * You can use checkTransactionProof above to decode the amount
+     * @param {Buffer} onetimeAddress UTXO's steal address
+     * @param {Buffer} txPublicKey UTXO's transaction public key
+     * @param {string=} newAmount plain amount for encrypting
+     * @returns {object} encrypted amount
+     */
     encryptedAmount(txPublicKey, onetimeAddress, newAmount) {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
@@ -201,11 +210,11 @@ class Stealth {
 
         const aesKey = crypto.hmacSha256(ECDHSharedSerect.getEncoded(false));
         const aesCtr = new aesjs.ModeOfOperation.ctr(aesKey);
-        const encryptedAmount = common.bintohex(
+        const ecptAmount = common.bintohex(
             aesCtr.encrypt(aesjs.utils.utf8.toBytes(newAmount.toString())),
         );
 
-        return encryptedAmount;
+        return ecptAmount;
     }
 
     /**

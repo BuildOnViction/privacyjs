@@ -154,7 +154,7 @@ const scanUTXOs = async (privateKey, limit) => {
             }
 
         } catch (exception) {
-            console.log(exception);
+            // console.log(exception);
             utxo = null;
             break;
         }

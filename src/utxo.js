@@ -98,7 +98,7 @@ class UTXO {
      * create signature of an UTXO to send to smart-contract to withdraw
      * TODO: future we need to implement ring-signatureCT (monero-like) to prove
      * @param {string} privateKey
-     * @results {array} DER encoded signature in array
+     * @results {ec.Signature} include the ec.Signature you can convert to anyform after that
      */
     sign(privateKey, targetAddress) {
         const secp256k1 = new EC('secp256k1');
@@ -114,6 +114,20 @@ class UTXO {
         // this.derSign = signature.toDER();
 
         return signature;
+    }
+
+    /**
+     * There a lot of way to select some utxos with sum balance larger than
+     * a number. Here the solution to find the minimum sum balance utxo subset
+     * for private send or withdraw.
+     * We also point out which utxo is for modulo (remain are all spent/send)
+     * but this one need to be split into two ones
+     * @param {number} balance
+     */
+    selectUTXOWithMinSum(balance) {
+        console.log(balance);
+        console.log(this);
+        throw new Error('not implemented yet ');
     }
 }
 

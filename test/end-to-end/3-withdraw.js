@@ -85,7 +85,7 @@ describe('withdraw from SC', () => {
                     })
                     .then(function (receipt) {
                         let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
-                        let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
+                        let isMineUTXO = utxoIns.checkOwnership(SENDER_WALLET.privateKey);
                         
                         expect(isMineUTXO).to.not.equal(null);
                         expect(isMineUTXO.amount).to.equal(remain);
@@ -145,7 +145,7 @@ describe('withdraw from SC', () => {
                     })
                     .then(function (receipt) {
                         let utxoIns = new UTXO(receipt.events.NewUTXO.returnValues);
-                        let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
+                        let isMineUTXO = utxoIns.checkOwnership(SENDER_WALLET.privateKey);
                         
                         expect(isMineUTXO).to.not.equal(null);
                         expect(isMineUTXO.amount).to.equal(remain);

@@ -3,7 +3,7 @@ import ecurve from 'ecurve';
 // import { keccak256 } from 'js-sha3';
 import Address from './address';
 import Stealth from './stealth';
-import crypto from './crypto';
+import { BigInteger } from './crypto';
 import {
     numberToHex,
     bconcat,
@@ -12,7 +12,6 @@ import {
     soliditySha3,
 } from './common';
 
-const { BigInteger } = crypto;
 const ecparams = ecurve.getCurveByName('secp256k1');
 const EC = require('elliptic').ec;
 
@@ -64,7 +63,7 @@ class UTXO {
      * @param {string} privateSpendKey Hex string of private spend key - in other word serectkey
      * @returns {object} amount, keys
      */
-    isMineUTXO(privateSpendKey) {
+    checkOwnership(privateSpendKey) {
         const receiver = new Stealth({
             ...Address.generateKeys(privateSpendKey),
         });
@@ -79,12 +78,11 @@ class UTXO {
 
     /**
      * Generate hash data as signing input to claim this utxo belongs to who owns privatekey
+     * // TODO take note about the length of output
      * @param {string} targetAddress targetAddress who you're sending this utxo for
      * @returns {string} delegate data of utxo
      */
     getHashData(targetAddress) {
-        // return keccak256(
-        // return Web3.utils.soliditySha3(
         return soliditySha3(
             bintohex(bconcat([
                 this.lfCommitment.getEncoded(false),
@@ -114,6 +112,20 @@ class UTXO {
         // this.derSign = signature.toDER();
 
         return signature;
+    }
+
+    /**
+     * Return the secret value use for RingCT
+     * value = hs(ECDH) + private_spend_key
+     * @param {string} privateSpendKey of the owner - length 32 bytes
+     * @returns {string} ringCTPrivateKey in 32 bytes format
+     */
+    getRingCTKeys(privateSpendKey) {
+        const decodedUTXO = this.checkOwnership(privateSpendKey);
+        return {
+            privKey: decodedUTXO.privKey,
+            pubKey: decodedUTXO.pubKey,
+        };
     }
 }
 

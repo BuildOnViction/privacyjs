@@ -16,7 +16,7 @@ describe('#unittest #utxo', function () {
         utxos.forEach(function (utxo) {
             it('should claim belonging utxos', function (done) {
                 let utxoIns = new UTXO(utxo);
-                let isMineUTXO = utxoIns.isMineUTXO(privateKey);
+                let isMineUTXO = utxoIns.checkOwnership(privateKey);
 
                 assert.notEqual(isMineUTXO, null);
                 // don't check amount here because the algorithm can be changed
@@ -30,7 +30,7 @@ describe('#unittest #utxo', function () {
     otherUtxos.forEach(function (utxo) {
         it('should not claim utxo not belongs', function (done) {
             let utxoIns = new UTXO(utxo);
-            let isMineUTXO = utxoIns.isMineUTXO(privateKey);
+            let isMineUTXO = utxoIns.checkOwnership(privateKey);
 
             assert.equal(isMineUTXO, null);
             done();

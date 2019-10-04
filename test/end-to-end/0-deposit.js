@@ -30,7 +30,7 @@ describe('#deposit', () => {
 
                 let utxoIns = new UTXO(returnedValue);
 
-                let isMineUTXO = utxoIns.isMineUTXO(SENDER_WALLET.privateKey);
+                let isMineUTXO = utxoIns.checkOwnership(SENDER_WALLET.privateKey);
 
                 expect(isMineUTXO).to.not.equal(null);
                 expect(isMineUTXO.amount).to.equal(amount.toString());

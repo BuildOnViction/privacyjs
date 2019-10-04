@@ -148,17 +148,17 @@ const runtest = function(done) {
                 const senderUTXOIns = new UTXO(returnUTXOs[0]);
                 const receiverUTXOIns = new UTXO(returnUTXOs[1]);
 
-                var decodedSenderUTXO = senderUTXOIns.isMineUTXO(SENDER_WALLET.privateKey);
-                var decodedReceiverUTXO = receiverUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey);
+                var decodedSenderUTXO = senderUTXOIns.checkOwnership(SENDER_WALLET.privateKey);
+                var decodedReceiverUTXO = receiverUTXOIns.checkOwnership(RECEIVER_WALLET.privateKey);
                 
-                console.log("senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey) ", senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey));
-                console.log("receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey) ", receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey));
+                console.log("senderUTXOIns.checkOwnership(RECEIVER_WALLET.privateKey) ", senderUTXOIns.checkOwnership(RECEIVER_WALLET.privateKey));
+                console.log("receiverUTXOIns.checkOwnership(SENDER_WALLET.privateKey) ", receiverUTXOIns.checkOwnership(SENDER_WALLET.privateKey));
 
-                console.log("senderUTXOIns.isMineUTXO(SENDER_WALLET.privateKey) ", decodedSenderUTXO);
-                console.log("receiverUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey) ", decodedReceiverUTXO);
+                console.log("senderUTXOIns.checkOwnership(SENDER_WALLET.privateKey) ", decodedSenderUTXO);
+                console.log("receiverUTXOIns.checkOwnership(RECEIVER_WALLET.privateKey) ", decodedReceiverUTXO);
 
-                expect(senderUTXOIns.isMineUTXO(RECEIVER_WALLET.privateKey)).to.be.equal(null);
-                expect(receiverUTXOIns.isMineUTXO(SENDER_WALLET.privateKey)).to.be.equal(null);
+                expect(senderUTXOIns.checkOwnership(RECEIVER_WALLET.privateKey)).to.be.equal(null);
+                expect(receiverUTXOIns.checkOwnership(SENDER_WALLET.privateKey)).to.be.equal(null);
 
                 expect(decodedSenderUTXO).to.not.be.equal(null);
                 expect(decodedReceiverUTXO).to.not.be.equal(null);

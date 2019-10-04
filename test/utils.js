@@ -139,7 +139,7 @@ const scanUTXOs = async (privateKey, limit) => {
                     ...utxo,
                     "3": index
                 });
-                let isMine = utxoInstance.isMineUTXO(privateKey);
+                let isMine = utxoInstance.checkOwnership(privateKey);
                 
                 if (isMine) {
                     utxos.push(utxo);

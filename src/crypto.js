@@ -5,18 +5,18 @@ const ecurve = require('ecurve');
 
 // hack to get bigi without including it as a dep
 const ecparams = ecurve.getCurveByName('secp256k1');
-const BigInteger = ecparams.n.constructor;
+export const BigInteger = ecparams.n.constructor;
 
-function hash160(buffer) {
+export function hash160(buffer) {
     const sha256 = crypto.createHash('sha256').update(buffer).digest();
     return crypto.createHash('rmd160').update(sha256).digest();
 }
 
-function hmacSha256(buffer) {
+export function hmacSha256(buffer) {
     return crypto.createHmac('sha256', new Buffer([])).update(buffer).digest();
 }
 
-function sha256x2(buffer) {
+export function sha256x2(buffer) {
     const sha256 = crypto.createHash('sha256').update(buffer).digest();
     return crypto.createHash('sha256').update(sha256).digest();
 }
@@ -28,7 +28,7 @@ function sha256x2(buffer) {
  * @param {function} callback
  * @returns {string} Hex string without prefix 0x
  */
-function randomHex(size, callback) {
+export function randomHex(size, callback) {
     const cryto = crypto || window.crypto;
     const isCallback = (typeof callback === 'function');
 
@@ -86,12 +86,3 @@ function randomHex(size, callback) {
         }
     }
 }
-
-export default {
-    BigInteger,
-    ecparams,
-    hash160,
-    hmacSha256,
-    sha256x2,
-    randomHex,
-};

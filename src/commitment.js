@@ -1,11 +1,10 @@
-import crypto from './crypto';
+import { hmacSha256, BigInteger } from './crypto';
 import * as common from './common';
 
 const ecurve = require('ecurve');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
-const { BigInteger } = crypto;
 
 /**
  * Pedersen commitment constant
@@ -72,7 +71,7 @@ class Commitment {
         const basePointG = ecparams.G;
         const commitment = basePointG.multiply(
             BigInteger.fromBuffer(
-                crypto.hmacSha256(ECDHSharedSerect.getEncoded(true)),
+                hmacSha256(ECDHSharedSerect.getEncoded(true)),
             ),
         )
             .add(basePointH.multiply(
@@ -97,7 +96,7 @@ class Commitment {
             const UTXOIns = inputUtxos[index];
 
             // todo - need to check decodeddata before continuing
-            const decodedData = UTXOIns.isMineUTXO(privateKey);
+            const decodedData = UTXOIns.checkOwnership(privateKey);
             const basePointG = ecparams.G;
 
             const commitment = basePointG.multiply(

@@ -55,7 +55,7 @@ describe('#unittest #stealth', function () {
                     ...Address.generateKeys(fixture.sender.privKey)
                 })
                 var receiver = new Stealth({
-                    ...Address.generateKeys(randomHex(64))
+                    ...Address.generateKeys(randomHex())
                 })
 
                 // create proof for a transaction for an other receiver - not above one

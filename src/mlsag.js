@@ -7,24 +7,28 @@
 import ecurve from 'ecurve';
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
-import { BigInteger, hmacSha256 } from './crypto';
+import * as _ from 'lodash';
+import { BigInteger, randomHex } from './crypto';
+import { fastHash } from './common';
+
 // import { soliditySha3, bintohex } from './common';
 
-const ecparams = ecurve.getCurveByName('secp256k1');
+const secp256k1 = ecurve.getCurveByName('secp256k1');
 // const { Point } = ecurve;
-const hs = hmacSha256;
-const basePoint = ecparams.G;
+// const hs = hmacSha256;
+// const basePoint = secp256k1.G;
 
 /**
  * Using secp256k1 to turn a public key to a point (utxo's one time address)
- * @param {string} hex public key in hex string
+ * @param {ecurve.Point} hex public key in hex string
  * @returns {ecurve.Point} return a point in keccak256 ECC
  */
-export const hashToPoint = (hex) => {
-    assert(hex && hex.length === 66, 'Invalid hex input for hashtopoint');
+export const hashToPoint = (point) => {
+    // assert(hex && hex.length === 66, 'Invalid hex input for hashtopoint');
+    let hex = point.getEncoded(false).toString('hex').splice(2); // ignore first two bit
     while (hex) {
-        const newPoint = ecparams.G.multiply(BigInteger.fromHex(keccak256(hex)));
-        if (ecparams.isOnCurve(newPoint)) {
+        const newPoint = secp256k1.G.multiply(BigInteger.fromHex(keccak256(hex)));
+        if (secp256k1.isOnCurve(newPoint)) {
             return newPoint;
         }
         hex = keccak256(hex);
@@ -33,15 +37,25 @@ export const hashToPoint = (hex) => {
 
 // export const keyVector = (rows) => _.fill(rows, null);
 
-export const keyImage = (x, rows) => {
-    const HP = [];
-    const KeyImage = [];
-    for (let i = 0; i < rows; i++) {
-        HP[i] = BigInteger.fromBuffer(hs(basePoint.multiply(BigInteger.fromHex(x[i]))));
-        KeyImage[i] = HP[i].multiply(BigInteger.fromHex(x[i]));
-    }
+/**
+ * Generate key image for single stealth pair private/public
+ * for using in RingCT
+ * // TODO - give format, length of key image output and support multiple input
+ * @param {string} privKey 32 bytes hex
+ * @param {string} pubKey 32 bytes hex
+ * @returns {ecurve.Point}
+ */
+export const keyImage = (privKey, pubKey) => {
+    console.log('generating key image ');
+    // const HP = [];
+    // const KeyImage = [];
+    // for (let i = 0; i < rows; i++) {
+    //     HP[i] = BigInteger.fromBuffer(hs(basePoint.multiply(BigInteger.fromHex(x[i]))));
+    //     KeyImage[i] = HP[i].multiply(BigInteger.fromHex(x[i]));
+    // }
 
-    return KeyImage;
+    // return KeyImage;
+    return hashToPoint(pubKey).multiply(privKey);
 };
 
 // const genPubKeylFromUTXO(utxos, index)
@@ -54,18 +68,48 @@ export const UTXO_RING_SIZE = 11;
  * Using MLSAG technique to apply ring-signature for spending utxos
  * base on a group 11 utxos
  * Notice that MLSAG in tomo using stealth address as public key in ringCT (Pj)
- * @param {string} privateKey - hs(ECDH) + private_spend_key, remember this is the ECDH of utxos[index]
+ * @param {string} privKey - hs(ECDH) + private_spend_key, remember this is the ECDH of utxos[index]
  * @param {utxo array} utxos list utxo, refer src/utxo.js for more detail about data structure
  * @param {buffer} message Message that got signed
  * @param {number} index Index of real spended utxo
  */
-// export const MLSAGSign = (privateKey, utxos, message, index) => {
-//     const X = ;
-//     const Hpj = ""; // hash to point of current public key of
-//     const I = BiPrivKey.multiply(hashToPoint());
+export class MLSAG {
+    static sign(privKey, utxos, message, index) {
+        // do i need the utxo instance or just plain data of 11 utxos - TODO give solution and explain
+        const sender = utxos[index].getRingCTKeys();
+        const X = sender.privkey;
+        const I = keyImage(X, sender.pubKey); // hash to point of current public key of
+        const Pj = hashToPoint(sender.pubKey);
+        const n = utxos.length;
+        console.log(X);
+        console.log(I);
 
-// };
+        const alpha = BigInteger.fromHex(randomHex());
+        const si = _.map(new Array(utxos.length), () => BigInteger.fromHex(randomHex()));
+        const L = [];
+        const R = [];
+        const ci = [];
 
+        // init value before generating ring
+        L[index] = alpha.multiply(secp256k1.G);
+        R[index] = alpha.multiply();
+        ci[(index + 1) % n] = BigInteger.fromHex(
+            fastHash(message
+                + L[index].getEncoded(true).toString('hex')
+                + R[index].getEncoded(true).toString('hex')),
+        );
+
+        const j = (index + 1) % n;
+        while (!L[j]) {
+            L[j] = si[j + 1].multiply(secp256k1.G).add(
+                ci[j].multiply(utxos[j].lfStealth),
+            );
+            R[i] = si[j + 1].multiply(hashToPoint()).add(
+                ci[j].multiply(utxos[j].lfStealth),
+            );
+        }
+    }
+}
 
 // export const MLSAG_Ver(pk, keyimage, c1, s ):
 //     rows = len(pk)

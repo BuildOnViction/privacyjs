@@ -63,7 +63,7 @@ class Stealth {
         const receiverPubViewKey = Point.decodeFrom(ecparams, pubViewKey || this.pubViewKey);
         const receiverPubSpendKey = Point.decodeFrom(ecparams, pubSpendKey || this.pubSpendKey);
 
-        const randomHexVal = randomHex(32);
+        const randomHexVal = randomHex();
         // const randomHex = 'f042298df7ea67d6bd8cf8e32537f23656ae36d3d9e04955f86997addb2dc4ee';
 
         const blindingFactor = BigInteger.fromBuffer(new Buffer(randomHexVal, 'hex'));

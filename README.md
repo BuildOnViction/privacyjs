@@ -150,7 +150,7 @@ const scanAllUTXO = async() => {
         try {
             utxo = await getUTXO(index);
             let utxoInstance = new UTXO(utxo);
-            let isMine = utxoInstance.isMineUTXO(SENDER_WALLET.privateKey);
+            let isMine = utxoInstance.checkOwnership(SENDER_WALLET.privateKey);
             
             if (isMine && parseFloat(isMine.amount).toString() == isMine.amount ) {
                 balance += isMine.amount;

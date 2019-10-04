@@ -1,21 +1,22 @@
-const elliptic = require('elliptic');
+import { BigInteger } from './crypto';
 
-const EC = elliptic.ec;
-const ECDSA = new EC('secp256k1');
 const Base58 = require('bs58');
+const ecurve = require('ecurve');
 const common = require('./common');
 
+const ecparams = ecurve.getCurveByName('secp256k1');
 const addressUtils = {};
+
 
 /**
  * Generate public key from a private key
- * // TODO: remove elliptic and replace by privatekey*base_point
  * @param {string} Any private key
- * @returns {string} Public key in hex string using ECDSA
+ * @returns {string} Public key in hex string using secp256k1
  */
 addressUtils.privateKeyToPub = function (privKey) {
-    // Then generate the public point/key corresponding to your privKey.
-    return ECDSA.keyFromPrivate(privKey).getPublic().encodeCompressed('hex');
+    return ecparams.G.multiply(
+        BigInteger.fromHex(privKey),
+    ).getEncoded(true).toString('hex');
 };
 
 /**

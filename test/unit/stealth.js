@@ -1,5 +1,5 @@
 import assert from 'assert';
-import crypto from '../../src/crypto';
+import {randomHex} from '../../src/crypto';
 import Address from '../../src/address';
 import Stealth from '../../src/stealth';
 
@@ -55,7 +55,7 @@ describe('#unittest #stealth', function () {
                     ...Address.generateKeys(fixture.sender.privKey)
                 })
                 var receiver = new Stealth({
-                    ...Address.generateKeys(crypto.randomHex(64))
+                    ...Address.generateKeys(randomHex(64))
                 })
 
                 // create proof for a transaction for an other receiver - not above one

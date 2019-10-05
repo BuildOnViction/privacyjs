@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {randomHex} from '../../src/crypto';
-import Address from '../../src/address';
+import * as Address from '../../src/address';
 import Stealth from '../../src/stealth';
 
 var fixtures = require('./fixtures')

@@ -6,7 +6,7 @@
 
 import ecurve from 'ecurve';
 import { keccak256 } from 'js-sha3';
-import assert from 'assert';
+// import assert from 'assert';
 import * as _ from 'lodash';
 import { BigInteger, randomHex } from './crypto';
 import { fastHash } from './common';
@@ -79,7 +79,7 @@ export class MLSAG {
         const sender = utxos[index].getRingCTKeys();
         const X = sender.privkey;
         const I = keyImage(X, sender.pubKey); // hash to point of current public key of
-        const Pj = hashToPoint(sender.pubKey);
+        // const Pj = hashToPoint(sender.pubKey);
         const n = utxos.length;
         console.log(X);
         console.log(I);
@@ -104,7 +104,7 @@ export class MLSAG {
             L[j] = si[j + 1].multiply(secp256k1.G).add(
                 ci[j].multiply(utxos[j].lfStealth),
             );
-            R[i] = si[j + 1].multiply(hashToPoint()).add(
+            R[j] = si[j + 1].multiply(hashToPoint()).add(
                 ci[j].multiply(utxos[j].lfStealth),
             );
         }

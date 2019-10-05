@@ -5,7 +5,7 @@
 import TestConfig from '../config.json';
 import chai from 'chai';
 import TestUtils from '../utils';
-import Address from '../../src/address';
+import * as Address from '../../src/address';
 import Stealth from '../../src/stealth';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';

@@ -7,7 +7,7 @@ import TestConfig from '../config.json';
 import chai from 'chai';
 import UTXO from '../../src/utxo';
 import Stealth from '../../src/stealth';
-import Address from '../../src/address';
+import * as Address from '../../src/address';
 import Commitment from '../../src/commitment';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import TestUtils from '../utils';

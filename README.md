@@ -1,33 +1,36 @@
 tomoprivacy
+Low-level apis for working in Tomoprivacy protocal
 =======
-# This repo includes all utils for generating
+Terms
 - `keys`: private view key, public spend key, public view key.
 - `privacy address`: address from privacy transaction.
-- `Person commitment`: Pederson commitment is cryptographic commitment scheme equivalent to secretly writing a secret message m in a sealed, tamper-evident, individually numbered (or/and countersigned) envelope kept by who wrote the message. The envelope's content can't be changed by any means, and the message does not leak any information.
+- `Pederson commitment`: Pederson commitment is cryptographic commitment scheme equivalent to secretly writing a secret message m in a sealed, tamper-evident, individually numbered (or/and countersigned) envelope kept by who wrote the message. The envelope's content can't be changed by any means, and the message does not leak any information.
 - `Bullet proof`: Range proofs is a type of zero-knowledge proof used for proving that a secret is within a value range without revealing the precise value of the secret. Bulletproofs is a new non-interactive zero-knowledge proof protocol with very short proofs and without a trusted setup; the proof size is only logarithmic in the witness size. Bulletproofs are especially well suited for efficient range proofs on committed values: they enable proving that a committed value is in a range using only (2 logn + 9) group and field elements, where n is the bit length of the range. Proof generation and verification times are linear in n.
 - `Transaction public key`: equal blinding factor * G (the standard secp256k1 base point)
 - `Stealth Address`: in other word - oneTimeAddress or tomo privacy address
+- `RingCT`: ring confidental transaction protocol, base on Cryptonote's with modifying for tomochain only
 
-
-Additional requests/features please contact anhnt@tomochain.com
-[![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
-### TODO
-- [] Instant use class for depositing, calculating balance, withdrawing, private send(mixing utxo inside)
-- [] Review the randomHex function -> not sure the performance and how randomic it is
-- [x] Use babel for development
-- [] Fully support browser 
-- [] Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
-- [x] Minify the build
-- [] Deploy to npm
-- [x] Shorten the address
-
-Usage
------
-
-First, you should really read this excellent resource:
+Reference 
+- https://eprint.iacr.org/2015/1098.pdf
 - https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-introduction
 - https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-part-2-stealth-addresses
 - https://cryptonote.org/whitepaper.pdf - Cryptonote white paper
+Additional requests/features please contact anhnt@tomochain.com
+
+[![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
+### TODO
+- [] Support high level api for instantly use: deposit, check balance, withdraw, privatesend - right now just low-level apis for interacting with Smart-contract and generating fields following  the protocol
+- [] Support auto RingCT and bullet-proof (with auto select, mix spending utxos, noising array utxos)
+- [] Use type flows for helping other developer understand the structure, bytes length of fiels in privacy protocol
+- [x] Review the randomHex function -> replace by eclliptic.genPair for make sure the random value in range > 0 and < p in Zp secck256
+- [x] Use babel for development
+- [x] Fully support browser 
+- [x] Setup test runer on the cloud (coverage above 80% if you run it on local right now npm test)
+- [x] Minify the build
+- [x] Deploy to npm
+
+Usage
+-----
 
 ***The fun part of privacy is the client must calculate all the things. Any wrong calculation results in money loss :)***
 
@@ -91,12 +94,12 @@ let sender = new Stealth({
 let proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
 privacyContract.methods.deposit(
-    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(2, 64)), // the X part of curve 
-    Web3.utils.hexToNumberString(proof.onetimeAddress.toString('hex').substr(-64)), // the Y part of curve
-    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(2, 64)), // the X part of curve
-    Web3.utils.hexToNumberString(proof.txPublicKey.toString('hex').substr(-64)), // the Y par of curve,
-    Web3.utils.hexToNumberString(proof.mask),
-    Web3.utils.hexToNumberString(proof.encryptedAmount)// encrypt of amount using ECDH
+    '0x' + proof.onetimeAddress.toString('hex').substr(2, 64), // the X part of curve 
+    '0x' + proof.onetimeAddress.toString('hex').substr(-64), // the Y part of curve
+    '0x' + proof.txPublicKey.toString('hex').substr(2, 64), // the X part of curve
+    '0x' + proof.txPublicKey.toString('hex').substr(-64), // the Y par of curve,
+    '0x' + proof.mask,
+    '0x' + proof.encryptedAmount// encrypt of amount using ECDH
 )
     .send({
         from: SENDER_WALLET.address,

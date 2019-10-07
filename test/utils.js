@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import chai from 'chai';
 import TestConfig from './config.json';
-import Address from '../src/address';
+import * as Address from '../src/address';
 import Stealth from '../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import { hextobin } from '../src/common';

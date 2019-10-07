@@ -5,15 +5,12 @@
 import Web3 from 'web3';
 import TestConfig from '../config.json';
 import chai from 'chai';
-import { toBN, isBN, numberToHex } from '../../src/common';
-import Address from '../../src/address';
+import * as Address from '../../src/address';
 import Commitment from '../../src/commitment';
 import Stealth from '../../src/stealth';
 import TestUtils from '../utils';
 import HDWalletProvider from "truffle-hdwallet-provider";
 import * as _ from 'lodash';
-import BN from 'bn.js';
-import { scanUTXOs } from '../utils';
 var BigInteger = require('bigi')
 import UTXO from '../../src/utxo';
 
@@ -67,7 +64,7 @@ const runtest = function(done) {
 
     // create 3 utxos, let this test independents to deposit test
     TestUtils.depositNTimes(3, TOMO).then((utxos) => {
-        let sumOfSpendingMasks = BigInteger.fromHex('0');
+        let sumOfSpendingMasks = BigInteger.fromHex('');
         let UTXOs = [];
         let generatedCommitments = [];
         const spendingUtxosIndex = _.map(utxos, result => {

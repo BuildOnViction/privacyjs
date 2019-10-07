@@ -5,13 +5,8 @@
 import Web3 from 'web3';
 import TestConfig from '../config.json';
 import chai from 'chai';
-import Address from '../../src/address';
-import Stealth from '../../src/stealth';
 import HDWalletProvider from "truffle-hdwallet-provider";
-import ecurve from 'ecurve';
-import {BigInteger} from '../../src/crypto';
 import { scanUTXOs } from '../utils';
-const ecparams = ecurve.getCurveByName('secp256k1');
 const expect = chai.expect;
 chai.should();
 

@@ -1,6 +1,6 @@
 import TestConfig from '../config.json';
 import Stealth from '../../src/stealth';
-import Address from '../../src/address';
+import * as Address from '../../src/address';
 import {hashToPoint} from '../../src/mlsag';
 
 const ecurve = require('ecurve');
@@ -33,13 +33,13 @@ describe('#unittest #ringct #mlsag', function () {
     describe('#hashToPoint', function () {
         // because of this randomization, we do this 50 times to make sure
         // it always return new point on hash
-        for (let times = 0; times < 50; times ++){
+        for (let times = 0; times < 1; times ++){
             it("Should turn a hex into a point in keccak256 ECC correctly", function (done) {
-                const publicKey = ec.genKeyPair().getPublic().encodeCompressed('hex');
-                const newPoint = hashToPoint(publicKey);
+                // const publicKey = ec.genKeyPair().getPublic().encodeCompressed('hex');
+                // const newPoint = hashToPoint(publicKey);
 
-                expect(ecparams.isOnCurve(newPoint)).to.be.equal(true);
-                done();
+                // expect(ecparams.isOnCurve(newPoint)).to.be.equal(true);
+                done(new Error("not implemented yet"));
             })
         }
     });

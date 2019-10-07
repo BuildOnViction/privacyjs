@@ -5,15 +5,13 @@ const ecurve = require('ecurve');
 const common = require('./common');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
-const addressUtils = {};
-
 
 /**
  * Generate public key from a private key
  * @param {string} Any private key
  * @returns {string} Public key in hex string using secp256k1
  */
-addressUtils.privateKeyToPub = function (privKey) {
+export const privateKeyToPub = function (privKey) {
     return ecparams.G.multiply(
         BigInteger.fromHex(privKey),
     ).getEncoded(true).toString('hex');
@@ -26,7 +24,7 @@ addressUtils.privateKeyToPub = function (privKey) {
  * @param {string} public view key
  * @returns {string} base58-check format for stealth address
  */
-addressUtils.generateAddress = function (pubSk, pubVk) {
+export const generateAddress = function (pubSk, pubVk) {
     const preAddr = pubSk + pubVk;
     const hash = common.fastHash(preAddr);
     const addrHex = preAddr + hash.slice(0, 8);
@@ -39,19 +37,17 @@ addressUtils.generateAddress = function (pubSk, pubVk) {
  * @return {object} private spend key, private view key, public view key,
  * public spend key, privacy address
  */
-addressUtils.generateKeys = function (secretKey) {
+export const generateKeys = function (secretKey) {
     const privSk = secretKey;
     const privVk = common.fastHash(privSk);
-    const pubSk = addressUtils.privateKeyToPub(privSk);
-    const pubVk = addressUtils.privateKeyToPub(privVk);
+    const pubSk = privateKeyToPub(privSk);
+    const pubVk = privateKeyToPub(privVk);
 
     return {
         privSpendKey: privSk,
         pubSpendKey: pubSk,
         privViewKey: privVk,
         pubViewKey: pubVk,
-        pubAddr: addressUtils.generateAddress(pubSk, pubVk),
+        pubAddr: generateAddress(pubSk, pubVk),
     };
 };
-
-module.exports = addressUtils;

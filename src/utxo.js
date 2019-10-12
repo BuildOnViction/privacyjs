@@ -114,20 +114,6 @@ class UTXO {
         return signature;
     }
 
-    /**
-     * There a lot of way to select some utxos with sum balance larger than
-     * a number. Here the solution to find the minimum sum balance utxo subset
-     * for private send or withdraw.
-     * We also point out which utxo is for modulo (remain are all spent/send)
-     * but this one need to be split into two ones
-     * @param {number} balance
-     */
-    selectUTXOWithMinSum(balance) {
-        console.log(balance);
-        console.log(this);
-        throw new Error('not implemented yet ');
-    }
-
     /** Return the secret value use for RingCT
      * value = hs(ECDH) + private_spend_key
      * @param {string} privateSpendKey of the owner - length 32 bytes

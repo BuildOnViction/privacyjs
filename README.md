@@ -19,6 +19,7 @@ Additional requests/features please contact anhnt@tomochain.com
 
 [![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
 ### TODO
+- [] Remove bigi use bn.js instead because of poor documentation and no-longer support
 - [] Support high level api for instantly use: deposit, check balance, withdraw, privatesend - right now just low-level apis for interacting with Smart-contract and generating fields following  the protocol
 - [] Support auto RingCT and bullet-proof (with auto select, mix spending utxos, noising array utxos)
 - [] Use type flows for helping other developer understand the structure, bytes length of fiels in privacy protocol

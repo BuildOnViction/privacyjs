@@ -1,8 +1,8 @@
 import { BigInteger } from './crypto';
+import * as common from './common';
 
 const Base58 = require('bs58');
 const ecurve = require('ecurve');
-const common = require('./common');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 

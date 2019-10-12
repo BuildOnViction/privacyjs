@@ -1,16 +1,16 @@
+/* eslint-disable no-loop-func */
 // @flow
 import ecurve from 'ecurve';
-import { keccak256, sha3_256 as sha3 } from 'js-sha3';
+import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
 import { BigInteger, randomHex } from './crypto';
-import { fastHash, bconcat, hextobin, d2b} from './common';
-import { fastHash, bconcat, hextobin, d2b} from './common';
-import { baseH, baseH2 } from './commitment';
+import { fastHash, bconcat, hextobin } from './common';
+// import { baseH, baseH2 } from './commitment';
 // import { soliditySha3, bintohex } from './common';
 
 const secp256k1 = ecurve.getCurveByName('secp256k1');
-const { Point } = ecurve;
+// const { Point } = ecurve;
 // const hs = hmacSha256;
 const baseG = secp256k1.G;
 
@@ -54,9 +54,9 @@ function hashRingCT(message, Lj, Rj) {
     ).mod(secp256k1.p);
 }
 
-function hashToScalar(point){
-    return hashToPoint(point).getEncoded(true).toString('hex').slice(2); // ignore first byte (04, 02, 03)
-}
+// function hashToScalar(point) {
+//     return hashToPoint(point).getEncoded(true).toString('hex').slice(2); // ignore first byte (04, 02, 03)
+// }
 
 // export const keyVector = (numberOfSendingUTXOs) => _.fill(numberOfSendingUTXOs, null);
 
@@ -105,7 +105,7 @@ export const UTXO_RING_SIZE = 11;
 export default class MLSAG {
     // sign single utxo
     // the multiple utxos version is below
-    static sign(message, privKey, utxos, index, targetAddress) {
+    static sign(message, privKey, utxos, index) {
         const sender = utxos[index].getRingCTKeys(privKey);
 
         // message here represent for tx_hash
@@ -115,7 +115,7 @@ export default class MLSAG {
         // }).join(""));
 
         const X = BigInteger.fromHex(sender.privKey); // the private key we use for signing the message in ringCT
-        const I = keyImage(X, sender.pubKey.toString('hex')); 
+        const I = keyImage(X, sender.pubKey.toString('hex'));
         const HP = hashToPoint(sender.pubKey.toString('hex'));// hash to point of current public key of
         const n = utxos.length;
         // console.log(X);
@@ -133,7 +133,7 @@ export default class MLSAG {
         ci[(index + 1) % n] = BigInteger.fromHex(
             fastHash(
                 hextobin(message),
-                + L[index].getEncoded(true).toString('hex')
+                +L[index].getEncoded(true).toString('hex')
                 + R[index].getEncoded(true).toString('hex'),
             ),
         );
@@ -172,22 +172,23 @@ export default class MLSAG {
 
         // mixing lengh, here we set default as 11
         const decoysEachRing = mixing[0].length;
-        
+
         const X = [];
         const I = [];
         const HP = [];
         const L = [];
         const R = [];
         const s = [];
-        const ci = [];
-        
+        const c = [];
+
         let pj = message;
-        for(var i = 0; i < mixing.length; i++) {
+        let i;
+        for (i = 0; i < mixing.length; i++) {
             L.push([]);
             R.push([]);
             const sender = mixing[i][index].getRingCTKeys(privKeys[i]);
             X[i] = BigInteger.fromHex(sender.privKey); // the private key we use for signing the message in ringCT
-            I[i] = keyImage(X, sender.pubKey.toString('hex')); 
+            I[i] = keyImage(X, sender.pubKey.toString('hex'));
             HP[i] = _.map(mixing[i], (utxo) => {
                 pj = bconcat(pj, utxo.lfStealth.getEncoded(true));
                 return hashToPoint(utxo.lfStealth.getEncoded(true).toString('hex'));
@@ -196,27 +197,27 @@ export default class MLSAG {
         }
 
         for (i = 0; i < numberOfUTXOs; i++) {
-            L[i][index] = baseG.multiply(s[i][index]); //aG
-            R[i][index] = HP[i][index].multiply(s[i][index]); //aH
+            L[i][index] = baseG.multiply(s[i][index]); // aG
+            R[i][index] = HP[i][index].multiply(s[i][index]); // aH
         }
-            
+
         let j = (index + 1) % decoysEachRing;
         let tohash = pj;
 
-        for(i = 0; i < numberOfUTXOs; i++) {
+        for (i = 0; i < numberOfUTXOs; i++) {
             tohash = bconcat(tohash, L[i][index].getEncoded(true), R[i][index].getEncoded(true));
         }
-        
+
         c[j] = BigInteger.fromHex(fastHash(tohash));
 
-        while (j != index){
+        while (j !== index) {
             tohash = pj;
             for (i = 0; i < numberOfUTXOs; i++) {
                 L[i][j] = baseG.multiply(s[i][j]).add(
-                    mixing[i][j].lfStealth.multiply(c[j])
+                    mixing[i][j].lfStealth.multiply(c[j]),
                 ); // Lj = sG + cxG
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
-                    I[i].multiply(c[j])
+                    I[i].multiply(c[j]),
                 ); // Rj = sH + cxH
                 tohash = bconcat(tohash, L[i][j].getEncoded(true), R[i][j].getEncoded(true));
             }
@@ -224,23 +225,28 @@ export default class MLSAG {
             c[j] = BigInteger.fromHex(fastHash(tohash));
             for (i = 0; i < numberOfUTXOs; i++) {
                 s[i][index] = s[i][index].subtract(
-                    c[index].multiply(xx[i])
-                ); //si = a - c x so a = s + c x
+                    c[index].multiply(privKeys[i]),
+                ); // si = a - c x so a = s + c x
             }
         }
-        return I, c[0], s
+        return {
+            I,
+            c1: c[0],
+            s,
+        };
     }
 
-    static verifyMul(message, mixing, I, c1, s ){
+    static verifyMul(message, mixing, I, c1, s) {
         const numberOfUTXOs = mixing.length;
 
         // mixing lengh, here we set default as 11
         const decoysEachRing = mixing[0].length;
-        
+
         const L = [];
         const R = [];
+        const HP = [];
         let pj = message;
-        for(var i = 0; i < numberOfUTXOs; i++) {
+        for (let i = 0; i < numberOfUTXOs; i++) {
             L.push([]);
             R.push([]);
             HP[i] = _.map(mixing[i], (utxo) => {
@@ -250,26 +256,27 @@ export default class MLSAG {
             s.push(_.map(new Array(mixing[i].length), () => BigInteger.fromHex(randomHex())));
         }
 
-        const c = []; // you do an extra one, and then check the wrap around 
+        const c = []; // you do an extra one, and then check the wrap around
         c[0] = c1;
-        let j = 0
+        let j = 0;
         while (j < decoysEachRing) {
-            let tohash = pj
+            let tohash = pj;
+            let i;
             for (i = 0; i < numberOfUTXOs; i++) {
                 L[i][j] = baseG.multiply(s[i][j]).add(
-                    mixing[i][j].lfStealth.multiply(c[j])
+                    mixing[i][j].lfStealth.multiply(c[j]),
                 );
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
-                    I[i].multiply(c[j])
+                    I[i].multiply(c[j]),
                 ); // Rj = sH + cxH
                 tohash = bconcat(tohash, L[i][j].getEncoded(true), R[i][j].getEncoded(true));
             }
-            j = j + 1;
+            j += 1;
             c[j] = BigInteger.fromHex(fastHash(tohash));
         }
-        const rv = (c[0] == c[decoysEachRing])
-        
-        return rv
+        const rv = (c[0] === c[decoysEachRing]);
+
+        return rv;
     }
 
     /**
@@ -281,19 +288,18 @@ export default class MLSAG {
      */
     static verify(message, utxos, I, c1, si) {
         const numberOfDecoy = utxos.length; // length of decoy utxos, default is 11
-        const numberOfSendingUTXOs = 1; // number of utxos you need to verify - now just support one input
+        // const numberOfSendingUTXOs = 1; // number of utxos you need to verify - now just support one input
         // const message = sha3(_.map(utxos, ut => {
         //     return ut.lfStealth.getEncoded(true).toString('hex');
         // }).join(""));
 
-        console.log(message);
         const L = [];
         const R = [];
         const ci = [];
 
         ci[0] = _.cloneDeep(c1);
 
-        for (let i = 0; i < numberOfDecoy; i++) {
+        for (let j = 0; j < numberOfDecoy; j++) {
             L[j] = baseG.multiply(si[j + 1]).add(
                 utxos[j].lfStealth.multiply(ci[j]),
             );
@@ -309,5 +315,4 @@ export default class MLSAG {
         const rv = ci[0] === ci[numberOfDecoy];
         return rv;
     }
-
 }

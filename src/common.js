@@ -743,3 +743,32 @@ export const soliditySha3 = function (...args) {
 
     return sha3('0x' + hexArgs.join(''));
 };
+
+/**
+ * Decimal to binary
+ * @param {*} val
+ * @returns {array} array include 0, 1
+ */
+export const d2b = (val) => {
+    let i = 0;
+    const amountb = [];
+    while (val !== 0) {
+        amountb[i] = val & 1;
+        i++;
+        val >>= 1;
+    }
+    while (i < 64) {
+        amountb[i] = 0;
+        i++;
+    }
+    return amountb;
+};
+
+/**
+ * BN to binary
+ * @param {*} val
+ * @returns {array} array include 0, 1
+ */
+export const bn2b = (bn) => {
+    return bn.toString('2').split("");
+};

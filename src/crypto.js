@@ -30,5 +30,5 @@ export function sha256x2(buffer) {
  * @returns {string} Hex string without prefix 0x
  */
 export function randomHex() {
-    return ec.genKeyPair().getPrivate().toString('hex');
+    return ec.genKeyPair().getPrivate().toString('hex').slice(2);
 }

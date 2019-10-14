@@ -1,37 +1,33 @@
+import chai from 'chai';
 import TestConfig from '../config.json';
 import Stealth from '../../src/stealth';
 import * as Address from '../../src/address';
 import Commitment from '../../src/commitment';
-import chai from 'chai';
 
-const expect = chai.expect;
+const { expect } = chai;
 chai.should();
 
-const ecurve = require('ecurve');
-
-const WALLETS = TestConfig.WALLETS;
+const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
-const RECEIVER_WALLET = WALLETS[1];
 
 const TOMO = 1000000000000000000;
 const sender = new Stealth({
-    ...Address.generateKeys(SENDER_WALLET.privateKey)
-})
+    ...Address.generateKeys(SENDER_WALLET.privateKey),
+});
 
-describe('#unittest #commitment', function () {
-    describe('#sumCommitments', function () {
+describe('#unittest #commitment', () => {
+    describe('#sumCommitments', () => {
 
-        it("Should generateCommitment correctly", function (done) {
-            let proof = sender.genTransactionProof(TOMO, sender.pubSpendKey, sender.pubViewKey);
-            let regeneratedCommitment = Commitment.genCommitment(TOMO, proof.mask, false);
+        it('Should generateCommitment correctly', (done) => {
+            const proof = sender.genTransactionProof(TOMO, sender.pubSpendKey, sender.pubViewKey);
+            const regeneratedCommitment = Commitment.genCommitment(TOMO, proof.mask, false);
             expect(proof.commitment.toString('hex')).to.equal(regeneratedCommitment.toString('hex'));
             done();
-        })
+        });
 
-        it("Should split comitments correctly in private send", function (done) {
-            done(new Error("not implemented yet"));
-        })
-    
-    })
-})
+        it('Should split comitments correctly in private send', (done) => {
+            done(new Error('not implemented yet'));
+        });
 
+    });
+});

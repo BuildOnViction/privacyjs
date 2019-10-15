@@ -43,24 +43,64 @@ describe('#unittest #ringct #mlsag', () => {
     });
 
     describe('#sign', () => {
-        it('Should able to verify an utxo belong to a group', (done) => {
+        it('Should able to verify signer belong belong to a group', (done) => {
             const index = 3;
             MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-            const signature = MLSAG.sign(
-                SENDER_WALLET.privateKey, inputUTXOS, index, WALLETS[1].address,
+            const signature = MLSAG.mulSign(
+                'aAAAAAAA',
+                SENDER_WALLET.privateKey,
+                [inputUTXOS],
+                index,
             );
 
             expect(signature.I).not.to.equal(null);
-            expect(signature.ci_zero).not.to.equal(null);
-            expect(signature.si).not.to.equal(null);
+            expect(signature.c1).not.to.equal(null);
+            expect(signature.s).not.to.equal(null);
+
+            const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+            expect(
+                MLSAG.verifyMul(
+                    'aAAAAAAA',
+                    [verifyInputUTXOS],
+                    signature.I,
+                    signature.c1,
+                    signature.s,
+                ),
+            ).to.be.equal(true);
             done();
         });
 
-        // it("Should not able to verify an utxo belong to a group", function (done) {
-        //     done(new Error("not implemented yet"));
-        // });
+        it('Should not able to verify signer with different message', (done) => {
+            const index = 3;
+            MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+
+            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+            const signature = MLSAG.mulSign(
+                'aAAAAAAA',
+                SENDER_WALLET.privateKey,
+                [inputUTXOS],
+                index,
+            );
+
+            expect(signature.I).not.to.equal(null);
+            expect(signature.c1).not.to.equal(null);
+            expect(signature.s).not.to.equal(null);
+
+            const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+
+            expect(
+                MLSAG.verifyMul(
+                    'aAAAAAAABBBB',
+                    [verifyInputUTXOS],
+                    signature.I,
+                    signature.c1,
+                    signature.s,
+                ),
+            ).to.be.equal(false);
+            done();
+        });
     });
 
     describe('#verify', () => {

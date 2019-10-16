@@ -10,6 +10,7 @@ import isNull from 'lodash/isNull';
 import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
+import { BigInteger } from './crypto';
 
 // const atob = require('atob') || window.atob;
 /**
@@ -100,18 +101,42 @@ export const isBN = object => BN.isBN(object);
  */
 export const isBigNumber = object => object && object.constructor && object.constructor.name === 'BigNumber';
 
+// /**
+//  * Takes an input and transforms it into an BN.js object
+//  *
+//  * @method toBN
+//  *
+//  * @param {Number|String|BN} number, string, HEX string or BN
+//  *
+//  * @returns {BN} BN
+//  */
+// export const toBN = (number) => {
+//     try {
+//         return numberToBN(number);
+//     } catch (error) {
+//         throw new Error(`${error} Given value: "${number}"`);
+//     }
+// };
+
+
 /**
- * Takes an input and transforms it into an BN
- *
+ * Takes an input and transforms it into an bigi object
+ * TODO - need to replace bigi by bn.js
  * @method toBN
  *
- * @param {Number|String|BN} number, string, HEX string or BN
+ * @param {Number|String} number, string, HEX string or BN
  *
- * @returns {BN} BN
+ * @returns {BigInteger} BigInteger
  */
 export const toBN = (number) => {
     try {
-        return numberToBN(number);
+        let hexstr = numberToBN(number).toString(16);
+        if (hexstr.length % 2 === 1) {
+            hexstr = '0' + hexstr;
+        }
+        return BigInteger.fromHex(
+            hexstr,
+        );
     } catch (error) {
         throw new Error(`${error} Given value: "${number}"`);
     }
@@ -765,10 +790,17 @@ export const d2b = (val) => {
 };
 
 /**
- * BN to binary
- * @param {*} val
+ * BN to binary string array ([1, 0, 1, 0])
+ * size is optional for padded more zero if needed
+ * @param {BigInteger} bn
+ * @param {number} size if length output < size we need to pad zero before
  * @returns {array} array include 0, 1
  */
-export const bn2b = (bn) => {
-    return bn.toString('2').split("");
+export const bn2b = (bn, size) => {
+    let result = bn.toString('2');
+    if (size) {
+        while (result.length < (size || 2)) { result = '0' + result; }
+        return result.split('');
+    }
+    return result.split('');
 };

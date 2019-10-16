@@ -151,7 +151,7 @@ export const toBN = (number) => {
  *
  * @returns {String}
  */
-export const toTwosComplement = number => `0x${toBN(number)
+export const toTwosComplement = number => `0x${numberToBN(number)
     .toTwos(256)
     .toString(16, 64)}`;
 
@@ -349,7 +349,7 @@ export const hexToNumber = (value) => {
         return value;
     }
 
-    return toBN(value).toNumber();
+    return numberToBN(value).toNumber();
 };
 
 /**
@@ -364,7 +364,7 @@ export const hexToNumber = (value) => {
 export const hexToNumberString = (value) => {
     if (!value) return value;
 
-    return toBN(value).toString(10);
+    return numberToBN(value).toString(10);
 };
 
 /**
@@ -380,7 +380,7 @@ export const numberToHex = (value) => {
     if (isNull(value) || typeof value === 'undefined') {
         return value;
     }
-    const number = toBN(value);
+    const number = numberToBN(value);
     const result = number.toString(16);
     const hexString = number.lt(new BN(0)) ? `-${result.substr(1)}` : `${result}`;
 

@@ -27,6 +27,7 @@ const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
  * 3. MLSAG verify signature
  */
 
+// TODO write more test case
 describe('#unittest #ringct #mlsag', () => {
     describe('#hashToPoint', () => {
         // because of this randomization, we do this 50 times to make sure
@@ -103,13 +104,4 @@ describe('#unittest #ringct #mlsag', () => {
         });
     });
 
-    describe('#verify', () => {
-        it('Should able to verify an utxo belong to a group', (done) => {
-            done(new Error('not implemented yet'));
-        });
-
-        it('Should not able to verify an utxo belong to a group', (done) => {
-            done(new Error('not implemented yet'));
-        });
-    });
 });

@@ -494,7 +494,6 @@ export default class BulletProof {
     static innerProductProve(Gi, Hi, U, a, b) {
         // n is the size of the input vectors
         let n = M * N;
-        console.log(n);
         let round = 0;
         const L = [];
         const R = [];

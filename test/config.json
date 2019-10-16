@@ -1,10 +1,58 @@
 {
-    "RPC_END_POINT": "https://testnet.tomochain.com",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x69DdC9c131bDdde79d5F7a15f15942746A080689",
+    "RPC_END_POINT": "http://localhost:8545",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xf5977211E823E1b518B403073D659C50E8587f35",
+    "RINGCT_PRECOMPILED_CONTRACT": {
+        "PRIVATE_KEY": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
+        "ADDRESS": "0x55389b1c67ab2BA2939256E1ac1af250E59C197B",
+        "ABI": [
+            {
+              "constant": false,
+              "inputs": [
+                {
+                  "name": "data",
+                  "type": "bytes"
+                }
+              ],
+              "name": "VerifyRingCT",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "bool"
+                }
+              ],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            },
+            {
+              "constant": false,
+              "inputs": [
+                {
+                  "name": "numRing",
+                  "type": "uint256"
+                },
+                {
+                  "name": "ringSize",
+                  "type": "uint256"
+                }
+              ],
+              "name": "ComputeSignatureSize",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "uint256"
+                }
+              ],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ]
+    },
     "WALLETS": [
         {
-            "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
-            "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
+            "privateKey": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
+            "address": "0x1901deed3e1AfA53109DbA327B45B6F8Fa1809E1"
         },
         {
             "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",

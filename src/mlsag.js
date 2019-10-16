@@ -152,6 +152,7 @@ export default class MLSAG {
             I,
             c1: c[0],
             s,
+            privKeys,
         };
     }
 

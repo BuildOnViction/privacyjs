@@ -51,7 +51,7 @@ describe('#unittest #ringct #mlsag', () => {
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
             const signature = MLSAG.mulSign(
-                'aAAAAAAA',
+                '',
                 SENDER_WALLET.privateKey,
                 [inputUTXOS],
                 index,
@@ -64,7 +64,7 @@ describe('#unittest #ringct #mlsag', () => {
             const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
             expect(
                 MLSAG.verifyMul(
-                    'aAAAAAAA',
+                    '',
                     [verifyInputUTXOS],
                     signature.I,
                     signature.c1,

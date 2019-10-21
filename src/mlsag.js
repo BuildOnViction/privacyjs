@@ -1,32 +1,34 @@
 /* eslint-disable no-loop-func */
-// @flow
 import ecurve from 'ecurve';
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
+// import web3 from 'web3';
 import { BigInteger, randomHex } from './crypto';
-import { bconcat } from './common';
+// import { bconcat } from './common';
 
 const secp256k1 = ecurve.getCurveByName('secp256k1');
 const baseG = secp256k1.G;
 
+// type LongFormPoint = string[66];
 // TODO implement flow type
 /**
  * Turn a hex into secp256k1 point, we do it by repeating hashing and multiply baseG
  * util got a correct point
- * @param {string} hex public key in hex string
+ * @param {string} hex long-form format include x+y (without first bit)
  * @returns {ecurve.Point} return a point in Secp256k1
  */
-export const hashToPoint = (shortFormPoint) => {
-    assert(shortFormPoint && shortFormPoint.length, 'Invalid input public key to hash');
+export const hashToPoint = (longFormPoint) => {
+    assert(longFormPoint && longFormPoint.length, 'Invalid input public key to hash');
 
-    while (shortFormPoint) {
-        const newPoint = baseG.multiply(BigInteger.fromHex(keccak256(shortFormPoint)));
-        if (secp256k1.isOnCurve(newPoint)) {
-            return newPoint;
-        }
-        shortFormPoint = keccak256(shortFormPoint);
+    // while (longFormPoint) {
+    let hashed = keccak256(Buffer.from(longFormPoint, 'hex'));
+
+    if (hashed.length % 2 === 1) {
+        hashed = '0' + hashed;
     }
+    const newPoint = baseG.multiply(BigInteger.fromHex(hashed));
+    return newPoint;
 };
 
 /**
@@ -36,11 +38,11 @@ export const hashToPoint = (shortFormPoint) => {
  * @returns {BigInteger}
  */
 function hashRingCT(message) {
-    return BigInteger.fromBuffer(
+    return BigInteger.fromHex(
         keccak256(
             message,
         ),
-    ).mod(secp256k1.p);
+    );
 }
 
 /**
@@ -87,26 +89,23 @@ export default class MLSAG {
         const s = [];
         const c = [];
 
-        let pj = Buffer.from(message, 'utf8');
+        const pj = Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
         let i;
         const privKeys = [];
 
         // prepare HP
-        console.log('numberOfRing ', numberOfRing);
         for (i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
             const ringctKeys = mixing[i][index].getRingCTKeys(userPrivateKey);
-            privKeys[i] = BigInteger.fromHex(ringctKeys.privKey);
-            I[i] = keyImage(privKeys[i], ringctKeys.pubKey.toString('hex'));
-            HP[i] = _.map(mixing[i], (utxo) => {
-                pj = bconcat([pj, utxo.lfStealth.getEncoded(true)]);
-                return hashToPoint(utxo.lfStealth.getEncoded(true).toString('hex'));
-            });
+            privKeys[i] = BigInteger.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
+
+            I[i] = keyImage(privKeys[i], mixing[i][index].lfStealth.getEncoded(false).toString('hex').slice(2));
+            HP[i] = _.map(mixing[i], utxo => hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2)));
+
             s.push(_.map(new Array(mixing[i].length), () => BigInteger.fromHex(randomHex())));
         }
 
-        console.log('s.length ', s[0].length);
         for (i = 0; i < numberOfRing; i++) {
             L[i][index] = baseG.multiply(s[i][index]); // aG
             R[i][index] = HP[i][index].multiply(s[i][index]); // aH
@@ -116,12 +115,11 @@ export default class MLSAG {
         let tohash = _.cloneDeep(pj); // pj = message || all_pubkeys
 
         for (i = 0; i < numberOfRing; i++) {
-            tohash = bconcat([tohash, L[i][index].getEncoded(true), R[i][index].getEncoded(true)]);
+            tohash = Buffer.concat([tohash, L[i][index].getEncoded(false).slice(1), R[i][index].getEncoded(false).slice(1)]);
         }
 
         // calculate c[index+1] first, used for calculating R,L next round
         c[j] = hashRingCT(tohash);
-
         while (j !== index) {
             tohash = _.cloneDeep(pj);
             for (i = 0; i < numberOfRing; i++) {
@@ -131,7 +129,7 @@ export default class MLSAG {
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
                     I[i].multiply(c[j]),
                 ); // Rj = sH + cxH
-                tohash = bconcat([tohash, L[i][j].getEncoded(true).toString('hex'), R[i][j].getEncoded(true).toString('hex')]);
+                tohash = Buffer.concat([tohash, L[i][j].getEncoded(false).slice(1), R[i][j].getEncoded(false).slice(1)]);
             }
             j = (j + 1) % ringSize;
             c[j] = hashRingCT(tohash);
@@ -146,7 +144,7 @@ export default class MLSAG {
                     privKeys[i],
                 ),
             ).mod(
-                secp256k1.p,
+                secp256k1.n,
             );
         }
 
@@ -159,13 +157,14 @@ export default class MLSAG {
     }
 
     /**
+     * @param {number} index where you put the real spending utxo in each ring
      * Verify the result of mlsag signing
-     * @param {*} message
-     * @param {*} mixing
-     * @param {*} I
-     * @param {*} c1
-     * @param {*} s
-     * @returns {Boolean}
+     * @param {string|Buffer|number} message whatever message you wanna sign
+     * @param {Array<UTXO>} mixing an 2-d array, each rows is a mixing-ring(included the spending utxo itself) utxo
+     * @param {Array<Point>} I Key image list
+     * @param {BigInteger} c1 the first item of commitment list
+     * @param {Array<BigInteger>} s random array
+     * @returns {Boolean} true if message is verify
      */
     static verifyMul(message, mixing, I, c1, s) {
         const numberOfRing = mixing.length;
@@ -173,20 +172,16 @@ export default class MLSAG {
         const L = [];
         const R = [];
         const HP = [];
-        let pj = Buffer.from(message, 'utf8');
+        const pj = Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
 
         for (let i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
-            HP[i] = _.map(mixing[i], (utxo) => {
-                pj = bconcat([pj, utxo.lfStealth.getEncoded(true)]);
-                return hashToPoint(utxo.lfStealth.getEncoded(true).toString('hex'));
-            });
+            HP[i] = _.map(mixing[i], utxo => hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2)));
         }
 
         const c = [c1];
         let j = 0;
-
         while (j < ringSize) {
             let tohash = _.cloneDeep(pj);
             let i;
@@ -197,7 +192,7 @@ export default class MLSAG {
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
                     I[i].multiply(c[j]),
                 ); // Rj = sH + cxH
-                tohash = bconcat([tohash, L[i][j].getEncoded(true).toString('hex'), R[i][j].getEncoded(true).toString('hex')]);
+                tohash = Buffer.concat([tohash, L[i][j].getEncoded(false).slice(1), R[i][j].getEncoded(false).slice(1)]);
             }
             j++;
             c[j] = hashRingCT(tohash);

@@ -79,7 +79,7 @@ describe('#ringct #verify', () => {
         });
 
         const signature = MLSAG.mulSign(
-            '1000',
+            '',
             SENDER_WALLET.privateKey,
             [inputUTXOS],
             index,
@@ -87,7 +87,7 @@ describe('#ringct #verify', () => {
 
         const sendingBytes = `${numberToBN(1).toString(16, 16)
         }${numberToBN(12).toString(16, 16)
-        }${numberToBN(1000).toString(16, 64)
+        }${numberToBN(0).toString(16, 64)
         }${signature.c1.toHex(32)
         }${_.map(_.flatten(signature.s), element => element.toHex(32)).join('')
         }${_.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
@@ -102,13 +102,15 @@ describe('#ringct #verify', () => {
         // self verify
         expect(
             MLSAG.verifyMul(
-                '1000',
+                '',
                 [inputUTXOS],
                 signature.I,
                 signature.c1,
                 signature.s,
             ),
         ).to.be.equal(true);
+
+        console.log(sendingBytes);
 
         // verify on Smart-contract
         privacyContract.methods.VerifyRingCT(

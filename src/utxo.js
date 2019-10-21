@@ -115,7 +115,7 @@ class UTXO {
         return signature;
     }
 
-    /** Return the secret value use for RingCT
+    /** Return the secret value use for RingCT in long form
      * value = hs(ECDH) + private_spend_key
      * @param {string} privateSpendKey of the owner - length 32 bytes
      * @returns {string} ringCTPrivateKey in 32 bytes format

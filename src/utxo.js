@@ -1,4 +1,5 @@
 import ecurve from 'ecurve';
+import assert from 'assert';
 // import Web3 from 'web3';
 // import { keccak256 } from 'js-sha3';
 import { generateKeys } from './address';
@@ -121,6 +122,8 @@ class UTXO {
      */
     getRingCTKeys(privateSpendKey) {
         const decodedUTXO = this.checkOwnership(privateSpendKey);
+        assert(decodedUTXO, " Can't decode utxo that not belongs");
+
         return {
             privKey: decodedUTXO.privKey,
             pubKey: decodedUTXO.pubKey,

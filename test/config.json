@@ -57,6 +57,9 @@
         {
             "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
             "address": "0x3d8dE6eee3b8890FB7E1f9BA7d50D1866D6c3668"
+        },{
+            "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
+            "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
         }
     ],
     "PRIVACYADD_MAPPING_SMART_CONTRACT": "0xbb32d285e4cF30d439F8106bbA926941730fbf1E",

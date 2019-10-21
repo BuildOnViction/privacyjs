@@ -73,7 +73,15 @@ export const fastHash = input => Hash(input);
  * @returns {Buffer} concated buffer
  */
 export const bconcat = (arr) => {
-    arr = arr.map(item => (Buffer.isBuffer(item) ? item : new Buffer([item])));
+    arr = arr.map((item) => {
+        const res = (Buffer.isBuffer(item) ? item : new Buffer([item]));
+        // console.log('bconcat ------------------ ');
+        // console.log(item);
+        // console.log(res);
+        // console.log('bconcat ------------------ ');
+        return res;
+    });
+
     return Buffer.concat(arr);
 };
 

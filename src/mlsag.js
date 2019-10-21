@@ -92,6 +92,7 @@ export default class MLSAG {
         const privKeys = [];
 
         // prepare HP
+        console.log('numberOfRing ', numberOfRing);
         for (i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
@@ -105,6 +106,7 @@ export default class MLSAG {
             s.push(_.map(new Array(mixing[i].length), () => BigInteger.fromHex(randomHex())));
         }
 
+        console.log('s.length ', s[0].length);
         for (i = 0; i < numberOfRing; i++) {
             L[i][index] = baseG.multiply(s[i][index]); // aG
             R[i][index] = HP[i][index].multiply(s[i][index]); // aH

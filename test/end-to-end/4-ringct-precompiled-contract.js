@@ -7,6 +7,7 @@
  */
 import Web3 from 'web3';
 import chai from 'chai';
+import assert from 'assert';
 import HDWalletProvider from 'truffle-hdwallet-provider';
 import numberToBN from 'number-to-bn';
 import * as _ from 'lodash';
@@ -14,7 +15,7 @@ import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
 import MLSAG from '../../src/mlsag';
 import UTXO from '../../src/utxo.js';
-import MLSAG_DATA from '../unit/mlsag.json';
+import RINGCT_DATA from './ringct.json';
 
 const BN = require('bn.js');
 
@@ -41,14 +42,13 @@ const privacyContract = new web3.eth.Contract(
 
 describe('#ringct #verify', () => {
     it('Successful create single ring', (done) => {
-        // TestUtils.depositNTimes(1, TOMO).then((utxos) => {
+        // TestUtils.depositNTimes(12, TOMO).then((utxos) => {
         //     const index = 3;
         const pubkeys = [[]];
-
         //     const signature = MLSAG.mulSign(
         //         '',
         //         SENDER_WALLET.privateKey,
-        //         [inputUTXOS.slice(0, 1)],
+        //         [utxos.slice(0, 1)],
         //         index,
         //     );
 
@@ -68,43 +68,51 @@ describe('#ringct #verify', () => {
         //             + _.map(_.flatten(signature.I), element => element.toString(16, 64)).join(''),
         //     );
         const index = 3;
-        MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+        RINGCT_DATA.NOISING_UTXOS.splice(index, 0, RINGCT_DATA.SPENDING_UTXOS[0]);
 
-        const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], (ut) => {
+        const inputUTXOS = _.map(RINGCT_DATA.NOISING_UTXOS, (ut) => {
             const utxo = new UTXO(ut);
             pubkeys[0].push(
                 utxo.lfStealth,
             );
             return utxo;
         });
+
         const signature = MLSAG.mulSign(
-            '',
-            // SENDER_WALLET.privateKey,
-            '786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea',
+            '1000',
+            SENDER_WALLET.privateKey,
             [inputUTXOS],
             index,
         );
-        console.log(
-            numberToBN(1).toString(16, 16)
-                    + numberToBN(12).toString(16, 16)
-                    + numberToBN(1000).toString(16, 64)
-                    + signature.c1.toString(16, 64)
-                    + _.map(_.flatten(signature.s), element => element.toHex(32)).join('')
-                    + _.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
-                    + _.map(_.flatten(signature.I), element => element.getEncoded(true).toString('hex')).join(''),
-        );
-        privacyContract.methods.VerifyRingCT(
-            Buffer.from(
-                numberToBN(1).toString(16, 16)
-                    + numberToBN(12).toString(16, 16)
-                    + numberToBN(1000).toString(16, 64)
-                    + signature.c1.toString(16, 64)
-                    + _.map(_.flatten(signature.s), element => element.toString(16, 64)).join('')
-                    + _.map(_.flatten(pubkeys), pubkey => new BN(
-                        pubkey.getEncoded(true).toString('hex'), 16,
-                    ).toString(16, 64)).join('')
-                    + _.map(_.flatten(signature.I), element => element.toString(16, 64)).join(''), 'hex',
+
+        const sendingBytes = `${numberToBN(1).toString(16, 16)
+        }${numberToBN(12).toString(16, 16)
+        }${numberToBN(1000).toString(16, 64)
+        }${signature.c1.toHex(32)
+        }${_.map(_.flatten(signature.s), element => element.toHex(32)).join('')
+        }${_.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+        }${_.map(_.flatten(signature.I), element => element.getEncoded(true).toString('hex')).join('')}`;
+
+        assert(sendingBytes.length === (16 + 16 + 64 + 64 + 12 * 64 + 66 * 12 + 66), 'Wrong calculation bytes');
+
+        expect(signature.I).not.to.equal(null);
+        expect(signature.c1).not.to.equal(null);
+        expect(signature.s).not.to.equal(null);
+
+        // self verify
+        expect(
+            MLSAG.verifyMul(
+                '1000',
+                [inputUTXOS],
+                signature.I,
+                signature.c1,
+                signature.s,
             ),
+        ).to.be.equal(true);
+
+        // verify on Smart-contract
+        privacyContract.methods.VerifyRingCT(
+            Buffer.from(sendingBytes, 'hex'),
         )
             .send({
                 from: SENDER_WALLET.address,

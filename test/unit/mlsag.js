@@ -17,7 +17,7 @@ const { expect } = chai;
 chai.should();
 
 const { WALLETS } = TestConfig;
-const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const SENDER_WALLET = WALLETS[2]; // hold around 1 mil tomo
 
 /**
  * Multilayered linkable spontaneous ad-hoc group signatures test
@@ -49,6 +49,7 @@ describe('#unittest #ringct #mlsag', () => {
             MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+
             const signature = MLSAG.mulSign(
                 'aAAAAAAA',
                 SENDER_WALLET.privateKey,

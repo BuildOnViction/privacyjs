@@ -1,159 +1,155 @@
-import * as _ from 'lodash';
-import ecurve from 'ecurve';
+// import * as _ from 'lodash';
+// import ecurve from 'ecurve';
 
-// import { keccak256 } from 'js-sha3';
-import assert from 'assert';
-import MLSAG from './mlsag';
-import { BigInteger, randomHex } from './crypto';
-import { numberToHex } from './common';
+// // import { keccak256 } from 'js-sha3';
+// import assert from 'assert';
+// import MLSAG from './mlsag';
+// import { BigInteger, randomHex } from './crypto';
+// import { numberToHex } from './common';
 
 
-const secp256k1 = ecurve.getCurveByName('secp256k1');
-const { Point } = ecurve;
-// const hs = fastHash;
-const basePoint = secp256k1.G;
-const PEDERSON_COMMITMENT_H = [
-    '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
-    '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
-];
+// const secp256k1 = ecurve.getCurveByName('secp256k1');
+// const { Point } = ecurve;
+// // const hs = fastHash;
+// const basePoint = secp256k1.G;
+// const PEDERSON_COMMITMENT_H = [
+//     '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+//     '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
+// ];
 
-// consider to fork ecurve and add some more utils
-// like elliptic provided
-const EC = require('elliptic').ec;
+// // consider to fork ecurve and add some more utils
+// // like elliptic provided
+// const EC = require('elliptic').ec;
 
-const ec = new EC('secp256k1');
+// const ec = new EC('secp256k1');
 
-// must create the H ourself because it's not in the ecurve lib
-const basePointH = new Point.fromAffine(secp256k1,
-    new BigInteger(PEDERSON_COMMITMENT_H[0], 16),
-    new BigInteger(PEDERSON_COMMITMENT_H[1], 16));
+// // must create the H ourself because it's not in the ecurve lib
+// const basePointH = new Point.fromAffine(secp256k1,
+//     new BigInteger(PEDERSON_COMMITMENT_H[0], 16),
+//     new BigInteger(PEDERSON_COMMITMENT_H[1], 16));
 
-// prepare for single private key
-export const MLSAGPrepare = (xx) => {
-    const keyPair = ec.genKeyPair();
-    const a = keyPair.getPrivate();
-    const aG = keyPair.getPublic();
+// // prepare for single private key
+// export const MLSAGPrepare = (xx) => {
+//     const keyPair = ec.genKeyPair();
+//     const a = keyPair.getPrivate();
+//     const aG = keyPair.getPublic();
 
-    const aHP = basePointH.multiply(a);
-    const II = basePointH.multiply(xx);
+//     const aHP = basePointH.multiply(a);
+//     const II = basePointH.multiply(xx);
 
-    return {
-        xx, a, aG, aHP, II,
-    };
-};
+//     return {
+//         xx, a, aG, aHP, II,
+//     };
+// };
 
-/**
- * Ring CT implementation
- */
-class RingCT {
-    static genRctSimple(message, inSk, destinations, inamounts, outamounts, mixRing, amountKeys, index, outSk) {
-        assert(inamounts.length > 0, 'Empty inamounts');
-        assert(inamounts.length === inSk.length, 'Different number of inamounts/inSk');
-        assert(outamounts.length === destinations.length, 'Different number of amounts/destinations');
-        assert(amountKeys.length === destinations.length, 'Different number of amountKeys/destinations');
-        assert(index.length === inSk.length, 'Different number of index/inSk');
-        assert(mixRing.length === inSk.length, 'Different number of mixRing/inSk');
-        for (let n = 0; n < mixRing.length; ++n) {
-            assert(index[n] < mixRing[n].length, 'Bad index into mixRing');
-        }
+// /**
+//  * Ring CT implementation
+//  */
+// class RingCT {
+//     static generateMessage() {
+//         return '';
+//     }
 
-        const rv = {
-            p: {
-                rangeSigs: [],
-                bulletproofs: [],
-                MGs: [],
-            },
-            type: '',
-            message: '',
-            outPk: [],
-            ecdhInfo: [],
-        };
-        rv.message = message;
+//     static genRctSimple(privateKey, spending, mixRing, amountKeys, index) {
+//         //
+//         const message = this.generateMessage();
+//         const rv = {
+//             p: {
+//                 rangeSigs: [],
+//                 bulletproofs: [],
+//                 MGs: [],
+//             },
+//             type: '',
+//             message: '',
+//             outPk: [],
+//             ecdhInfo: [],
+//         };
+//         rv.message = message;
 
-        // generate destinations.length random mask
-        // here we always generate 2 utxos for each transaction even with withdraw action
-        const masks = _.map(Array(destinations.length), () => BigInteger.fromHex(randomHex().slice(2)));
-        for (let i = 0; i < destinations.length; i++) {
-            // add destination to sig
-            if (!rv.outPk[i]) {
-                rv.outPk[i] = {};
-            }
-            rv.outPk[i].dest = _.cloneDeep(destinations[i]);
-        }
+//         // generate destinations.length random mask
+//         // here we always generate 2 utxos for each transaction even with withdraw action
+//         // keypair(x,C(0,x))
+//         const masks = _.map(Array(2), () => BigInteger.fromHex(randomHex()));
+//         for (let i = 0; i < destinations.length; i++) {
+//             // add destination to sig
+//             if (!rv.outPk[i]) {
+//                 rv.outPk[i] = {};
+//             }
+//             rv.outPk[i].dest = _.cloneDeep(destinations[i]);
+//         }
 
-        rv.p.bulletproofs = [];
-        const C = []; // commitment generated by proveRangeBuffletProof
-        // ignore bullet proof by now
-        rv.p.bulletproofs.push(
-            // proveRangeBulletproof(C, masks, outamounts, keys, hwdev)
-            [],
-        );
-        for (let i = 0; i < outamounts.length; ++i) {
-            // why we need to multiple by 8
-            rv.outPk[i].mask = C[i];
-            outSk[i].mask = masks[i];
-        }
+//         rv.p.bulletproofs = [];
+//         const C = []; // commitment generated by proveRangeBulletProof
 
-        const sumout = BigInteger.fromHex('');
-        for (let i = 0; i < outSk.length; ++i) {
-            sumout.iadd(outSk[i].mask).iadd(sumout);
+//         // ignore bullet proof by now
+//         rv.p.bulletproofs.push(
+//             // proveRangeBulletproof(C, masks, outamounts, keys, hwdev)
+//             [],
+//         );
+//         for (let i = 0; i < outamounts.length; ++i) {
+//             rv.outPk[i].mask = C[i];
+//             outSk[i].mask = masks[i];
+//         }
 
-            // mask amount and mask
-            rv.ecdhInfo[i].mask = _.clone(outSk[i].mask);
-            rv.ecdhInfo[i].amount = numberToHex(outamounts[i]);
-            // ecdhEncode(rv.ecdhInfo[i], amountKeys[i], rv.type == RCTTypeBulletproof2);
-        }
+//         const sumout = BigInteger.ZERO;
+//         for (let i = 0; i < outSk.length; ++i) {
+//             sumout.iadd(outSk[i].mask).iadd(sumout);
 
-        rv.mixRing = mixRing;
-        const pseudoOuts = [];
-        const sumpouts = BigInteger.fromHex('');
-        const a = [];
-        let i;
-        for (i = 0; i < inamounts.length - 1; i++) {
-            a[i] = BigInteger.fromHex(randomHex().slice(2));
-            sumpouts.iadd(a[i]).iadd(sumpouts);
-            pseudoOuts[i] = basePoint.multiply(a[i]).add(
-                basePointH.multiply(inamounts[i]),
-            );
-        }
-        a[i] = sumout.subtract(sumpouts);
-        pseudoOuts[i] = basePoint.multiply(a[i]).add(
-            basePointH.multiply(inamounts[i]),
-        );
+//             // mask amount and mask
+//             rv.ecdhInfo[i].mask = _.clone(outSk[i].mask);
+//             rv.ecdhInfo[i].amount = numberToHex(outamounts[i]);
+//         }
 
-        const fullMessage = this.getPreMLSAGHash(rv);
+//         rv.mixRing = mixRing;
+//         const pseudoOuts = [];
+//         const sumpouts = BigInteger.ZERO;
+//         const a = [];
+//         let i;
+//         for (i = 0; i < inamounts.length - 1; i++) {
+//             a[i] = BigInteger.fromHex(randomHex().slice(2));
+//             sumpouts.iadd(a[i]).iadd(sumpouts);
+//             pseudoOuts[i] = basePoint.multiply(a[i]).add(
+//                 basePointH.multiply(inamounts[i]),
+//             );
+//         }
+//         a[i] = sumout.subtract(sumpouts);
+//         pseudoOuts[i] = basePoint.multiply(a[i]).add(
+//             basePointH.multiply(inamounts[i]),
+//         );
 
-        // what is the purpose of msout
-        for (i = 0; i < inamounts.length; i++) {
-            rv.p.MGs[i] = this.proveRctMGSimple(fullMessage, rv.mixRing[i], inSk[i], a[i], pseudoOuts[i], index[i]);
-        }
-        return rv;
-    }
+//         const fullMessage = this.getPreMLSAGHash(rv);
 
-    static proveRctMGSimple(message, mixing, inSk, a, Cout, index) {
-        // setup vars
-        const cols = mixing.length;
+//         // what is the purpose of msout
+//         for (i = 0; i < inamounts.length; i++) {
+//             rv.p.MGs[i] = this.proveRctMGSimple(fullMessage, rv.mixRing[i], inSk[i], a[i], pseudoOuts[i], index[i]);
+//         }
+//         return rv;
+//     }
 
-        // let tmp = [];
-        const sk = [];
-        let i;
-        const M = [[], []];
+//     static proveRctMGSimple(message, mixing, inSk, a, Cout, index) {
+//         // setup vars
+//         const cols = mixing.length;
 
-        sk[0] = _.clone(inSk.dest);
-        sk[1] = inSk.mask.subtract(a);
+//         // let tmp = [];
+//         const sk = [];
+//         let i;
+//         const M = [[], []];
 
-        // additional ring
-        for (i = 0; i < cols; i++) {
-            M[i][0] = mixing[i].dest;
-            M[i][1] = mixing[i].mask.subtract(Cout);
-        }
-        const result = MLSAG.mulSign(message, sk, mixing, index);
-        return result;
-    }
+//         sk[0] = _.clone(inSk.dest);
+//         sk[1] = inSk.mask.subtract(a);
 
-    static getPreMLSAGHash(rv) {
-        return '1' + rv.toString();
-    }
-}
+//         // additional ring
+//         for (i = 0; i < cols; i++) {
+//             M[i][0] = mixing[i].dest;
+//             M[i][1] = mixing[i].mask.subtract(Cout);
+//         }
+//         const result = MLSAG.mulSign(message, sk, mixing, index);
+//         return result;
+//     }
 
-export default RingCT;
+//     static getPreMLSAGHash(rv) {
+//         return '1' + rv.toString();
+//     }
+// }
+
+// export default RingCT;

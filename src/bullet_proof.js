@@ -364,17 +364,18 @@ export default class BulletProof {
         // why M - 1, double check the generation code for aL, aR
         for (let j = 0; j < M; j++) {
             V[j] = pedersenCommitment(masks[j], v[j]); // output is a ecurve.Point type
-            aL[j] = bn2b(v[j], N);
+            aL[j] = bn2b(v[j], N); // force convert v to n bit binary
             aR[j] = vectorSubVector(
                 _.map(aL[j], element => toBN(element)),
                 _.map(Array(N), () => BigInteger.ONE),
-            ); // what the heck is this, what happens if fir al[j][k] = 0
+            );
         }
 
-        // flatten aL, aR and convert to BI for easier using pedersen commitment for vector
+        // flatten aL, aR and convert to BI for easier calculation
         aL = _.map(_.flatten(aL), element => toBN(element));
         aR = _.flatten(aR);
 
+        // hamadard<aL, aR> = 0
         assert(innerProduct(aL, aR).toString('10') === '0', 'Wrong aL, aR !!');
 
         // Compute A: a curve point, vector commitment to aL and aR with hiding value alpha
@@ -387,7 +388,8 @@ export default class BulletProof {
         const rho = BigInteger.fromHex(randomHex());
         const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
 
-        // V is array of Point so we just convert to array of buffer for ready hashing
+        // V is array of Point, convert to array of buffer for ready hashing
+        // and used in multiple place
         const VinBuffer = _.map(V, vi => vi.getEncoded(true));
 
         // Random challenges to build the inner product to prove the values of aL and aR

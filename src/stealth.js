@@ -51,10 +51,9 @@ class Stealth {
      * If there is no input -> deposit yourself to privacy account
      * (public spend key/public view key of receiver)
      * @param {number} amount Plain money
-     * @param {string} pubSpendKey Public spend key in hex (without 0x)
-     * @param {string} pubViewKey Public view key in hex (without 0x)
-     * @param {string} pubViewKey Public view key in hex (without 0x)
-     * @param {buffer=} predefinedMask Optional, in case you got mask already and don't want to generate again
+     * @param {string} [pubSpendKey] Public spend key in hex (without 0x)
+     * @param {string} [pubViewKey] Public view key in hex (without 0x)
+     * @param {buffer} [predefinedMask] Optional, in case you got mask already and don't want to generate again
      * @returns {object} onetimeAddress and txPublicKey
      */
     genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask) {
@@ -116,8 +115,8 @@ class Stealth {
      * checkTransactionProof check if this user owns the UTXO or not
      * @param {Buffer} onetimeAddress UTXO's steal address
      * @param {Buffer} txPublicKey UTXO's transaction public key
-     * @param {string=} encryptedAmount optional = aes256(sharedSecret, amount)
-     * @param {string=} encryptedMask optional = aes256(sharedSecret, mask)
+     * @param {string} [encryptedAmount] optional = aes256(sharedSecret, amount)
+     * @param {string} [encryptedMask] optional = aes256(sharedSecret, mask)
      * @returns {object} amount
      */
     checkTransactionProof(txPublicKey, onetimeAddress, encryptedAmount, encryptedMask) {
@@ -179,7 +178,7 @@ class Stealth {
      * You can use checkTransactionProof above to decode the amount
      * @param {Buffer} onetimeAddress UTXO's steal address
      * @param {Buffer} txPublicKey UTXO's transaction public key
-     * @param {string=} newAmount plain amount for encrypting
+     * @param {string} newAmount plain amount for encrypting
      * @returns {object} encrypted amount
      */
     encryptedAmount(txPublicKey, onetimeAddress, newAmount) {

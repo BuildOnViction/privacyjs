@@ -28,6 +28,7 @@ export const generateAddress = function (pubSk, pubVk) {
     const preAddr = pubSk + pubVk;
     const hash = common.fastHash(preAddr);
     const addrHex = preAddr + hash.slice(0, 8);
+
     return Base58.encode(common.hextobin(addrHex));
 };
 

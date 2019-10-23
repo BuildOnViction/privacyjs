@@ -1,15 +1,20 @@
 /* eslint-disable no-loop-func */
+// @flow
 import ecurve from 'ecurve';
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
 import { BigInteger, randomHex } from './crypto';
+import UTXO from './utxo';
+
 // import { bconcat } from './common';
 
 const secp256k1 = ecurve.getCurveByName('secp256k1');
 const baseG = secp256k1.G;
 
-// type LongFormPoint = string[66];
+// fixed string length
+type Point = ecurve.Point;
+
 // TODO implement flow type
 /**
  * Turn a hex into secp256k1 point, we do it by repeating hashing and multiply baseG
@@ -17,10 +22,9 @@ const baseG = secp256k1.G;
  * @param {string} hex long-form format include x+y (without first bit)
  * @returns {ecurve.Point} return a point in Secp256k1
  */
-export const hashToPoint = (longFormPoint) => {
+export const hashToPoint = (longFormPoint: string) => {
     assert(longFormPoint && longFormPoint.length, 'Invalid input public key to hash');
 
-    // while (longFormPoint) {
     let hashed = keccak256(Buffer.from(longFormPoint, 'hex'));
 
     if (hashed.length % 2 === 1) {
@@ -36,7 +40,7 @@ export const hashToPoint = (longFormPoint) => {
  * @param {Buffer} message
  * @returns {BigInteger}
  */
-function hashRingCT(message) {
+function hashRingCT(message: Buffer) {
     return BigInteger.fromHex(
         keccak256(
             message,
@@ -51,7 +55,7 @@ function hashRingCT(message) {
  * @param {string} pubKey 32 bytes hex
  * @returns {ecurve.Point}
  */
-export const keyImage = (privKey, pubKey) => hashToPoint(pubKey).multiply(
+export const keyImage = (privKey: string, pubKey: string) => hashToPoint(pubKey).multiply(
     privKey,
 );
 
@@ -76,7 +80,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static mulSign(message, userPrivateKey, decoys, index) {
+    static mulSign(message: Buffer, userPrivateKey: string, decoys: Array<Array<UTXO>>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -159,14 +163,14 @@ export default class MLSAG {
     /**
      * @param {number} index where you put the real spending utxo in each ring
      * Verify the result of mlsag signing
-     * @param {string|Buffer|number} message whatever message you wanna sign
+     * @param {Buffer} message whatever message you wanna sign
      * @param {Array<UTXO>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
      * @param {Array<Point>} I Key image list
      * @param {BigInteger} c1 the first item of commitment list
      * @param {Array<BigInteger>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyMul(message, decoys, I, c1, s) {
+    static verifyMul(message: Buffer, decoys: Array<Array<UTXO>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
         const numberOfRing = decoys.length;
         const ringSize = decoys[0].length;
         const L = [];
@@ -215,7 +219,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static signCommitment(userPrivateKey, decoys, outputUTXOs, index) {
+    static signCommitment(userPrivateKey: string, decoys: Array<Array<UTXO>>, outputUTXOs: Array<UTXO>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -278,7 +282,7 @@ export default class MLSAG {
         while (j !== index) {
             tohash = _.cloneDeep(pj);
             L[j] = baseG.multiply(s[j]).add(
-                decoys[j].lfStealth.multiply(c[j]),
+                publicKeys[j].multiply(c[j]),
             ); // Lj = sG + cxG
             R[j] = HP[j].multiply(s[j]).add(
                 I.multiply(c[j]),
@@ -311,12 +315,12 @@ export default class MLSAG {
      * Verify the result of mlsag signing
      * @param {string|Buffer|number} message whatever message you wanna sign
      * @param {Array<UTXO>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
-     * @param {Array<Point>} I Key image list
+     * @param {Point} I Key image
      * @param {BigInteger} c1 the first item of commitment list
      * @param {Array<BigInteger>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyCommitment(decoys, I, c1, s) {
+    static verifyCommitment(decoys: Array<Point>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
         const ringSize = decoys.length;
         const L = [];
         const R = [];
@@ -328,7 +332,7 @@ export default class MLSAG {
         while (j < ringSize) {
             let tohash = _.cloneDeep(pj);
             L[j] = baseG.multiply(s[j]).add(
-                decoys[j].lfStealth.multiply(c[j]),
+                decoys[j].multiply(c[j]),
             );
             R[j] = HP[j].multiply(s[j]).add(
                 I.multiply(c[j]),

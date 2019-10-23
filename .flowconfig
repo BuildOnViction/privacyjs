@@ -1,0 +1,15 @@
+[ignore]
+./node_modules/**
+./.vscode/**
+./coverage/**
+./.nyc_output/**
+./tools/**
+[include]
+./src/**
+[libs]
+
+[lints]
+
+[options]
+
+[strict]

@@ -1,7 +1,6 @@
+// @flow
 import ecurve from 'ecurve';
 import assert from 'assert';
-// import Web3 from 'web3';
-// import { keccak256 } from 'js-sha3';
 import { generateKeys } from './address';
 import Stealth from './stealth';
 import { BigInteger } from './crypto';
@@ -32,13 +31,55 @@ const EC = require('elliptic').ec;
     *
 */
 
+type UTXOType = {
+    '0': {
+        '0': string,
+        '1': string,
+        '2': string
+    },
+    '1': {
+        '0': string,
+        '1': string,
+        '2': string
+    },
+    '2': {
+        '0': string,
+        '1': string
+    },
+    '3': number
+}
+
 class UTXO {
+    commitmentX: string;
+
+    commitmentYBit: string;
+
+    pubkeyX: string;
+
+    pubkeyYBit: string;
+
+    amount: string;
+
+    mask: string;
+
+    txPubX: string;
+
+    txPubYBit: string;
+
+    index: number;
+
+    lfStealth: ecurve.Point;
+
+    lfTxPublicKey: ecurve.Point;
+
+    lfCommitment: ecurve.Point;
+
     /**
      *
      * @param {object} utxo
      * @param {privateKey} Optional
      */
-    constructor(utxo) {
+    constructor(utxo: UTXOType) {
         this.commitmentX = utxo['0']['0'];
         this.commitmentYBit = utxo['1']['0'];
         this.pubkeyX = utxo['0']['1'];
@@ -64,7 +105,7 @@ class UTXO {
      * @param {string} privateSpendKey Hex string of private spend key - in other word serectkey
      * @returns {object} amount, keys
      */
-    checkOwnership(privateSpendKey) {
+    checkOwnership(privateSpendKey: string) {
         const receiver = new Stealth({
             ...generateKeys(privateSpendKey),
         });
@@ -83,7 +124,7 @@ class UTXO {
      * @param {string} targetAddress targetAddress who you're sending this utxo for
      * @returns {string} delegate data of utxo
      */
-    getHashData(targetAddress) {
+    getHashData(targetAddress: string) {
         return soliditySha3(
             bintohex(bconcat([
                 this.lfCommitment.getEncoded(false),
@@ -99,7 +140,7 @@ class UTXO {
      * @param {string} privateKey
      * @results {ec.Signature} include the ec.Signature you can convert to anyform after that
      */
-    sign(privateKey, targetAddress) {
+    sign(privateKey: string, targetAddress: string) {
         const secp256k1 = new EC('secp256k1');
 
         // Generate keys
@@ -120,7 +161,7 @@ class UTXO {
      * @param {string} privateSpendKey of the owner - length 32 bytes
      * @returns {string} ringCTPrivateKey in 32 bytes format
      */
-    getRingCTKeys(privateSpendKey) {
+    getRingCTKeys(privateSpendKey: string) {
         const decodedUTXO = this.checkOwnership(privateSpendKey);
         assert(decodedUTXO, " Can't decode utxo that not belongs");
 

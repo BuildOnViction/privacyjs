@@ -10,28 +10,46 @@
  * and definition of Zero-knowledge terms (commitment, one time address
  * ring-signature, ring confidential transaction, bulletproof, rang proof)
  * so they might pass wrong data cause losing money
+ *
+ * // TODO what happen if the server passing different methods in abi
+ * // we need to find a way to specify it in construction
  */
 
 import Web3 from 'web3';
+import EventEmitter from 'eventemitter3';
 import HDWalletProvider from 'truffle-hdwallet-provider';
 import assert from 'assert';
 import * as CONSTANT from './constants';
 import * as Address from './address';
 import Stealth from './stealth';
-// import UTXO from './utxo';
+import UTXO from './utxo';
+import { BigInteger } from './crypto';
+import { toBN } from './common';
 
 // TODO find way to specify the length of each field, address
-
 type SmartContractOpts = {
     RPC_END_POINT: string,
     ADDRESS: string,
     ABI: Array<Object>,
     gasPrice: number | string, // js suport number 3 bit so number here is acceptable
     gas: number | string,
-    from: string
+    from: string,
+    methodsMapping: ?{
+        deposit: string,
+        send: string,
+        withdraw: string,
+        getTX: string,
+    }
 };
 
-export default class Wallet {
+type DecodedProof = {
+    privKey: string, // private key of one-time-address
+    pubKey: Buffer, // public key of one-time-address in encoded form
+    amount: ?string,
+    mask: ?string
+};
+
+export default class Wallet extends EventEmitter {
     addresses: {
         privSpendKey: string,
         pubSpendKey: string,
@@ -47,12 +65,19 @@ export default class Wallet {
 
     privacyContract: Web3.eth.Contract
 
+    // always store in bignumber for easier calculation
+    balance: BigInteger;
+
+    // unspent transaction outputs
+    utxos: Array<UTXO>;
+
     /**
      *
      * @param {string} privateKey
      * @param {Object} scOpts
      */
     constructor(privateKey: string, scOpts: SmartContractOpts, address: string) {
+        super();
         assert(privateKey && privateKey.length === CONSTANT.PRIVATE_KEY_LENGTH, 'Malform private key !!');
         assert(address && address.length === 42, 'Malform address !!');
 
@@ -64,7 +89,12 @@ export default class Wallet {
         this.scOpts.gasPrice = this.scOpts.gasPrice || CONSTANT.DEFAULT_GAS_PRICE;
         this.scOpts.gas = this.scOpts.gas || CONSTANT.DEFAULT_GAS;
         this.scOpts.from = this.scOpts.from || address;
-
+        this.scOpts.methodsMapping = this.scOpts.methodsMapping || {
+            deposit: 'deposit',
+            send: 'send',
+            withdraw: 'withdraw',
+            getTX: 'getUTXO',
+        };
         const provider = new HDWalletProvider(privateKey, scOpts.RPC_END_POINT);
         const web3 = new Web3(provider);
 
@@ -120,7 +150,6 @@ export default class Wallet {
                     reject(error);
                 })
                 .then((receipt) => {
-                    receipt.events.NewUTXO.should.be.a('object');
                     try {
                         resolve({
                             utxo: receipt.events.NewUTXO.returnValues,
@@ -143,7 +172,49 @@ export default class Wallet {
     qrUTXOData() {
     }
 
-    send() {
+    async send(privacyAddress: string, amount: string | number) {
+        if (!this.balance) {
+            this.emit('PRIVACY_WALLET_START_SCANNING');
+
+            await this.scan();
+
+            this.emit('PRIVACY_WALLET_STOP_SCANNING');
+        }
+        const biAmount = toBN(amount);
+
+        assert(biAmount.compareTo(this.balance) === '+', 'Balance is not enough');
+
+        const selectedUTXOs = this._selectUTXOs(biAmount);
+
+        const {
+            spendings, outputs, ringct, bulletproof,
+        } = this._generateTX(biAmount, selectedUTXOs);
+
+        const proof = this._makePrivateSendProof(spendings, outputs, ringct, bulletproof);
+
+        return new Promise((resolve, reject) => {
+            this.privacyContract.methods[this.scOpts.methodsMapping.send](proof)
+                .send({
+                    from: this.scOpts.from,
+                })
+                .on('error', (error) => {
+                    reject(error);
+                })
+                .then((receipt) => {
+                    try {
+                        resolve({
+                            utxo: receipt.events.NewUTXO.returnValues,
+                            proof,
+                        });
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+        });
+    }
+
+    _makePrivateSendProof(spendings, outputs, ringct, bulletproof) {
+
     }
 
     fromStorage() {
@@ -164,5 +235,36 @@ export default class Wallet {
 
     isSpend() {
 
+    }
+
+    /**
+     * Check utxo's proof belongs
+     * consider changing input format
+     * @param {Buffer} txPubkey long-form point = Point.getEncoded(false)
+     * @param {*} stealth long-form point = Point.getEncoded(false)
+     * @param {*} encryptedAmount AES(ECDH, amount) in hex string
+     * @returns {Object} stealth_private_key, stealth_public_key, real amount
+     */
+    isMine(txPubkey: Buffer, stealth: Buffer, encryptedAmount: string): DecodedProof {
+        return this.stealth.checkTransactionProof(
+            txPubkey, stealth, encryptedAmount,
+        );
+    }
+
+    /**
+     * Check utxo belongs
+     * @param {UTXO} utxo UTXO instance
+     * @returns {Object} stealth_private_key, stealth_public_key, real amount
+     */
+    isMineUTXO(utxo: UTXO): DecodedProof {
+        return utxo.checkOwnership(this.addresses.privSpendKey);
+    }
+
+    decimalBalance() {
+        return this.balance ? Web3.utils.toBN('0x' + this.balance.toHex()).toString() : '0';
+    }
+
+    hexBalance() {
+        return this.balance ? '0x' + this.balance.toHex() : '0x0';
     }
 }

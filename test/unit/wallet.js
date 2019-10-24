@@ -1,22 +1,28 @@
-import assert from 'assert';
+import sinon from 'sinon';
 import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import ecurve from 'ecurve';
 import Wallet from '../../src/wallet';
 import Configs from '../config.json';
 import * as CONSTANT from '../../src/constants';
-import UTXO from '../../src/utxo';
+// import UTXO from '../../src/utxo';
+import { BigInteger } from '../../src/crypto';
 
+const ecparams = ecurve.getCurveByName('secp256k1');
+const { Point } = ecurve;
 const { expect } = chai;
 chai.should();
+chai.use(chaiAsPromised);
 
 const { WALLETS } = Configs;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
 describe('#unittest #wallet', () => {
     describe('#init()', () => {
-        it('should not able to init wallet with wrong from private key', (done) => {
+        it('should not able to init wallet with wrong form private key', (done) => {
             try {
                 const wallet = new Wallet(`${SENDER_WALLET.privateKey}AA`);
-                console.log(wallet);
+                done(new Error('Wallet should not be inited ', wallet));
             } catch (exception) {
                 expect(exception.toString()).to.be.equal('AssertionError [ERR_ASSERTION]: Malform private key !!');
                 done();
@@ -44,46 +50,126 @@ describe('#unittest #wallet', () => {
     });
 
     describe('#deposit()', () => {
-        const wallet = new Wallet(SENDER_WALLET.privateKey, {
-            RPC_END_POINT: Configs.RPC_END_POINT,
-            ABI: Configs.PRIVACY_ABI,
-            ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
-            gasPrice: '250000000',
-            gas: '2000000',
-        }, SENDER_WALLET.address);
+        let wallet;
+        let wallet1;
+        let stealthPoint;
+        let txPubkeyPoint;
+        let decodedProof;
+        let proof;
 
-        it('should able to create a belonging utxo', (done) => {
-            // should move to before
-            const proof = wallet._genUTXOProof(1000000000);
-            const utxo = new UTXO({
-                0: {
-                    0: proof[0], // ignore the commitment cuz we don't check it
-                    1: proof[0],
-                    2: proof[2],
-                },
-                1: {
-                    0: proof[1], // ignore the commitment cuz we don't check it
-                    1: proof[1],
-                    2: proof[3],
-                },
-                2: {
-                    0: proof[5],
-                    1: proof[6],
-                },
-                3: 10, // index of UTXO
-            });
-            let decodedUTXO = utxo.checkOwnership(SENDER_WALLET.privateKey);
-            expect(decodedUTXO).to.not.equal(null);
-            expect(decodedUTXO.amount).to.not.equal(1000000000);
+        beforeEach((done) => {
+            wallet = new Wallet(SENDER_WALLET.privateKey, {
+                RPC_END_POINT: Configs.RPC_END_POINT,
+                ABI: Configs.PRIVACY_ABI,
+                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+                gasPrice: '250000000',
+                gas: '2000000',
+            }, SENDER_WALLET.address);
 
-            // make sure other can't decode
-            decodedUTXO = utxo.checkOwnership(WALLETS[1].privateKey);
-            expect(decodedUTXO).to.equal(null);
+            wallet1 = new Wallet(WALLETS[1].privateKey, {
+                RPC_END_POINT: Configs.RPC_END_POINT,
+                ABI: Configs.PRIVACY_ABI,
+                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+                gasPrice: '250000000',
+                gas: '2000000',
+            }, SENDER_WALLET.address);
+
+            proof = wallet._genUTXOProof(1000000000);
+            stealthPoint = Point.fromAffine(ecparams,
+                new BigInteger(proof[0].slice(2), 16),
+                new BigInteger(proof[1].slice(2), 16));
+            txPubkeyPoint = Point.fromAffine(ecparams,
+                new BigInteger(proof[2].slice(2), 16),
+                new BigInteger(proof[3].slice(2), 16));
 
             done();
         });
-        it('should able to deposit', (done) => {
-            done(new Error('Not implemented yet'));
+
+        afterEach((done) => {
+            // wallet.privacyContract.methods = originalDeposit;
+            // sinon.replace(wallet.privacyContract.methods, 'deposit', originalDeposit);
+            done();
+        });
+
+        it('should able to create a belonging utxo', (done) => {
+            decodedProof = wallet.isMine(
+                txPubkeyPoint.getEncoded(false), stealthPoint.getEncoded(false), proof[5].slice(2),
+            );
+            expect(decodedProof).to.not.equal(null);
+            expect(decodedProof.amount).to.be.equal('1000000000');
+
+            done();
+        });
+
+        it('should not able to decoded wallet\'s proof ', (done) => {
+            // make sure other can't decode
+            decodedProof = wallet1.isMine(
+                txPubkeyPoint.getEncoded(false), stealthPoint.getEncoded(false), proof[5].slice(2),
+            );
+            expect(decodedProof).to.equal(null);
+
+            done();
+        });
+
+        // in this case sc just just your input is on curve and you have enough money to spend, nothing else
+        it('should able to deposit with correct data', (done) => {
+            try {
+                // TODO stupid fake returns, find other way
+                // we strictly test how the wallet parse and return data
+                // in near future it would change by tx-base not utxo-base
+                const fake = sinon.fake.returns({
+                    send: () => ({
+                        on: () => ({
+                            then: (callback) => {
+                                callback({
+                                    events: { NewUTXO: { returnValues: {} } },
+                                });
+                            },
+                        }),
+                    }),
+                });
+                sinon.replace(wallet.privacyContract.methods, 'deposit', fake);
+                wallet.deposit('1000000000')
+                    .then((res) => {
+                        expect(res).to.have.property('utxo');
+                        expect(res.utxo).not.to.equal(null);
+                        done();
+                    })
+                    .catch((err) => {
+                        done(err);
+                    });
+            } catch (exception) {
+                done(exception);
+            }
+        });
+
+        it('should not able to parse other kind of data-structure', (done) => {
+            try {
+                // TODO stupid fake returns, find other way
+                // we strictly test how the wallet parse and return data
+                // in near future it would change by tx-base not utxo-base
+                const fake = sinon.fake.returns({
+                    send: () => ({
+                        on: () => ({
+                            then: (callback) => {
+                                callback({
+                                    events: { NewTX: { returnValues: { UTXO: {}, timestamp: new Date() } } },
+                                });
+                            },
+                        }),
+                    }),
+                });
+                sinon.replace(wallet.privacyContract.methods, 'deposit', fake);
+                wallet.deposit('1000000000')
+                    .then(() => {
+                        done(new Error());
+                    })
+                    .catch(() => {
+                        done();
+                    });
+            } catch (exception) {
+                done(exception);
+            }
         });
     });
 

@@ -26,7 +26,7 @@ const EC = require('elliptic').ec;
 /* UTXO structure input
     * 0 - [commitmentX, pubkeyX, txPubX],
     * 1 - [commitmentYBit, pubkeyYBit, txPubYBit],
-    * 2 - [amount, mask],
+    * 2 - [EncryptedAmount, EncryptedMask],
     * 3 - _index
     *
 */

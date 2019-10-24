@@ -2,6 +2,10 @@
 /**
  * The bulletproof implementation bases on https://eprint.iacr.org/2017/1066.pdf
  * please refer below for denoting, we replace some denotes in the paper by our owns
+ * related knowledge
+ * inner product
+ * inner product proof
+ * multi-exponentiation
  *
  */
 
@@ -16,7 +20,7 @@ import {
 } from './common';
 import { baseH } from './commitment';
 
-const secp256k1 = ecurve.getCurveByName('secp256k1');
+const secp256k1 = ecurve.getCurveByName('secp128r1');
 // const hs = hmacSha256;
 const baseG = secp256k1.G;
 
@@ -341,7 +345,9 @@ export default class BulletProof {
         const Gi = [];
         const V = [];
         M = masks.length; // number of proofs to aggregate
-        // N should be the maximum bit of amounts input instead of fix 64
+
+        // TODO get N from length of d2bn(v)
+        // and N should be < 64 (maximum length)
 
         /**
          * Besides generators H and G, two vectors of generators,Gi and Hi,
@@ -361,7 +367,6 @@ export default class BulletProof {
             );
         }
 
-        // why M - 1, double check the generation code for aL, aR
         for (let j = 0; j < M; j++) {
             V[j] = pedersenCommitment(masks[j], v[j]); // output is a ecurve.Point type
             aL[j] = bn2b(v[j], N); // force convert v to n bit binary
@@ -375,8 +380,8 @@ export default class BulletProof {
         aL = _.map(_.flatten(aL), element => toBN(element));
         aR = _.flatten(aR);
 
-        // hamadard<aL, aR> = 0
-        assert(innerProduct(aL, aR).toString('10') === '0', 'Wrong aL, aR !!');
+        // hamadard<aL, aR> = 0 not inner product
+        // assert(innerProduct(aL, aR).toString('10') === '0', 'Wrong aL, aR !!');
 
         // Compute A: a curve point, vector commitment to aL and aR with hiding value alpha
         const alpha = BigInteger.fromHex(randomHex());
@@ -389,12 +394,11 @@ export default class BulletProof {
         const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
 
         // V is array of Point, convert to array of buffer for ready hashing
-        // and used in multiple place
+        // and used in multi-place
         const VinBuffer = _.map(V, vi => vi.getEncoded(true));
 
         // Random challenges to build the inner product to prove the values of aL and aR
         // non-interactive
-
         const y = hashToScalar(
             bconcat([
                 ...VinBuffer,
@@ -480,6 +484,7 @@ export default class BulletProof {
             L, R, a, b,
         } = this.innerProductProve(Gi, Hiprime, Hx, l, r);
 
+        // TODO log proof size at this step
         return {
             V, A, S, T1, T2, taux, mu, L, R, a, b, t,
         };

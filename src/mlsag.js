@@ -163,6 +163,7 @@ export default class MLSAG {
             c1: c[0],
             s,
             privKeys,
+            message: pj,
         };
     }
 
@@ -241,7 +242,7 @@ export default class MLSAG {
         const R = [];
         const c = [];
 
-        const pj = Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
+        let pj = new Buffer([]);
         let i;
 
         let sumSpendingMask = BigInteger.ZERO; // for calculating private key in ring
@@ -250,7 +251,9 @@ export default class MLSAG {
 
         // prepare sum of output mask
         outputUTXOs.forEach((utxo) => {
-            sumOutputMask = sumOutputMask.add(utxo.mask);
+            sumOutputMask = sumOutputMask.add(
+                BigInteger.fromHex(utxo.decodedMask),
+            );
         });
         // prepare sum of output commitment
         outputUTXOs.forEach((utxo) => {
@@ -266,25 +269,49 @@ export default class MLSAG {
         // calculate sum of spending commitment and sum of spending mask
         const publicKeys = [];
         for (i = 0; i < numberOfRing; i++) {
-            const decodedUTXO = decoys[i][index].checkOwnership(userPrivateKey);
-            sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decodedUTXO.mask));
+            decoys[i][index].checkOwnership(userPrivateKey);
+            sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].decodedMask));
+            sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].privKey));
+
             for (let j = 0; j < ringSize; j++) {
+                // + Commitment
                 publicKeys[j] = publicKeys[j] ? publicKeys[j].add(
                     decoys[i][j].lfCommitment,
                 ) : decoys[i][j].lfCommitment;
+
+                // + publickey of utxo
+                publicKeys[j] = publicKeys[j].add(
+                    decoys[i][j].lfStealth,
+                );
             }
         }
 
+        outputCommitment = outputCommitment ? outputCommitment.negate() : outputCommitment;
+        for (let j = 0; j < ringSize; j++) {
+            publicKeys[j] = publicKeys[j].add(
+                outputCommitment,
+            );
+        }
+
         // prepare data for ring include private key, key image, HP, s
-        const privKey = sumSpendingMask.subtract(sumOutputMask);
+        const privKey = sumSpendingMask
+            .subtract(sumOutputMask)
+            .mod(secp256k1.n);
+
         const I = keyImage(privKey, publicKeys[index].getEncoded(false).toString('hex').slice(2));
-        const HP = _.map(publicKeys, pubkey => hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2)));
+        const HP = _.map(publicKeys, (pubkey) => {
+            pj = Buffer.concat([pj, pubkey.getEncoded(true)]);
+            return hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2));
+        });
         const s = _.map(new Array(publicKeys.length), () => BigInteger.fromHex(randomHex()));
 
         L[index] = baseG.multiply(s[index]); // aG
         R[index] = HP[index].multiply(s[index]); // aH
 
         let j = (index + 1) % ringSize;
+
+        pj = Buffer.from(keccak256(pj), 'hex');
+
         let tohash = _.cloneDeep(pj); // pj = message || all_pubkeys
 
         tohash = Buffer.concat([tohash, L[index].getEncoded(false).slice(1), R[index].getEncoded(false).slice(1)]);
@@ -319,6 +346,8 @@ export default class MLSAG {
             I,
             c1: c[0],
             s,
+            message: pj, // easier for test
+            publicKeys,
         };
     }
 
@@ -336,8 +365,13 @@ export default class MLSAG {
         const ringSize = decoys.length;
         const L = [];
         const R = [];
-        const pj = Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
-        const HP = _.map(decoys, pubkey => hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2)));
+        let pj = new Buffer([]);
+        const HP = _.map(decoys, (pubkey) => {
+            pj = Buffer.concat([pj, pubkey.getEncoded(true)]);
+            return hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2));
+        });
+
+        pj = Buffer.from(keccak256(pj), 'hex');
 
         const c = [c1];
         let j = 0;

@@ -180,7 +180,35 @@ describe('#unittest #wallet', () => {
     });
 
     describe('#send()', () => {
-        it('should able to send', (done) => {
+        it('should able to create correct output utxos', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should able to create correct ringct', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should able to create correct bullet proof', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should call to sc correctly to send and receive exactly same output utxos', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should not create single ring', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should not create proof with ringsize > 5', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should not execute-time > 10s ', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should emit event correctly in sending progress', (done) => {
             done(new Error('Not implemented yet'));
         });
     });

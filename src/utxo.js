@@ -74,6 +74,12 @@ class UTXO {
 
     lfCommitment: ecurve.Point;
 
+    decodedAmount: string;
+
+    decodedMask: string;
+
+    privKey: string;
+
     /**
      *
      * @param {object} utxo
@@ -110,12 +116,18 @@ class UTXO {
             ...generateKeys(privateSpendKey),
         });
 
-        return receiver.checkTransactionProof(
+        const decodedData = receiver.checkTransactionProof(
             this.lfTxPublicKey.getEncoded(false),
             this.lfStealth.getEncoded(false),
             this.amount,
             this.mask,
         );
+
+        this.decodedAmount = decodedData.amount;
+        this.decodedMask = decodedData.mask;
+        this.privKey = decodedData.privKey;
+
+        return decodedData;
     }
 
     /**

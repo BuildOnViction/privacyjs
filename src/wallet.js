@@ -19,12 +19,15 @@ import Web3 from 'web3';
 import EventEmitter from 'eventemitter3';
 import HDWalletProvider from 'truffle-hdwallet-provider';
 import assert from 'assert';
+import * as _ from 'lodash';
+import numberToBN from 'number-to-bn'; // this is converter to bn.js, this lib support more utils than bigi
 import * as CONSTANT from './constants';
 import * as Address from './address';
 import Stealth from './stealth';
 import UTXO from './utxo';
 import { BigInteger } from './crypto';
 import { toBN } from './common';
+import MLSAG from './mlsag';
 
 // TODO find way to specify the length of each field, address
 type SmartContractOpts = {
@@ -138,6 +141,7 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} TxObject includes UTXO and original proof
      */
     deposit(amount: number): Promise<any> {
+        this.emit('START_DEPOSIT');
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(amount);
 
@@ -147,53 +151,71 @@ export default class Wallet extends EventEmitter {
                     value: amount,
                 })
                 .on('error', (error) => {
+                    this.emit('STOP_DEPOSIT', error);
                     reject(error);
                 })
                 .then((receipt) => {
-                    try {
-                        resolve({
-                            utxo: receipt.events.NewUTXO.returnValues,
-                            proof,
-                        });
-                    } catch (error) {
-                        reject(error);
-                    }
+                    this.emit('FINISH_DEPOSIT', receipt.events);
+                    resolve({
+                        utxo: receipt.events.NewUTXO.returnValues,
+                        proof,
+                    });
                 });
         });
     }
 
     scan() {
-        throw Error('Not implemented yet');
+        this.emit('START_SCANNING');
+        try {
+            this.emit('FINISH_SCANNING');
+            throw new Error('Not implemeted yet');
+        } catch (ex) {
+            this.emit('STOP_SCANNING');
+        }
     }
 
     store() {
     }
 
-    qrUTXOData() {
+    qrUTXOsData() {
     }
 
+    /**
+     * Private send money to privacy address
+     * @param {string} privacyAddress
+     * @param {string|number} amount
+     * @returns {object} includes new utxos and original created proof
+     * on some very first version, we store the proof locally to help debugging if error happens
+     */
     async send(privacyAddress: string, amount: string | number) {
+        assert(privacyAddress.length === CONSTANT.PRIVACY_ADDRESS_LENGTH, 'Malform privacy address !!');
+
         if (!this.balance) {
-            this.emit('PRIVACY_WALLET_START_SCANNING');
-
             await this.scan();
-
-            this.emit('PRIVACY_WALLET_STOP_SCANNING');
         }
+
         const biAmount = toBN(amount);
 
         assert(biAmount.compareTo(this.balance) === '+', 'Balance is not enough');
 
-        const selectedUTXOs = this._selectUTXOs(biAmount);
+        const proof = this._makePrivateSendProof(privacyAddress, biAmount);
 
-        const {
-            spendings, outputs, ringct, bulletproof,
-        } = this._generateTX(biAmount, selectedUTXOs);
+        const res = await this._send(proof);
 
-        const proof = this._makePrivateSendProof(spendings, outputs, ringct, bulletproof);
+        return res;
+    }
 
+    /**
+     * Use Web3 to sign and make tx to smart-contract
+     * @param {Object} proof
+     * @returns {object} new utxos and proof
+     */
+    _send(proof: Object): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.privacyContract.methods[this.scOpts.methodsMapping.send](proof)
+            // ugly syntax
+            this.privacyContract.methods[
+                this.scOpts.methodsMapping
+                && this.scOpts.methodsMapping.send](proof)
                 .send({
                     from: this.scOpts.from,
                 })
@@ -201,20 +223,142 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
-                    try {
-                        resolve({
-                            utxo: receipt.events.NewUTXO.returnValues,
-                            proof,
-                        });
-                    } catch (error) {
-                        reject(error);
-                    }
+                    resolve({
+                        utxo: receipt.events.NewUTXO.returnValues,
+                        proof,
+                    });
                 });
         });
     }
 
-    _makePrivateSendProof(spendings, outputs, ringct, bulletproof) {
+    // fake decoys by now
+    getDecoys(numberOfRing: number): Array<Array<UTXO>> {
+        return [
+            _.map(Array(numberOfRing), () => []),
+        ];
+    }
 
+    /**
+     * Generate ring confidental transaction proof
+     * 1. Generate ring-signature from spending utxos
+     * 2. generate additional ring for proof commitment_input = commitment_output
+     */
+    _genRingCT(spendingUTXOs: Array<UTXO>, outputUTXOs: Array<UTXO>) {
+        const numberOfRing = spendingUTXOs.length;
+        const ringSize = 12; // 11 decoys + one spending
+
+        // get random utxos for making ring from network
+        // number of random utxo = spendingUTXOs * 11 (maximum decoys per ring)
+        let decoys = this.getDecoys(numberOfRing);
+
+        // random index each time generating ringct
+        const index = Math.round(Math.random() * ringSize);
+
+        // TODO need rewrite - not optimized
+        const pubkeys = []; // public keys of utxo
+        decoys = _.map(decoys, (decoyRing, counter) => decoyRing.splice(index, 0, spendingUTXOs[counter]));
+        _.each(_.flatten(decoys), (decoy) => {
+            pubkeys.push(decoy.lfStealth);
+        });
+
+        // generating message = Buffer.from([pubOfDecoy1, pubOfDecoy2, ..., pubOfDecoyN])
+        const ringSignature = MLSAG.mulSign(
+            this.addresses.privSpendKey,
+            decoys,
+            index,
+        );
+        const ctSignature = MLSAG.signCommitment(
+            this.addresses.privSpendKey,
+            decoys,
+            outputUTXOs,
+            index,
+        );
+
+        return Buffer.from(
+            // ring signature part
+            `${numberToBN(numberOfRing).toString(16, 16)
+            }${numberToBN(ringSize).toString(16, 16)
+            }${ringSignature.message.toString('hex')
+            }${ringSignature.c1.toHex(32)
+            }${_.map(_.flatten(ringSignature.s), element => element.toHex(32)).join('')
+            }${_.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+            }${_.map(_.flatten(ringSignature.I), element => element.getEncoded(true).toString('hex')).join('')
+            }${numberToBN(1).toString(16, 16) // start ct part
+            }${numberToBN(ringSize).toString(16, 16)
+            }${ctSignature.message.toString('hex') // should be ctSignature.message
+            }${ctSignature.c1.toHex(32)
+            }${_.map(_.flatten(ctSignature.s), element => element.toHex(32)).join('')
+            }${_.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+            }${_.map(_.flatten(ctSignature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
+            'hex',
+        );
+    }
+
+    /**
+     * Generate range proof to prove a number in a range
+     * in tomo system, the range from 0 to 2^64
+     * we can choose what kind of range proof to use here
+     * two supported are bulletproof and aggregate schnorr
+     * @param {BigInteger} amount
+     * @returns {Buffer} Proof
+     */
+    _genRangeProof(amount: BigInteger):Buffer {
+        return amount.toBuffer();
+    }
+
+    /**
+     * Generate utxos afer transaction, one for sender (even balance = 0), one for receiver
+     * @param {Array<UTXO>} spendingUTXOs spending utxos
+     * @param {string} receiver privacy address of receiver
+     * @param {BigInteger} amount sending amount
+     */
+    _genOutputUTXOs(spendingUTXOs: Array<UTXO>, receiver: string, amount: BigInteger): Array<Object> {
+        // let sumOfSpendingMasks = BigInteger.ZERO;
+        const UTXOs = spendingUTXOs;
+        let balance = BigInteger.ZERO;
+
+        _.each(UTXOs, (utxo) => {
+            // TODO when scan utxo, calculated and store this so we don't need this step
+            utxo.checkOwnership(this.addresses.privSpendKey);
+
+            // sumOfSpendingMasks = sumOfSpendingMasks.add(
+            //     BigInteger.fromHex(utxo.decodedMask),
+            // ).mod(secp256k1.n);
+
+            balance = balance.add(
+                toBN(utxo.decodedAmount),
+            );
+        });
+
+        assert(amount.compareTo(balance) === '+', 'Balance is not enough');
+
+        const receiverStealth = Stealth.fromString(receiver);
+        const proofOfReceiver = receiverStealth.genTransactionProof(
+            Web3.utils.hexToNumberString(amount.toHex()),
+        );
+
+        const proofOfMe = this.stealth.genTransactionProof(
+            Web3.utils.hexToNumberString(balance.subtract(amount).toHex()),
+        );
+
+        return [proofOfReceiver, proofOfMe];
+    }
+
+    /**
+     *
+     * @param {BigInteger} amount
+     * @returns {Object} proof output
+     */
+    _makePrivateSendProof(receiver: string, amount: BigInteger): Object {
+        const outputUTXOs = this._genOutputUTXOs(this.utxos, receiver, amount);
+        const ringct = this._genRingCT(this.utxos, outputUTXOs);
+        const rangeProof = this._genRangeProof(amount);
+
+        return {
+            outputUTXOs,
+            ringct,
+            rangeProof,
+        };
     }
 
     fromStorage() {
@@ -260,7 +404,7 @@ export default class Wallet extends EventEmitter {
         return utxo.checkOwnership(this.addresses.privSpendKey);
     }
 
-    decimalBalance() {
+    decBalance() {
         return this.balance ? Web3.utils.toBN('0x' + this.balance.toHex()).toString() : '0';
     }
 

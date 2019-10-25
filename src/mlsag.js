@@ -80,7 +80,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static mulSign(message: Buffer, userPrivateKey: string, decoys: Array<Array<UTXO>>, index: number) {
+    static mulSign(userPrivateKey: string, decoys: Array<Array<UTXO>>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -93,7 +93,9 @@ export default class MLSAG {
         const s = [];
         const c = [];
 
-        const pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g)); // 32 bytes
+        // let pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g)); // 32 bytes
+        let pj = new Buffer([]);
+
         let i;
         const privKeys = [];
 
@@ -105,8 +107,10 @@ export default class MLSAG {
             privKeys[i] = BigInteger.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
 
             I[i] = keyImage(privKeys[i], decoys[i][index].lfStealth.getEncoded(false).toString('hex').slice(2));
-            HP[i] = _.map(decoys[i], utxo => hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2)));
-
+            HP[i] = _.map(decoys[i], (utxo) => {
+                pj = Buffer.concat([pj, utxo.lfStealth.getEncoded(true)]);
+                return hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2));
+            });
             s.push(_.map(new Array(decoys[i].length), () => BigInteger.fromHex(randomHex())));
         }
 
@@ -114,6 +118,8 @@ export default class MLSAG {
             L[i][index] = baseG.multiply(s[i][index]); // aG
             R[i][index] = HP[i][index].multiply(s[i][index]); // aH
         }
+
+        pj = Buffer.from(keccak256(pj), 'hex');
 
         let j = (index + 1) % ringSize;
         let tohash = _.cloneDeep(pj); // pj = message || all_pubkeys
@@ -170,19 +176,25 @@ export default class MLSAG {
      * @param {Array<BigInteger>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyMul(message: Buffer, decoys: Array<Array<UTXO>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
+    static verifyMul(decoys: Array<Array<UTXO>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
         const numberOfRing = decoys.length;
         const ringSize = decoys[0].length;
         const L = [];
         const R = [];
         const HP = [];
-        const pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
+        // const pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
+        let pj = new Buffer([]);
 
         for (let i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
-            HP[i] = _.map(decoys[i], utxo => hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2)));
+            HP[i] = _.map(decoys[i], (utxo) => {
+                pj = Buffer.concat([pj, utxo.lfStealth.getEncoded(true)]);
+                return hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2));
+            });
         }
+
+        pj = Buffer.from(keccak256(pj), 'hex');
 
         const c = [c1];
         let j = 0;

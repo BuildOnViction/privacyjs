@@ -51,7 +51,6 @@ describe('#unittest #ringct #mlsag', () => {
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
             const signature = MLSAG.mulSign(
-                '',
                 SENDER_WALLET.privateKey,
                 [inputUTXOS],
                 index,
@@ -64,7 +63,6 @@ describe('#unittest #ringct #mlsag', () => {
             const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
             expect(
                 MLSAG.verifyMul(
-                    '',
                     [verifyInputUTXOS],
                     signature.I,
                     signature.c1,
@@ -74,35 +72,33 @@ describe('#unittest #ringct #mlsag', () => {
             done();
         });
 
-        it('Should not able to verify signer with different message', (done) => {
-            const index = 3;
-            MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+    //     it('Should not able to verify signer with different message', (done) => {
+    //         const index = 3;
+    //         MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-            const signature = MLSAG.mulSign(
-                'aAAAAAAA',
-                SENDER_WALLET.privateKey,
-                [inputUTXOS],
-                index,
-            );
+    //         const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+    //         const signature = MLSAG.mulSign(
+    //             SENDER_WALLET.privateKey,
+    //             [inputUTXOS],
+    //             index,
+    //         );
 
-            expect(signature.I).not.to.equal(null);
-            expect(signature.c1).not.to.equal(null);
-            expect(signature.s).not.to.equal(null);
+    //         expect(signature.I).not.to.equal(null);
+    //         expect(signature.c1).not.to.equal(null);
+    //         expect(signature.s).not.to.equal(null);
 
-            const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+    //         const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
-            expect(
-                MLSAG.verifyMul(
-                    'aAAAAAAABBBB',
-                    [verifyInputUTXOS],
-                    signature.I,
-                    signature.c1,
-                    signature.s,
-                ),
-            ).to.be.equal(false);
-            done();
-        });
-    });
+    //         expect(
+    //             MLSAG.verifyMul(
+    //                 [verifyInputUTXOS],
+    //                 signature.I,
+    //                 signature.c1,
+    //                 signature.s,
+    //             ),
+    //         ).to.be.equal(false);
+    //         done();
+    //     });
+    // });
 
 });

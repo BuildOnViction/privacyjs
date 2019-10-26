@@ -54,7 +54,9 @@ describe('#unittest #ringct #mlsag', () => {
                 ...generateKeys(SENDER_WALLET.privateKey),
             });
             const index = 3;
+
             MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+
             let totalSpending = BigInteger.ZERO;
             const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
             ins.checkOwnership(SENDER_WALLET.privateKey);
@@ -62,23 +64,14 @@ describe('#unittest #ringct #mlsag', () => {
             totalSpending = totalSpending.add(
                 toBN(ins.decodedAmount),
             );
-
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-
-            const signature = MLSAG.mulSign(
-                SENDER_WALLET.privateKey,
-                [inputUTXOS],
-                index,
-            );
-            expect(signature.I).not.to.equal(null);
-            expect(signature.c1).not.to.equal(null);
-            expect(signature.s).not.to.equal(null);
-
             const proof = sender.genTransactionProof(
                 Web3.utils.hexToNumberString(totalSpending.toHex()),
             );
-
-            const ctsignature = MLSAG.signCommitment(
+            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+            const {
+                privKey,
+                publicKeys,
+            } = MLSAG.genCTRing(
                 SENDER_WALLET.privateKey,
                 [inputUTXOS],
                 [{
@@ -87,26 +80,23 @@ describe('#unittest #ringct #mlsag', () => {
                 }],
                 index,
             );
-            expect(ctsignature.I).not.to.equal(null);
-            expect(ctsignature.c1).not.to.equal(null);
-            expect(ctsignature.s).not.to.equal(null);
+            const signature = MLSAG.mulSign(
+                [
+                    BigInteger.fromHex(ins.privKey), privKey],
+                [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+                index,
+            );
+            expect(signature.I).not.to.equal(null);
+            expect(signature.c1).not.to.equal(null);
+            expect(signature.s).not.to.equal(null);
 
-            const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+
             expect(
                 MLSAG.verifyMul(
-                    [verifyInputUTXOS],
+                    [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
                     signature.I,
                     signature.c1,
                     signature.s,
-                ),
-            ).to.be.equal(true);
-
-            expect(
-                MLSAG.verifyCommitment(
-                    ctsignature.publicKeys,
-                    ctsignature.I,
-                    ctsignature.c1,
-                    ctsignature.s,
                 ),
             ).to.be.equal(true);
 
@@ -115,34 +105,6 @@ describe('#unittest #ringct #mlsag', () => {
 
         it('Should not spend more than total balance', (done) => {
             done(new Error('Not impelemented yet'));
-        });
-
-        it('Should able to verify with ringsize = 3', (done) => {
-            const index = 3;
-            MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
-
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-
-            const signature = MLSAG.mulSign(
-                SENDER_WALLET.privateKey,
-                [inputUTXOS, inputUTXOS, inputUTXOS],
-                index,
-            );
-
-            expect(signature.I).not.to.equal(null);
-            expect(signature.c1).not.to.equal(null);
-            expect(signature.s).not.to.equal(null);
-
-            const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-            expect(
-                MLSAG.verifyMul(
-                    [verifyInputUTXOS],
-                    signature.I,
-                    signature.c1,
-                    signature.s,
-                ),
-            ).to.be.equal(true);
-            done();
         });
 
         it('Should not sign for index not in range [0, ring.size]', (done) => {

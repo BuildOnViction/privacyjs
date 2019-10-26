@@ -5,7 +5,6 @@ import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
 import { BigInteger, randomHex } from './crypto';
-import UTXO from './utxo';
 
 // import { bconcat } from './common';
 
@@ -59,8 +58,6 @@ export const keyImage = (privKey: BigInteger, pubKey: string) => hashToPoint(pub
     privKey,
 );
 
-export const UTXO_RING_SIZE = 11;
-
 /**
  * TODO: implement in general way for decoy utxos + additional commitment
  * Using MLSAG technique to apply ring-signature for spending utxos
@@ -68,7 +65,7 @@ export const UTXO_RING_SIZE = 11;
  * Notice that MLSAG in tomo using stealth address as public key in ringCT (Pj)
  * stealth = Hs(r*public_view_key)*G + public_Spend_key
  * --> we got private key of stealth or called X = Hs(r*public_view_key) + private_spend_key
- * please read the getRingCTKeys of UTXO for more detail
+ * please read the getRingCTKeys of Point for more detail
  */
 export default class MLSAG {
     /**
@@ -80,7 +77,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static mulSign(userPrivateKey: string, decoys: Array<Array<UTXO>>, index: number) {
+    static mulSign(privKeys: Array<string>, decoys: Array<Array<Point>>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -97,19 +94,19 @@ export default class MLSAG {
         let pj = new Buffer([]);
 
         let i;
-        const privKeys = [];
+        // const privKeys = [];
 
         // prepare HP
         for (i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
-            const ringctKeys = decoys[i][index].getRingCTKeys(userPrivateKey);
-            privKeys[i] = BigInteger.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
+            // const ringctKeys = decoys[i][index].getRingCTKeys(userPrivateKey);
+            // privKeys[i] = BigInteger.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
 
-            I[i] = keyImage(privKeys[i], decoys[i][index].lfStealth.getEncoded(false).toString('hex').slice(2));
+            I[i] = keyImage(privKeys[i], decoys[i][index].getEncoded(false).toString('hex').slice(2));
             HP[i] = _.map(decoys[i], (utxo) => {
-                pj = Buffer.concat([pj, utxo.lfStealth.getEncoded(true)]);
-                return hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2));
+                pj = Buffer.concat([pj, utxo.getEncoded(true)]);
+                return hashToPoint(utxo.getEncoded(false).toString('hex').slice(2));
             });
             s.push(_.map(new Array(decoys[i].length), () => BigInteger.fromHex(randomHex())));
         }
@@ -134,7 +131,7 @@ export default class MLSAG {
             tohash = _.cloneDeep(pj);
             for (i = 0; i < numberOfRing; i++) {
                 L[i][j] = baseG.multiply(s[i][j]).add(
-                    decoys[i][j].lfStealth.multiply(c[j]),
+                    decoys[i][j].multiply(c[j]),
                 ); // Lj = sG + cxG
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
                     I[i].multiply(c[j]),
@@ -171,13 +168,13 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * Verify the result of mlsag signing
      * @param {Buffer} message whatever message you wanna sign
-     * @param {Array<UTXO>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
+     * @param {Array<Point>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
      * @param {Array<Point>} I Key image list
      * @param {BigInteger} c1 the first item of commitment list
      * @param {Array<BigInteger>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyMul(decoys: Array<Array<UTXO>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
+    static verifyMul(decoys: Array<Array<Point>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
         const numberOfRing = decoys.length;
         const ringSize = decoys[0].length;
         const L = [];
@@ -190,8 +187,8 @@ export default class MLSAG {
             L.push([]);
             R.push([]);
             HP[i] = _.map(decoys[i], (utxo) => {
-                pj = Buffer.concat([pj, utxo.lfStealth.getEncoded(true)]);
-                return hashToPoint(utxo.lfStealth.getEncoded(false).toString('hex').slice(2));
+                pj = Buffer.concat([pj, utxo.getEncoded(true)]);
+                return hashToPoint(utxo.getEncoded(false).toString('hex').slice(2));
             });
         }
 
@@ -204,7 +201,7 @@ export default class MLSAG {
             let i;
             for (i = 0; i < numberOfRing; i++) {
                 L[i][j] = baseG.multiply(s[i][j]).add(
-                    decoys[i][j].lfStealth.multiply(c[j]),
+                    decoys[i][j].multiply(c[j]),
                 );
                 R[i][j] = HP[i][j].multiply(s[i][j]).add(
                     I[i].multiply(c[j]),
@@ -218,45 +215,39 @@ export default class MLSAG {
     }
 
     /**
-     * Implement confidential transaction part using MLSAG technique
+     * Generate confidential transaction ring
      * We create one ring for CT that each parameter generated by:
-     * private_key_of_ring = z = (sum_mask_in - sum_mask_out) mod n
+     * private_key_of_ring = z = (utxo' private key + sum_mask_in - sum_mask_out) mod n
      * public_key_of_ring = Pi + sum_C_in - sum_c_out (because sum value commits to zero)
      * index = index_of_ring_signature
      * @param {string} userPrivateKey private key of user to decode the privatekey of stealth(one-time-address)
      * as stealth = Hs(r*public_view_key)*G + public_Spend_key
      * --> we got private key of stealth or called X = Hs(r*public_view_key) + private_spend_key
      * @param {Array} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
-     * @param {Array} outputUTXOs utxo output of transaction, always 2 items in tomoprivacy protocol
+     * @param {Array} outputPoints utxo output of transaction, always 2 items in tomoprivacy protocol
      * one for receiver, one for sender (value maybe zero)
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static signCommitment(userPrivateKey: string, decoys: Array<Array<UTXO>>, outputUTXOs: Array<UTXO>, index: number) {
+    static genCTRing(userPrivateKey: string, decoys: Array<Array<Point>>, outputPoints: Array<Point>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
         // decoys lengh, here we set default as 11
         const ringSize = decoys[0].length;
-        const L = [];
-        const R = [];
-        const c = [];
-
-        let pj = new Buffer([]);
-        let i;
 
         let sumSpendingMask = BigInteger.ZERO; // for calculating private key in ring
         let sumOutputMask = BigInteger.ZERO; // big number
         let outputCommitment; // a point in seccp256k1
 
         // prepare sum of output mask
-        outputUTXOs.forEach((utxo) => {
+        outputPoints.forEach((utxo) => {
             sumOutputMask = sumOutputMask.add(
                 BigInteger.fromHex(utxo.decodedMask),
             );
         });
         // prepare sum of output commitment
-        outputUTXOs.forEach((utxo) => {
+        outputPoints.forEach((utxo) => {
             if (!outputCommitment) {
                 outputCommitment = utxo.lfCommitment;
             } else {
@@ -268,7 +259,7 @@ export default class MLSAG {
 
         // calculate sum of spending commitment and sum of spending mask
         const publicKeys = [];
-        for (i = 0; i < numberOfRing; i++) {
+        for (let i = 0; i < numberOfRing; i++) {
             decoys[i][index].checkOwnership(userPrivateKey);
             sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].decodedMask));
             sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].privKey));
@@ -298,95 +289,9 @@ export default class MLSAG {
             .subtract(sumOutputMask)
             .mod(secp256k1.n);
 
-        const I = keyImage(privKey, publicKeys[index].getEncoded(false).toString('hex').slice(2));
-        const HP = _.map(publicKeys, (pubkey) => {
-            pj = Buffer.concat([pj, pubkey.getEncoded(true)]);
-            return hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2));
-        });
-        const s = _.map(new Array(publicKeys.length), () => BigInteger.fromHex(randomHex()));
-
-        L[index] = baseG.multiply(s[index]); // aG
-        R[index] = HP[index].multiply(s[index]); // aH
-
-        let j = (index + 1) % ringSize;
-
-        pj = Buffer.from(keccak256(pj), 'hex');
-
-        let tohash = _.cloneDeep(pj); // pj = message || all_pubkeys
-
-        tohash = Buffer.concat([tohash, L[index].getEncoded(false).slice(1), R[index].getEncoded(false).slice(1)]);
-
-        // calculate c[index+1] first, used for calculating R,L next round
-        c[j] = hashRingCT(tohash);
-        while (j !== index) {
-            tohash = _.cloneDeep(pj);
-            L[j] = baseG.multiply(s[j]).add(
-                publicKeys[j].multiply(c[j]),
-            ); // Lj = sG + cxG
-            R[j] = HP[j].multiply(s[j]).add(
-                I.multiply(c[j]),
-            ); // Rj = sH + cxH
-            tohash = Buffer.concat([tohash, L[j].getEncoded(false).slice(1), R[j].getEncoded(false).slice(1)]);
-            j = (j + 1) % ringSize;
-            c[j] = hashRingCT(tohash);
-        }
-
-        // si = a - c x so a = s + c x
-        // actually here we should use an other random alpha
-        // but s[i] is also random
-        s[index] = s[index].subtract(
-            c[index].multiply(
-                privKey,
-            ),
-        ).mod(
-            secp256k1.n,
-        );
-
         return {
-            I,
-            c1: c[0],
-            s,
-            message: pj, // easier for test
+            privKey,
             publicKeys,
         };
-    }
-
-    /**
-     * @param {number} index where you put the real spending utxo in each ring
-     * Verify the result of mlsag signing
-     * @param {string|Buffer|number} message whatever message you wanna sign
-     * @param {Array<UTXO>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
-     * @param {Point} I Key image
-     * @param {BigInteger} c1 the first item of commitment list
-     * @param {Array<BigInteger>} s random array
-     * @returns {Boolean} true if message is verify
-     */
-    static verifyCommitment(decoys: Array<Point>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
-        const ringSize = decoys.length;
-        const L = [];
-        const R = [];
-        let pj = new Buffer([]);
-        const HP = _.map(decoys, (pubkey) => {
-            pj = Buffer.concat([pj, pubkey.getEncoded(true)]);
-            return hashToPoint(pubkey.getEncoded(false).toString('hex').slice(2));
-        });
-
-        pj = Buffer.from(keccak256(pj), 'hex');
-
-        const c = [c1];
-        let j = 0;
-        while (j < ringSize) {
-            let tohash = _.cloneDeep(pj);
-            L[j] = baseG.multiply(s[j]).add(
-                decoys[j].multiply(c[j]),
-            );
-            R[j] = HP[j].multiply(s[j]).add(
-                I.multiply(c[j]),
-            ); // Rj = sH + cxH
-            tohash = Buffer.concat([tohash, L[j].getEncoded(false).slice(1), R[j].getEncoded(false).slice(1)]);
-            j++;
-            c[j] = hashRingCT(tohash);
-        }
-        return (c[0].toString('16') === c[ringSize].toString('16'));
     }
 }

@@ -161,7 +161,7 @@ const runtest = function (done) {
         });
 };
 
-describe('privatesend', () => {
+describe('#send', () => {
     before((done) => {
         // scanUTXOs().then((ret) => {
         //     receiverBalance = ret.balance;

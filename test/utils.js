@@ -7,6 +7,8 @@ import * as Address from '../src/address';
 import Stealth from '../src/stealth';
 import { hextobin } from '../src/common';
 import UTXO from '../src/utxo';
+import { keyImage } from '../src/mlsag';
+import { BigInteger } from '../src/crypto.js';
 
 chai.should();
 
@@ -104,10 +106,21 @@ module.exports.registerPrivacyAddress = privateKey => new Promise((resolve, reje
 });
 
 
-// todo - move to util
 function getUTXO(index) {
     return new Promise((resolve, reject) => {
         privacyContract.methods.getUTXO(index)
+            .call({
+                from: WALLETS[0].address,
+            })
+            .then(utxo => resolve(utxo)).catch((exception) => {
+                reject(exception);
+            });
+    });
+}
+
+function isSpent(keyImage) {
+    return new Promise((resolve, reject) => {
+        privacyContract.methods.isSpent(keyImage)
             .call({
                 from: WALLETS[0].address,
             })
@@ -133,25 +146,28 @@ export const scanUTXOs = async (privateKey, limit) => {
         try {
             utxo = await getUTXO(index);
 
-            if (utxo['3'] === false) {
-                const utxoInstance = new UTXO({
-                    ...utxo,
-                    3: index,
-                });
-                const isMine = utxoInstance.checkOwnership(privateKey);
+            const utxoInstance = new UTXO({
+                ...utxo,
+                3: index,
+            });
 
-                if (isMine) {
-                    utxos.push(utxo);
-                }
+            const isMine = utxoInstance.checkOwnership(privateKey);
+            const ringctKeys = utxoInstance.getRingCTKeys(privateKey);
 
-                if (isMine && parseFloat(isMine.amount).toString() === isMine.amount) {
+            if (isMine && parseFloat(isMine.amount).toString() === isMine.amount) {
+                // check if utxo is spent already
+                const res = await isSpent(
+                    `0x${keyImage(
+                        BigInteger.fromHex(ringctKeys.privKey),
+                        utxoInstance.lfStealth.getEncoded(false).toString('hex').slice(2),
+                    ).getEncoded(true).toString('hex')}`,
+                );
+
+                if (!res) {
                     balance += parseFloat(isMine.amount);
                 }
-                index++;
-            } else {
-                index++;
             }
-
+            index++;
         } catch (exception) {
             // console.log(exception);
             utxo = null;
@@ -160,9 +176,9 @@ export const scanUTXOs = async (privateKey, limit) => {
 
         // we can't scan all utxo, it would take minutes on testnet and days on mainet
         // in testnet the encryption algorithm can be changed :(
-        if (limit) {
-            if (utxos.length > limit) break;
-        }
+        // if (limit) {
+        //     if (utxos.length > limit) break;
+        // }
     } while (utxo);
 
     return {

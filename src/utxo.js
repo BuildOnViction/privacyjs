@@ -123,9 +123,11 @@ class UTXO {
             this.mask,
         );
 
-        this.decodedAmount = decodedData.amount;
-        this.decodedMask = decodedData.mask;
-        this.privKey = decodedData.privKey;
+        if (decodedData) {
+            this.decodedAmount = decodedData.amount;
+            this.decodedMask = decodedData.mask;
+            this.privKey = decodedData.privKey;
+        }
 
         return decodedData;
     }

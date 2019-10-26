@@ -8,7 +8,7 @@ import Stealth from '../src/stealth';
 import { hextobin } from '../src/common';
 import UTXO from '../src/utxo';
 import { keyImage } from '../src/mlsag';
-import { BigInteger } from '../src/crypto.js';
+import { BigInteger } from '../src/crypto';
 
 chai.should();
 
@@ -30,15 +30,30 @@ const privacyContract = new web3.eth.Contract(
 
 // we deposit a lot, actually all cases need deposit first
 // to make sure we all have data in case mocha doesnt run deposit first
-export const deposit = amount => new Promise((resolve, reject) => {
+export const deposit = (amount, privateKey, from) => new Promise((resolve, reject) => {
+    let web3ls;
+    let contract = privacyContract;
+
+    if (privateKey) {
+        web3ls = new Web3(new HDWalletProvider(privateKey, TestConfig.RPC_END_POINT));
+
+        contract = new web3ls.eth.Contract(
+            TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
+                from, // default from address
+                gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
+                gas: '2000000',
+            },
+        );
+
+    }
     const sender = new Stealth({
-        ...Address.generateKeys(SENDER_WALLET.privateKey),
+        ...Address.generateKeys(privateKey || SENDER_WALLET.privateKey),
     });
 
     // create proof for a transaction
     const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
-    privacyContract.methods.deposit(
+    contract.methods.deposit(
         `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve
         `0x${proof.onetimeAddress.toString('hex').substr(-64)}`, // the Y part of curve
         `0x${proof.txPublicKey.toString('hex').substr(2, 64)}`, // the X part of curve
@@ -48,7 +63,7 @@ export const deposit = amount => new Promise((resolve, reject) => {
         `0x${proof.encryptedMask}`,
     )
         .send({
-            from: SENDER_WALLET.address,
+            from: from || SENDER_WALLET.address,
             value: amount,
         })
         .on('error', (error) => {
@@ -118,9 +133,9 @@ function getUTXO(index) {
     });
 }
 
-function isSpent(keyImage) {
+function isSpent(ki) {
     return new Promise((resolve, reject) => {
-        privacyContract.methods.isSpent(keyImage)
+        privacyContract.methods.isSpent(ki)
             .call({
                 from: WALLETS[0].address,
             })
@@ -152,9 +167,9 @@ export const scanUTXOs = async (privateKey, limit) => {
             });
 
             const isMine = utxoInstance.checkOwnership(privateKey);
-            const ringctKeys = utxoInstance.getRingCTKeys(privateKey);
 
             if (isMine && parseFloat(isMine.amount).toString() === isMine.amount) {
+                const ringctKeys = utxoInstance.getRingCTKeys(privateKey);
                 // check if utxo is spent already
                 const res = await isSpent(
                     `0x${keyImage(

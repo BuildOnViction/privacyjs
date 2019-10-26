@@ -51,11 +51,11 @@ function hashRingCT(message: Buffer) {
 /**
  * Generate key image for single stealth pair private/public
  * keyImage = Hp(Public_key)*private_key
- * @param {string} privKey 32 bytes hex
+ * @param {BigInteger} privKey 32 bytes hex
  * @param {string} pubKey 32 bytes hex
  * @returns {ecurve.Point}
  */
-export const keyImage = (privKey: string, pubKey: string) => hashToPoint(pubKey).multiply(
+export const keyImage = (privKey: BigInteger, pubKey: string) => hashToPoint(pubKey).multiply(
     privKey,
 );
 

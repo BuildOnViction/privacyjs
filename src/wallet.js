@@ -221,7 +221,7 @@ export default class Wallet extends EventEmitter {
                 index++;
 
                 // for testing, dont do this in real time
-                if (utxos.length > 10) {
+                if (utxos.length > 3) {
                     break;
                 }
             } catch (exception) {
@@ -398,23 +398,23 @@ export default class Wallet extends EventEmitter {
         privkeys.push(privKey);
         // decoys.push(publicKeys);
 
+        const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
         // ring-signature of utxos
         const ringSignature = MLSAG.mulSign(
             privkeys,
-            [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys],
+            ringctDecoys,
             index,
         );
 
         return {
             decoys,
             signature: Buffer.from(
-                // ring signature part
-                `${numberToBN(numberOfRing).toString(16, 16)
+                `${numberToBN(numberOfRing + 1).toString(16, 16)
                 }${numberToBN(ringSize).toString(16, 16)
                 }${ringSignature.message.toString('hex')
                 }${ringSignature.c1.toHex(32)
                 }${_.map(_.flatten(ringSignature.s), element => element.toHex(32)).join('')
-                }${_.map(_.flatten(pubkeys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+                }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
                 }${_.map(_.flatten(ringSignature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
                 'hex',
             ),
@@ -459,7 +459,6 @@ export default class Wallet extends EventEmitter {
         });
 
         // assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
-
         const receiverStealth = Stealth.fromString(receiver);
         const proofOfReceiver = receiverStealth.genTransactionProof(
             Web3.utils.hexToNumberString(amount.toHex()),

@@ -92,7 +92,7 @@
     "start": "nodemon --exec babel-node index.js",
     "lint": "eslint src",
     "test": "npm run lint && mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
-    "test-case": "npm run lint && mocha --require @babel/register --exit -g ",
+    "testcase": "npm run lint && mocha --require @babel/register --exit -g ",
     "test:watch": "npm run lint &&  mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
     "test:cover": "npm run lint &&  nyc npm test",
     "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov | coveralls",

@@ -6,7 +6,7 @@ import MLSAG_DATA from './mlsag.json';
 import MLSAG, { hashToPoint } from '../../src/mlsag';
 
 import UTXO from '../../src/utxo';
-import { BigInteger } from '../../src/crypto';
+import { BigInteger, randomHex } from '../../src/crypto';
 import { toBN } from '../../src/common';
 import Stealth from '../../src/stealth';
 import { generateKeys } from '../../src/address';
@@ -67,7 +67,10 @@ describe('#unittest #ringct #mlsag', () => {
             const proof = sender.genTransactionProof(
                 Web3.utils.hexToNumberString(totalSpending.toHex()),
             );
+
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+
+            // ct ring
             const {
                 privKey,
                 publicKeys,
@@ -80,6 +83,8 @@ describe('#unittest #ringct #mlsag', () => {
                 }],
                 index,
             );
+
+            // ring-signature of utxos
             const signature = MLSAG.mulSign(
                 [
                     BigInteger.fromHex(ins.privKey), privKey],
@@ -103,45 +108,41 @@ describe('#unittest #ringct #mlsag', () => {
             done();
         });
 
-        it('Should not spend more than total balance', (done) => {
-            done(new Error('Not impelemented yet'));
-        });
+    });
 
-        it('Should not sign for index not in range [0, ring.size]', (done) => {
-            done(new Error('Not impelemented yet'));
-        });
+    it('Should not able to verify a privatekey not in ring', (done) => {
+        const index = 3;
 
-        it('Should able to sign for index  in [0, ring.size]', (done) => {
-            done(new Error('Not impelemented yet'));
-        });
+        MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-        //     it('Should not able to verify signer with different message', (done) => {
-        //         const index = 3;
-        //         MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+        const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
+        ins.checkOwnership(SENDER_WALLET.privateKey);
 
-        //         const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-        //         const signature = MLSAG.mulSign(
-        //             SENDER_WALLET.privateKey,
-        //             [inputUTXOS],
-        //             index,
-        //         );
+        const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
-        //         expect(signature.I).not.to.equal(null);
-        //         expect(signature.c1).not.to.equal(null);
-        //         expect(signature.s).not.to.equal(null);
+        // ring-signature of utxos
+        const signature = MLSAG.mulSign(
+            [
+                BigInteger.fromHex(
+                    randomHex(),
+                )],
+            [_.map(inputUTXOS, utxo => utxo.lfStealth)],
+            index,
+        );
+        expect(signature.I).not.to.equal(null);
+        expect(signature.c1).not.to.equal(null);
+        expect(signature.s).not.to.equal(null);
 
-        //         const verifyInputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+        expect(
+            MLSAG.verifyMul(
+                [_.map(inputUTXOS, utxo => utxo.lfStealth)],
+                signature.I,
+                signature.c1,
+                signature.s,
+            ),
+        ).to.be.equal(false);
 
-    //         expect(
-    //             MLSAG.verifyMul(
-    //                 [verifyInputUTXOS],
-    //                 signature.I,
-    //                 signature.c1,
-    //                 signature.s,
-    //             ),
-    //         ).to.be.equal(false);
-    //         done();
-    //     });
+        done();
     });
 
 });

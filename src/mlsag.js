@@ -14,7 +14,6 @@ const baseG = secp256k1.G;
 // fixed string length
 type Point = ecurve.Point;
 
-// TODO implement flow type
 /**
  * Turn a hex into secp256k1 point, we do it by repeating hashing and multiply baseG
  * util got a correct point
@@ -59,7 +58,6 @@ export const keyImage = (privKey: BigInteger, pubKey: string) => hashToPoint(pub
 );
 
 /**
- * TODO: implement in general way for decoy utxos + additional commitment
  * Using MLSAG technique to apply ring-signature for spending utxos
  * base on a group 11 utxos
  * Notice that MLSAG in tomo using stealth address as public key in ringCT (Pj)

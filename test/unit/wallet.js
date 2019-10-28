@@ -180,6 +180,41 @@ describe('#unittest #wallet', () => {
     });
 
     describe('#send()', () => {
+        let wallet;
+        let wallet1;
+        let stealthPoint;
+        let txPubkeyPoint;
+        let decodedProof;
+        let proof;
+
+        beforeEach((done) => {
+            wallet = new Wallet(SENDER_WALLET.privateKey, {
+                RPC_END_POINT: Configs.RPC_END_POINT,
+                ABI: Configs.PRIVACY_ABI,
+                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+                gasPrice: '250000000',
+                gas: '2000000',
+            }, SENDER_WALLET.address);
+
+            wallet1 = new Wallet(WALLETS[1].privateKey, {
+                RPC_END_POINT: Configs.RPC_END_POINT,
+                ABI: Configs.PRIVACY_ABI,
+                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+                gasPrice: '250000000',
+                gas: '2000000',
+            }, SENDER_WALLET.address);
+
+            proof = wallet._genUTXOProof(1000000000);
+            stealthPoint = Point.fromAffine(ecparams,
+                new BigInteger(proof[0].slice(2), 16),
+                new BigInteger(proof[1].slice(2), 16));
+            txPubkeyPoint = Point.fromAffine(ecparams,
+                new BigInteger(proof[2].slice(2), 16),
+                new BigInteger(proof[3].slice(2), 16));
+
+            done();
+        });
+
         it('should able to create correct output utxos', (done) => {
             done(new Error('Not implemented yet'));
         });
@@ -197,6 +232,14 @@ describe('#unittest #wallet', () => {
         });
 
         it('should not create single ring', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should not able to create an tx with sum output commitment > sum input commitment', (done) => {
+            done(new Error('Not implemented yet'));
+        });
+
+        it('should not able to create an tx with privatekey not in the ring', (done) => {
             done(new Error('Not implemented yet'));
         });
 

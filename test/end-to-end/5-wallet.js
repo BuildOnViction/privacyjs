@@ -1,6 +1,8 @@
+/* eslint-disable no-loop-func */
 import chai from 'chai';
 import TestConfig from '../config.json';
 import Wallet from '../../src/wallet';
+import { generateKeys } from '../../src/address';
 
 const { expect } = chai;
 chai.should();
@@ -14,17 +16,23 @@ const { WALLETS } = TestConfig;
  * change config in ./test/config.json ./test/config.json
  */
 
-describe('#wallet #decoys', () => {
-    const wallet = new Wallet(WALLETS[0].privateKey, {
-        RPC_END_POINT: TestConfig.RPC_END_POINT,
-        ABI: TestConfig.PRIVACY_ABI,
-        ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
-    }, WALLETS[0].address);
-    for (let count = 0; count < 10; count++) {
-        it('Should get decoys successfully', (done) => {
+describe('#wallet #ete', () => {
+    let wallet: Wallet;
+
+    beforeEach((done) => {
+        wallet = new Wallet(WALLETS[0].privateKey, {
+            RPC_END_POINT: TestConfig.RPC_END_POINT,
+            ABI: TestConfig.PRIVACY_ABI,
+            ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
+        }, WALLETS[0].address);
+        done();
+    });
+
+    for (let count = 0; count < 5; count++) {
+        it('Should get decoys successfully for 5 rings', (done) => {
             wallet.scannedTo = 100;
-            wallet.getDecoys(2, [1, 5]).then((res) => {
-                expect(res.length).to.equal(2);
+            wallet._getDecoys(5, [1, 5]).then((res) => {
+                expect(res.length).to.equal(5);
                 expect(res[0].length).to.equal(11);
                 expect(res[1].length).to.equal(11);
                 // expect(typeof res[0][0]).to.equal('UTXO');
@@ -32,7 +40,7 @@ describe('#wallet #decoys', () => {
                 const randomElement = res[
                     Math.round(Math.random() * 1)
                 ][
-                    Math.round(Math.random() * 11)
+                    Math.round(Math.random() * 10)
                 ];
                 expect(randomElement).has.property('lfCommitment');
                 expect(randomElement).has.property('index');
@@ -55,5 +63,20 @@ describe('#wallet #decoys', () => {
         }).catch((err) => {
             done(err);
         });
+    });
+
+    it('Should able to create ringCT and output UTXO', (done) => {
+        // just lazy don't wanna store privacy address in config, gen it here from private key
+        const receiver = generateKeys(WALLETS[1].privateKey);
+        try {
+            wallet.send(receiver.pubAddr, '100000').then((res) => {
+                console.log(res);
+                done();
+            }).catch((err) => {
+                done(err);
+            });
+        } catch (ex) {
+            done(ex);
+        }
     });
 });

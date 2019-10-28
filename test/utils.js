@@ -157,6 +157,8 @@ export const scanUTXOs = async (privateKey, limit) => {
     let balance = 0;
     const utxos = [];
 
+    console.log('#Scanning my ', limit, ' utxo');
+
     do {
         try {
             utxo = await getUTXO(index);
@@ -180,6 +182,7 @@ export const scanUTXOs = async (privateKey, limit) => {
 
                 if (!res) {
                     balance += parseFloat(isMine.amount);
+                    utxos.push(utxoInstance);
                 }
             }
             index++;
@@ -191,9 +194,9 @@ export const scanUTXOs = async (privateKey, limit) => {
 
         // we can't scan all utxo, it would take minutes on testnet and days on mainet
         // in testnet the encryption algorithm can be changed :(
-        // if (limit) {
-        //     if (utxos.length > limit) break;
-        // }
+        if (limit) {
+            if (utxos.length > limit) break;
+        }
     } while (utxo);
 
     return {

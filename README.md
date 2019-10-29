@@ -21,11 +21,11 @@ Additional requests/features please contact anhnt@tomochain.com
 - 15/01/2020 Integrate to Maxbet, standardlize the transaction flow for Dapp.
 
 ### TODO
-- [] Remove bigi use bn.js instead because of poor documentation and no-longer support
-- [] Remove ecurve use elliptic instead because of poor documentation and no-longer support
-- [] Support high level api for instantly use: deposit, check balance, withdraw, privatesend - right now just low-level apis for interacting with Smart-contract and generating fields following  the protocol
-- [] Support auto RingCT and bullet-proof (with auto select, mix spending utxos, noising array utxos)
-- [] Use type flows for helping other developer understand the structure, bytes length of fiels in privacy protocol
+- [ ] Remove bigi use bn.js instead because of poor documentation and no-longer support
+- [ ] Remove ecurve use elliptic instead because of poor documentation and no-longer support
+- [ ] Support high level api for instantly use: deposit, check balance, withdraw, privatesend - right now just low-level apis for interacting with Smart-contract and generating fields following  the protocol
+- [ ] Support auto RingCT and bullet-proof (with auto select, mix spending utxos, noising array utxos)
+- [ ] Use type flows for helping other developer understand the structure, bytes length of fiels in privacy protocol
 
 Usage
 -----

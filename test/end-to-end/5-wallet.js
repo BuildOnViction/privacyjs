@@ -83,28 +83,34 @@ describe('#wallet #ete', () => {
         });
     });
 
-    it('Should genCT return correct ring (check on precompiled contract)', async (done) => {
+    it('Should genCT return correct ring (check on precompiled contract)', (done) => {
         wallet.scannedTo = 0;
         const receiver = generateKeys(WALLETS[1].privateKey);
-        await wallet.scan();
-        const outputProofs = wallet._genOutputProofs(wallet.utxos, receiver.pubAddr, toBN('100000'));
+        wallet.scan()
+            .then(() => {
+                const outputProofs = wallet._genOutputProofs(wallet.utxos, receiver.pubAddr, toBN('100000'));
 
-        wallet._genRingCT(wallet.utxos, outputProofs).then((res) => {
-            mlsagPrecompiledContract.methods.VerifyRingCT(
-                res.signature,
-            )
-                .send({
-                    from: SENDER_WALLET.address,
-                })
-                .then((receipt) => {
-                    console.log(receipt);
-                    done();
-                })
-                .catch((error) => {
-                    console.log(error);
-                    done(error);
+                wallet._genRingCT(wallet.utxos, outputProofs).then((res) => {
+                    mlsagPrecompiledContract.methods.VerifyRingCT(
+                        res.signature,
+                    )
+                        .send({
+                            from: SENDER_WALLET.address,
+                        })
+                        .then((receipt) => {
+                            console.log(receipt);
+                            done();
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                            done(error);
+                        });
                 });
-        });
+            })
+            .catch((error) => {
+                console.log(error);
+                done(error);
+            });
     });
 
     it('Should able to create ringCT and output UTXO', (done) => {

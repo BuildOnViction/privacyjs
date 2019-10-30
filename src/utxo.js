@@ -13,8 +13,13 @@ import {
     soliditySha3,
 } from './common';
 
+
 const ecparams = ecurve.getCurveByName('secp256k1');
 const EC = require('elliptic').ec;
+
+type Signature = EC.Signature;
+
+// type Signature = require('elliptic').Signature;
 
 /**
  * TXO stands for the unspent output from bitcoin transactions.
@@ -95,9 +100,7 @@ class UTXO {
     privKey: string;
 
     /**
-     *
-     * @param {object} utxo
-     * @param {privateKey} Optional
+     * @param {UTXOType} utxo
      */
     constructor(utxo: UTXOType) {
         this.commitmentX = utxo['0']['0'];
@@ -163,12 +166,12 @@ class UTXO {
     }
 
     /**
-     * create signature of an UTXO to send to smart-contract to withdraw
-     * TODO: future we need to implement ring-signatureCT (monero-like) to prove
+     * Create signature of an UTXO to send to smart-contract to withdraw
+     * @deprecated since version 0.3
      * @param {string} privateKey
      * @results {ec.Signature} include the ec.Signature you can convert to anyform after that
      */
-    sign(privateKey: string, targetAddress: string) {
+    sign(privateKey: string, targetAddress: string): Signature {
         const secp256k1 = new EC('secp256k1');
 
         // Generate keys

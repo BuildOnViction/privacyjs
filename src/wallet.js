@@ -83,7 +83,7 @@ export default class Wallet extends EventEmitter {
     /**
      *
      * @param {string} privateKey
-     * @param {Object} scOpts
+     * @param {Object} scOpts smart-contract options include address, abi, gas, gasPrice
      */
     constructor(privateKey: string, scOpts: SmartContractOpts, address: string) {
         super();
@@ -177,6 +177,11 @@ export default class Wallet extends EventEmitter {
         });
     }
 
+    /**
+     * Request UTXO data from smart-contract
+     * @param {number} index
+     * @returns {Object} utxo data
+     */
     getUTXO(index: number): Promise<Object> {
         return new Promise((resolve, reject) => {
             this.privacyContract.methods.getUTXO(index)
@@ -190,9 +195,13 @@ export default class Wallet extends EventEmitter {
         });
     }
 
-    async scan() {
+    /**
+     * Scan your utxo, notice scannedTo is keeping your latest inded that you scanned
+     * @param {number} [fromIndex] optinal index to start scanning, if not passed use this.scannedTo
+     */
+    async scan(fromIndex: number) {
         this.emit('START_SCANNING');
-        let index = this.scannedTo;
+        let index = fromIndex || this.scannedTo;
         let utxo = {};
         let balance = BigInteger.ZERO;
         const utxos = [];
@@ -220,7 +229,8 @@ export default class Wallet extends EventEmitter {
                 }
                 index++;
 
-                // for testing, dont do this in real time
+                // TODO remove after testing
+                // for testing, dont do this in real case
                 if (utxos.length > 3) {
                     break;
                 }
@@ -406,6 +416,15 @@ export default class Wallet extends EventEmitter {
             index,
         );
 
+        assert(
+            MLSAG.verifyMul(
+                ringctDecoys,
+                ringSignature.I,
+                ringSignature.c1,
+                ringSignature.s,
+            ) === true, 'Wrong signature !!',
+        );
+
         return {
             decoys,
             signature: Buffer.from(
@@ -472,11 +491,12 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
-     *
+     * Create proof base on amount and privacy_addres
+     * @param {string} receiver privacy address
      * @param {BigInteger} amount
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger): Object {
+    async _makePrivateSendProof(receiver: string, amount: BigInteger): Array {
         const outputProofs = this._genOutputProofs(this.utxos, receiver, amount);
         const { signature, decoys } = await this._genRingCT(this.utxos, outputProofs);
         // const rangeProof = this._genRangeProof(amount);

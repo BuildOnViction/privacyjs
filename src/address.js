@@ -19,10 +19,10 @@ export const privateKeyToPub = function (privKey) {
 
 /**
  * Generate privacy address from public spend key, public view key
- * stealth address = base58_encode(public_spend_key + public_view_key + checksum)
+ * privacy address = base58_encode(public_spend_key + public_view_key + checksum)
  * @param {string} public spend key
  * @param {string} public view key
- * @returns {string} base58-check format for stealth address
+ * @returns {string} base58-check format for privacy address
  */
 export const generateAddress = function (pubSk, pubVk) {
     const preAddr = pubSk + pubVk;

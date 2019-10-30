@@ -20,7 +20,7 @@ import {
 } from './common';
 import { baseH } from './commitment';
 
-const secp256k1 = ecurve.getCurveByName('secp128r1');
+const secp256k1 = ecurve.getCurveByName('secp256k1');
 // const hs = hmacSha256;
 const baseG = secp256k1.G;
 
@@ -206,7 +206,7 @@ const vectorPowers = (x, n) => {
 
     res[1] = x;
     for (let i = 2; i < n; ++i) {
-        res[i] = res[i - 1].multiply(x);
+        res[i] = res[i - 1].multiply(x).mod(secp256k1.N);
     }
 
     return res;
@@ -278,16 +278,9 @@ const vectorScalar = (a, x) => {
     }
     return res;
 };
-const range_proof_innerProduct_lhs = (l0, l1, x) => {
-    const l = l0;
-    return vectorAddVector(l, vectorScalar(l1, x));
-};
+const range_proof_innerProduct_lhs = (l0, l1, x) => vectorAddVector(l0, vectorScalar(l1, x));
 
-const range_proof_innerProduct_rhs = (r0, r1, x) => {
-    let r = r0;
-    r = vectorAddVector(r, vectorScalar(r1, x));
-    return r;
-};
+const range_proof_innerProduct_rhs = (r0, r1, x) => vectorAddVector(r0, vectorScalar(r1, x));
 
 const range_proof_innerProduct_poly_hiding_value = (tau1, tau2, masks, x, z) => {
     let taux = tau1.multiply(x);
@@ -344,7 +337,7 @@ export default class BulletProof {
         const Hi = [];
         const Gi = [];
         const V = [];
-        M = masks.length; // number of proofs to aggregate
+        M = v.length; // number of proofs to aggregate
 
         // TODO get N from length of d2bn(v)
         // and N should be < 64 (maximum length)
@@ -357,19 +350,21 @@ export default class BulletProof {
          * The parameters used to form the seed are simple enough to be harmless.
          * They allow to get rid of any trusted set-up.The use of the hash function ensures there is no discrete log relation between the generators.
          */
-
+        console.log('Performance check timing bullet proof ');
+        let timer1 = new Date().valueOf();
+        console.log('Start setup ', timer1.valueOf());
         for (let i = 0; i < M * N; ++i) {
             Hi[i] = H.multiply(
                 toBN(i * 2 + 1),
             );
-            Gi[i] = H.multiply(
+            Gi[i] = G.multiply(
                 toBN(i * 2 + 2),
             );
         }
 
         for (let j = 0; j < M; j++) {
             V[j] = pedersenCommitment(masks[j], v[j]); // output is a ecurve.Point type
-            aL[j] = bn2b(v[j], N); // force convert v to n bit binary
+            aL[j] = bn2b(v[j], N); // convert v to n bit binary
             aR[j] = vectorSubVector(
                 _.map(aL[j], element => toBN(element)),
                 _.map(Array(N), () => BigInteger.ONE),
@@ -393,6 +388,11 @@ export default class BulletProof {
         const rho = BigInteger.fromHex(randomHex());
         const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
 
+        let timer2 = new Date().valueOf();
+        console.log('End setup, time cost %s seconds \n', (timer2.valueOf() - timer1.valueOf()) / 1000);
+
+        timer1 = new Date().valueOf();
+        console.log('\nStart generating challenges ', timer1.valueOf());
         // V is array of Point, convert to array of buffer for ready hashing
         // and used in multi-place
         const VinBuffer = _.map(V, vi => vi.getEncoded(true));
@@ -415,12 +415,22 @@ export default class BulletProof {
             ]),
         ); // z now is Big integer
 
+        timer2 = new Date().valueOf();
+        console.log('End challenges, time cost %s seconds \n', (timer2.valueOf() - timer1.valueOf()) / 1000);
+
+        timer1 = new Date().valueOf();
+        console.log('\nStart range_proof_innerProduct_poly_coeff ', timer1.valueOf());
         // reconstruct the coefficients of degree 1 and of degree 2 of the
         // range proof inner product polynomial
         const {
             t1, t2, r0, r1, l0, l1,
         } = range_proof_innerProduct_poly_coeff(aL, sL, aR, sR, y, z);
 
+        timer2 = new Date().valueOf();
+        console.log('End range_proof_innerProduct_poly_coeff, time cost %s seconds \n', (timer2.valueOf() - timer1.valueOf()) / 1000);
+
+        timer1 = new Date().valueOf();
+        console.log('\nStart range_proof ', timer1.valueOf());
         // Compute T1: a curve point, Pedersen commitment to t1 with hiding value tau1
         const tau1 = BigInteger.fromHex(randomHex());
         const T1 = pedersenCommitment(tau1, t1);
@@ -478,11 +488,19 @@ export default class BulletProof {
             x_ip,
         );
 
+        timer2 = new Date().valueOf();
+        console.log('End range_proof , time cost %s seconds \n', (timer2.valueOf() - timer1.valueOf()) / 1000);
+
+        timer1 = new Date().valueOf();
+        console.log('\nStart range_proof_prove ', timer1.valueOf());
         // Compute L, R, curve points, and a, b, scalars
         // Output of the inner product argument of knowledge
         const {
             L, R, a, b,
         } = this.innerProductProve(Gi, Hiprime, Hx, l, r);
+
+        timer2 = new Date().valueOf();
+        console.log('End range_proof_prove , time cost %s seconds \n', (timer2.valueOf() - timer1.valueOf()) / 1000);
 
         // TODO log proof size at this step
         return {

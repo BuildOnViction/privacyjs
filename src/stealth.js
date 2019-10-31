@@ -43,7 +43,6 @@ class Stealth {
 
     /**
      * GenTransactionProof generates one-time address (stealth address) and
-     * // TODO: mask and amount should always be 32 bytes
      * tx public key - base on ECDH algorithm for sharing serect_key
      * read https://steemit.com/monero/@luigi1111/understanding-monero-cryptography-privacy-part-2-stealth-addresses
      * for further information

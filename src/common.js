@@ -10,7 +10,11 @@ import isNull from 'lodash/isNull';
 import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
+import ecurve from 'ecurve';
 import { BigInteger } from './crypto';
+import { basePointH } from './constants';
+
+const secp256k1 = ecurve.getCurveByName('secp256k1');
 
 // const atob = require('atob') || window.atob;
 /**
@@ -811,4 +815,27 @@ export const bn2b = (bn, size) => {
         return result.split('');
     }
     return result.split('');
+};
+
+export const genECPrimeGroupKey = (n) => {
+    const Gi = [];
+    const Hi = [];
+    for (let i = 0; i < n; ++i) {
+        Hi[i] = basePointH.multiply(
+            toBN(i * 2 + 1),
+        );
+        Gi[i] = secp256k1.G.multiply(
+            toBN(i * 2 + 2),
+        );
+    }
+
+    const U = secp256k1.G.multiply(
+        toBN(n + 3),
+    );
+    return {
+        ...secp256k1,
+        Gi,
+        Hi,
+        U,
+    };
 };

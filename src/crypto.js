@@ -1,6 +1,3 @@
-// TODO replace this module by third-party one,
-// this is NATIVE LIB OF NODEJS, WOULD NOT RUN ON BROWSER
-const crypto = require('crypto');
 const ecurve = require('ecurve');
 const EC = require('elliptic').ec;
 

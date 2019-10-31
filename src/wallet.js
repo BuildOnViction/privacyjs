@@ -30,7 +30,6 @@ import MLSAG, { keyImage } from './mlsag';
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 
-// TODO find way to specify the length of each field, address
 type SmartContractOpts = {
     RPC_END_POINT: string,
     ADDRESS: string,

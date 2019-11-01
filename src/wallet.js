@@ -112,7 +112,7 @@ export default class Wallet extends EventEmitter {
         this.privacyContract = new web3.eth.Contract(
             scOpts.ABI, this.scOpts.ADDRESS, {
                 gasPrice: '250000000',
-                gas: '2000000',
+                gas: '20000000',
             },
         );
 
@@ -403,8 +403,7 @@ export default class Wallet extends EventEmitter {
                 const lfCommitment = ecurve.Point.decodeFrom(ecparams, proof.commitment);
                 message = Buffer.concat([
                     message,
-                    stealth.getEncoded(false),
-                    stealth.getEncoded(false),
+                    stealth.getEncoded(false).slice(-32),
                 ]);
                 return {
                     lfCommitment,

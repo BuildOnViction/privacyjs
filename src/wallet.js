@@ -432,6 +432,7 @@ export default class Wallet extends EventEmitter {
                 ringSignature.I,
                 ringSignature.c1,
                 ringSignature.s,
+                message,
             ) === true, 'Wrong signature !!',
         );
 

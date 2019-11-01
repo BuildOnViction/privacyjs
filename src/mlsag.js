@@ -114,7 +114,7 @@ export default class MLSAG {
             R[i][index] = HP[i][index].multiply(s[i][index]); // aH
         }
 
-        pj = message ? Buffer.concat(pj, message) : pj;
+        pj = message ? Buffer.concat([pj, message]) : pj;
         pj = Buffer.from(keccak256(pj), 'hex');
 
         let j = (index + 1) % ringSize;
@@ -173,7 +173,7 @@ export default class MLSAG {
      * @param {Array<BigInteger>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyMul(decoys: Array<Array<Point>>, I: Point, c1: BigInteger, s: Array<BigInteger>) {
+    static verifyMul(decoys: Array<Array<Point>>, I: Point, c1: BigInteger, s: Array<BigInteger>, message: ?Buffer) {
         const numberOfRing = decoys.length;
         const ringSize = decoys[0].length;
         const L = [];
@@ -191,6 +191,7 @@ export default class MLSAG {
             });
         }
 
+        pj = message ? Buffer.concat([pj, message]) : pj;
         pj = Buffer.from(keccak256(pj), 'hex');
 
         const c = [c1];

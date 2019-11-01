@@ -399,10 +399,12 @@ export default class Wallet extends EventEmitter {
             this.addresses.privSpendKey,
             decoys,
             _.map(proofs, (proof) => {
+                const stealth = ecurve.Point.decodeFrom(ecparams, proof.onetimeAddress);
                 const lfCommitment = ecurve.Point.decodeFrom(ecparams, proof.commitment);
                 message = Buffer.concat([
                     message,
-                    lfCommitment.getEncoded(false),
+                    stealth.getEncoded(false),
+                    stealth.getEncoded(false),
                 ]);
                 return {
                     lfCommitment,
@@ -411,6 +413,8 @@ export default class Wallet extends EventEmitter {
             }),
             index,
         );
+
+        console.log('message ', message);
 
         // put ct ring to ring-signature to make ringct
         privkeys.push(privKey);

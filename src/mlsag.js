@@ -67,7 +67,7 @@ export const keyImage = (privKey: BigInteger, pubKey: string) => hashToPoint(pub
  */
 export default class MLSAG {
     /**
-     * @param {string|Buffer|number} message whatever message you wanna sign
+     * @param {Buffer} message whatever message you wanna sign in Buffer
      * @param {string} userPrivateKey private key of user to decode the privatekey of stealth(one-time-address)
      * as stealth = Hs(r*public_view_key)*G + public_Spend_key
      * --> we got private key of stealth or called X = Hs(r*public_view_key) + private_spend_key
@@ -75,7 +75,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static mulSign(privKeys: Array<string>, decoys: Array<Array<Point>>, index: number) {
+    static mulSign(privKeys: Array<string>, decoys: Array<Array<Point>>, index: number, message: ?Buffer) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -114,6 +114,7 @@ export default class MLSAG {
             R[i][index] = HP[i][index].multiply(s[i][index]); // aH
         }
 
+        pj = message ? Buffer.concat(pj, message) : pj;
         pj = Buffer.from(keccak256(pj), 'hex');
 
         let j = (index + 1) % ringSize;

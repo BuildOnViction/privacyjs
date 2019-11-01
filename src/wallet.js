@@ -389,6 +389,8 @@ export default class Wallet extends EventEmitter {
             );
         });
 
+        let message = new Buffer([]);
+
         // ct ring
         const {
             privKey,
@@ -396,10 +398,17 @@ export default class Wallet extends EventEmitter {
         } = MLSAG.genCTRing(
             this.addresses.privSpendKey,
             decoys,
-            _.map(proofs, proof => ({
-                lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
-                decodedMask: proof.mask,
-            })),
+            _.map(proofs, (proof) => {
+                const lfCommitment = ecurve.Point.decodeFrom(ecparams, proof.commitment);
+                message = Buffer.concat([
+                    message,
+                    lfCommitment.getEncoded(false),
+                ]);
+                return {
+                    lfCommitment,
+                    decodedMask: proof.mask,
+                };
+            }),
             index,
         );
 
@@ -408,11 +417,13 @@ export default class Wallet extends EventEmitter {
         // decoys.push(publicKeys);
 
         const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
+
         // ring-signature of utxos
         const ringSignature = MLSAG.mulSign(
             privkeys,
             ringctDecoys,
             index,
+            message,
         );
 
         assert(

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const ecurve = require('ecurve');
 const EC = require('elliptic').ec;
 

@@ -154,6 +154,20 @@ const pedersenVectorCommitment = (mask, base, aLR, GiHi) => {
     return temp;
 };
 
+function TwoVectorPCommitWithGens(Gi, Hi, a, b) {
+    let commitment;
+
+    for (let i = 0; i < Gi.length; i++) {
+        const modA = a[i].mod(secp256k1.n);
+        const modB = b[i].mod(secp256k1.n);
+
+        commitment = commitment ? commitment.add(Gi[i].multiply(modA))
+            .add(Hi[i].multiply(modB)) : Gi[i].multiply(modA).add(Hi[i].multiply(modB));
+    }
+    return commitment;
+}
+
+
 /**
  * Calculate inner product of two vector =
  *
@@ -223,7 +237,7 @@ const vectorPowers = (x, n) => {
 
 // return Array<ecurve.Point>, Array<ecurve.Point>, ECPoint)
 function GenerateNewParams(bG: Array<ecurve.Point>, bH: Array<ecurve.Point>, x: BigInteger, L: ecurve.Point, R: ecurve.Point, P: ecurve.Point) {
-    const nprime = bG.length / 2;
+    const nprime = parseInt(bG.length / 2);
 
     const Gprime = [];
     const Hprime = [];
@@ -233,7 +247,7 @@ function GenerateNewParams(bG: Array<ecurve.Point>, bH: Array<ecurve.Point>, x: 
     // Gprime = xinv * G[0, n] + x*G[nprime:]
     // Hprime = x * H[0, n] + xinv*H[nprime:]
 
-    for (let i = 0; i < Gprime.length; i++) {
+    for (let i = 0; i < nprime; i++) {
         Gprime[i] = bG[i].multiply(xinv).add(bG[i + nprime].multiply(x));
         Hprime[i] = bH[i].multiply(x).add(bH[i + nprime].multiply(xinv));
     }
@@ -616,7 +630,6 @@ export default class BulletProof {
         return !!proof;
     }
 
-
     // // rpresult.IPP = InnerProductProve(left, right, that, P, EC.U, EC.BPG, HPrime)
     static InnerProductProve(a: Array<BigInteger>, b: Array<BigInteger>, c: BigInteger, P: ecurve.Point, U: ecurve.Point, bG : Array<ecurve.Point>, bH: Array<ecurve.Point>): InnerProdArg {
         const loglen = parseInt(Math.log2(a.length));
@@ -634,11 +647,13 @@ export default class BulletProof {
         };
 
         // randomly generate an x value from public data
-        const x = BigInteger.fromHex(keccak256(P.getEncoded(false).toString('hex')));
+        const x = BigInteger.fromHex(keccak256(P.getEncoded(false).toString('hex'))).mod(secp256k1.n);
 
         runningProof.Challenges[loglen] = x;
 
         const Pprime = P.add(U.multiply(x.multiply(c)));
+        console.log('Pprime ', Pprime.getEncoded(true).toString('hex'));
+
         const ux = U.multiply(_.cloneDeep(x));
 
         return this.InnerProductProveSub(runningProof, bG, bH, a, b, ux, Pprime);
@@ -655,9 +670,6 @@ export default class BulletProof {
         b: Array<BigInteger>,
         u: ecurve.Point,
         P: ecurve.Point) {
-        let L = [];
-        let R = [];
-
         if (a.length === 1) {
             // Prover sends a & b
             // eslint-disable-next-line prefer-destructuring
@@ -669,13 +681,14 @@ export default class BulletProof {
 
         const curIt = parseInt(Math.log2(a.length)) - 1;
 
-        const nprime = a.length / 2;
-        // console.log(nprime)
-        // console.log(len(H))
-        const cl = innerProduct(a.slice(0, nprime), b.slice(nprime, a.length)); // either this line
-        const cr = innerProduct(a.slice(nprime, a.length), b.slice(0, nprime)); // or this line
-        L = pedersenVectorCommitment(cl, u, G.slice(nprime, a.length), H.slice(0, nprime), a.slice(0, nprime), b.slice(nprime, a.length));
-        R = pedersenVectorCommitment(cr, u, G.slice(0, nprime), H.slice(nprime, a.length), a.slice(nprime, a.length), b.slice(0, nprime));
+        const nprime = parseInt(a.length / 2);
+
+        const cl = innerProduct(a.slice(0, nprime), b.slice(-nprime));
+        const cr = innerProduct(a.slice(-nprime), b.slice(0, nprime));
+        // L = pedersenVectorCommitment(cl, u, bG.slice(nprime, a.length), H.slice(0, nprime), a.slice(0, nprime), b.slice(nprime, a.length));
+        // R = pedersenVectorCommitment(cr, u, bG.slice(0, nprime), H.slice(nprime, a.length), a.slice(nprime, a.length), b.slice(0, nprime));
+        const L = TwoVectorPCommitWithGens(bG.slice(0, nprime), bH.slice(-nprime), a.slice(-nprime), b.slice(0, nprime)).add(u.multiply(cl));
+        const R = TwoVectorPCommitWithGens(bG.slice(-nprime), bH.slice(0, nprime), a.slice(0, nprime), b.slice(-nprime)).add(u.multiply(cr));
 
         proof.L[curIt] = L;
         proof.R[curIt] = R;
@@ -683,28 +696,29 @@ export default class BulletProof {
         // prover sends L & R and gets a challenge
         // prover sends L & R and gets a challenge
         const w = hashToScalar(bconcat([
-            ...L[curIt].getEncoded(true),
-            ...R[curIt].getEncoded(true),
+            ...L.getEncoded(false),
+            ...R.getEncoded(false),
         ]));
 
-        const x = _.cloneDeep(w);
+        const x = w;
 
         proof.Challenges[curIt] = x;
 
-        const { Gprime, Hprime, Pprime } = GenerateNewParams(G, H, x, L, R, P);
+        // why do i need to generate new parameter here
+        const { Gprime, Hprime, Pprime } = GenerateNewParams(bG, bH, x, L, R, P);
 
         // fmt.Printf("Prover - Intermediate Pprime value: %s \n", Pprime)
         const xinv = x.modInverse(x, secp256k1.n);
 
         // or these two lines
         const aprime = vectorAddVector(
-            scalar_mul_vector(x, a.slice(0, nprime)),
-            scalar_mul_vector(xinv, a.slice(nprime, a.length)),
+            scalar_mul_vector(x, a.slice(-nprime)),
+            scalar_mul_vector(xinv, a.slice(0, nprime)),
         );
 
         const bprime = vectorAddVector(
-            scalar_mul_vector(b.slice(0, nprime), xinv),
-            scalar_mul_vector(b.slice(nprime, b.length), x),
+            scalar_mul_vector(xinv, b.slice(-nprime)),
+            scalar_mul_vector(x, b.slice(0, nprime)),
         );
 
         return this.InnerProductProveSub(proof, Gprime, Hprime, aprime, bprime, u, Pprime);
@@ -712,8 +726,9 @@ export default class BulletProof {
 
     static InnerProductVerify(c: BigInteger, P: ecurve.Point, U: ecurve.Point, bG: Array<ecurve.Point>, bH: Array<ecurve.Point>, ipp: InnerProdArg): Boolean {
         // console.log("Verifying Inner Product Argument")
-        const s1 = BigInteger.fromHex(keccak256(P.getEncoded(false).toString('hex')));
-        const chal1 = _.cloneDeep(s1);
+        const s1 = BigInteger.fromHex(keccak256(P.getEncoded(false).toString('hex'))).mod(secp256k1.n);
+        const chal1 = s1;
+
         const ux = U.multiply(chal1);
         let curIt = ipp.Challenges.length - 1;
 
@@ -729,16 +744,17 @@ export default class BulletProof {
         let Pprime = P.add(ux.multiply(c));// line 6 from protocol 1
 
         while (curIt >= 0) {
+            console.log('IPVerifying to index ', curIt);
             const Lval = ipp.L[curIt];
             const Rval = ipp.R[curIt];
 
             // prover sends L & R and gets a challenge
             const w = hashToScalar(bconcat([
-                ...Lval[curIt].getEncoded(false),
-                ...Rval[curIt].getEncoded(false),
+                ...Lval.getEncoded(false),
+                ...Rval.getEncoded(false),
             ]));
 
-            const chal2 = _.cloneDeep(w);
+            const chal2 = w;
 
             if (ipp.Challenges[curIt].compareTo(chal2) !== 0) {
                 console.log('IPVerify - Challenge verification failed at index ' + curIt);
@@ -759,6 +775,9 @@ export default class BulletProof {
         const Pcalc2 = Hprime[0].multiply(ipp.B);
         const Pcalc3 = ux.multiply(ccalc);
         const Pcalc = Pcalc1.add(Pcalc2).add(Pcalc3);
+
+        console.log(Pprime.getEncoded(true).toString('hex'));
+        console.log(Pcalc.getEncoded(true).toString('hex'));
 
         if (!Pprime.equals(Pcalc)) {
             console.log('IPVerify - Final Commitment checking failed');

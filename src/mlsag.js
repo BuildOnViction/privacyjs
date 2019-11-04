@@ -88,7 +88,6 @@ export default class MLSAG {
         const s = [];
         const c = [];
 
-        // let pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g)); // 32 bytes
         let pj = new Buffer([]);
 
         let i;

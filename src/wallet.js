@@ -53,6 +53,7 @@ type DecodedProof = {
 };
 
 const UTXO_RING_SIZE = 11;
+// const MAXIMUM_RING_NUMBER = 5;
 
 export default class Wallet extends EventEmitter {
     addresses: {
@@ -209,7 +210,6 @@ export default class Wallet extends EventEmitter {
             try {
                 // eslint-disable-next-line no-await-in-loop
                 utxo = await this.getUTXO(index);
-                console.log('getting utxo for index ', index);
                 const utxoInstance = new UTXO(utxo);
 
                 const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
@@ -230,9 +230,9 @@ export default class Wallet extends EventEmitter {
 
                 // TODO remove after testing
                 // for testing, dont do this in real case
-                if (utxos.length > 3) {
-                    break;
-                }
+                // if (utxos.length > 3) {
+                //     break;
+                // }
             } catch (exception) {
                 utxo = null;
                 break;
@@ -253,6 +253,7 @@ export default class Wallet extends EventEmitter {
 
     /**
      * Private send money to privacy address
+     * // TODO Need check if utxos length > maximum allowd ring so we can divide transactions
      * @param {string} privacyAddress
      * @param {string|number} amount
      * @returns {object} includes new utxos and original created proof
@@ -271,13 +272,16 @@ export default class Wallet extends EventEmitter {
 
         this.emit('START_SENDING');
 
-        const proof = await this._makePrivateSendProof(privacyAddress, biAmount);
+        // TODO need divide into multiple tx if this.utxos.length > maximum allowed ring each TX
+        // the slice(0, 5) here just for testing
+        const proof = await this._makePrivateSendProof(privacyAddress, biAmount, this.utxos.slice(0, 5));
 
         console.log('proof ', proof);
 
         let res;
         try {
             res = await this._send(proof);
+            // this.utxos.splice(0, 3);
             this.emit('FINISH_SENDING');
         } catch (ex) {
             console.log(ex);
@@ -322,16 +326,25 @@ export default class Wallet extends EventEmitter {
     async _getDecoys(numberOfRing: number, spendingIndexes: Array<number>): Promise<Array<Array<UTXO>>> {
         // the total decoys we need to get from smart-contract = UTXO_RING_SIZE * ring_size
         let utxos = [];
+        const decoysIndex = [];
 
         // we can't use Promise All in web3.methods.call because of memory leak
         // so let resolve one by one
         let counter = 0;
+        const MAXIMUM_RANDOMIZATION_TIMES = 50;
+        let randomizationTimes = 0;
 
+        // this.scannedTo = 90;
+
+        // should stop after a fixed loop in case it's forever
         while (counter < UTXO_RING_SIZE + 4) {
             let rd;
             do {
                 rd = Math.round(Math.random() * this.scannedTo);
-            } while (rd in spendingIndexes);
+                randomizationTimes++;
+            } while ((rd in spendingIndexes || rd in decoysIndex) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
+
+            decoysIndex.push(rd);
 
             // eslint-disable-next-line no-await-in-loop
             const utxo = await this.getUTXO(rd);
@@ -399,11 +412,10 @@ export default class Wallet extends EventEmitter {
             this.addresses.privSpendKey,
             decoys,
             _.map(proofs, (proof) => {
-                const stealth = ecurve.Point.decodeFrom(ecparams, proof.onetimeAddress);
                 const lfCommitment = ecurve.Point.decodeFrom(ecparams, proof.commitment);
                 message = Buffer.concat([
                     message,
-                    stealth.getEncoded(false).slice(-32),
+                    proof.onetimeAddress.slice(-64),
                 ]);
                 return {
                     lfCommitment,
@@ -413,7 +425,7 @@ export default class Wallet extends EventEmitter {
             index,
         );
 
-        console.log('message ', message);
+        // console.log('message ', message);
 
         // put ct ring to ring-signature to make ringct
         privkeys.push(privKey);
@@ -476,7 +488,8 @@ export default class Wallet extends EventEmitter {
     _genOutputProofs(spendingUTXOs: Array<UTXO>, receiver: string, amount: BigInteger): Array<Object> {
         // let sumOfSpendingMasks = BigInteger.ZERO;
         const UTXOs = spendingUTXOs;
-        const { balance } = this;
+        // const { balance } = this;
+        let balance = BigInteger.ZERO;
 
         _.each(UTXOs, (utxo) => {
             // TODO when scan utxo, calculated and store this so we don't need this step
@@ -486,12 +499,12 @@ export default class Wallet extends EventEmitter {
             //     BigInteger.fromHex(utxo.decodedMask),
             // ).mod(secp256k1.n);
 
-            // balance = balance.add(
-            //     toBN(utxo.decodedAmount),
-            // );
+            balance = balance.add(
+                toBN(utxo.decodedAmount),
+            );
         });
 
-        // assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
+        assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
         const receiverStealth = Stealth.fromString(receiver);
         const proofOfReceiver = receiverStealth.genTransactionProof(
             Web3.utils.hexToNumberString(amount.toHex()),
@@ -510,9 +523,9 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger): Array {
-        const outputProofs = this._genOutputProofs(this.utxos, receiver, amount);
-        const { signature, decoys } = await this._genRingCT(this.utxos, outputProofs);
+    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>): Array {
+        const outputProofs = this._genOutputProofs(spendingUTXOs, receiver, amount);
+        const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
         // const rangeProof = this._genRangeProof(amount);
 
         return [

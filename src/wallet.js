@@ -53,7 +53,7 @@ type DecodedProof = {
 };
 
 const UTXO_RING_SIZE = 11;
-// const MAXIMUM_RING_NUMBER = 5;
+const MAXIMUM_ALLOWED_RING_NUMBER = 5;
 
 export default class Wallet extends EventEmitter {
     addresses: {
@@ -227,13 +227,8 @@ export default class Wallet extends EventEmitter {
                     }
                 }
                 index++;
-
-                // TODO remove after testing
-                // for testing, dont do this in real case
-                // if (utxos.length > 3) {
-                //     break;
-                // }
             } catch (exception) {
+                console.log('    .... Finish scanning ', exception.toString().substr(0, 10));
                 utxo = null;
                 break;
             }
@@ -251,9 +246,25 @@ export default class Wallet extends EventEmitter {
     qrUTXOsData() {
     }
 
+    _getSpendingUTXO(amount: BigInteger): Array<UTXO> {
+        const spendingUTXOS = [];
+        let i = 0;
+        let justEnoughBalance = BigInteger.ZERO;
+        while (amount.compareTo(justEnoughBalance) > 0) {
+            justEnoughBalance = justEnoughBalance.add(
+                toBN(
+                    this.utxos[i].decodedAmount,
+                ),
+            );
+            spendingUTXOS.push(this.utxos[i]);
+            i++;
+        }
+
+        return spendingUTXOS;
+    }
+
     /**
      * Private send money to privacy address
-     * // TODO Need check if utxos length > maximum allowd ring so we can divide transactions
      * @param {string} privacyAddress
      * @param {string|number} amount
      * @returns {object} includes new utxos and original created proof
@@ -274,21 +285,50 @@ export default class Wallet extends EventEmitter {
 
         // TODO need divide into multiple tx if this.utxos.length > maximum allowed ring each TX
         // the slice(0, 5) here just for testing
-        const proof = await this._makePrivateSendProof(privacyAddress, biAmount, this.utxos.slice(0, 5));
+        const spendingUTXOs = this._getSpendingUTXO(biAmount);
+        const totalResponse = [];
+        const totalSpent = spendingUTXOs.length;
 
-        console.log('proof ', proof);
+        if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
+            try {
+                while (spendingUTXOs.length > 0) {
+                    // eslint-disable-next-line no-await-in-loop
+                    const proof = await this._makePrivateSendProof(
+                        privacyAddress,
+                        biAmount,
+                        spendingUTXOs.splice(0, MAXIMUM_ALLOWED_RING_NUMBER),
+                    );
 
-        let res;
+                    // eslint-disable-next-line no-await-in-loop
+                    const res = await this._send(proof);
+                    totalResponse.push(res.NewUTXO);
+
+                    if (!spendingUTXOs.length) this.emit('FINISH_SENDING');
+                }
+            } catch (ex) {
+                this.emit('STOP_SENDING', ex);
+            }
+
+            return totalResponse;
+        }
+
+        const proof = await this._makePrivateSendProof(
+            privacyAddress,
+            biAmount,
+            spendingUTXOs,
+        );
+
         try {
-            res = await this._send(proof);
-            // this.utxos.splice(0, 3);
+            // eslint-disable-next-line no-await-in-loop
+            const res = await this._send(proof);
+            this.utxos.splice(0, totalSpent);
+            totalResponse.push(res.NewUTXO);
             this.emit('FINISH_SENDING');
         } catch (ex) {
-            console.log(ex);
             this.emit('STOP_SENDING', ex);
         }
 
-        return res;
+        return totalResponse;
     }
 
     /**
@@ -307,10 +347,7 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
-                    resolve({
-                        utxo: receipt.events,
-                        proof,
-                    });
+                    resolve(receipt.events);
                 });
         });
     }
@@ -334,9 +371,7 @@ export default class Wallet extends EventEmitter {
         const MAXIMUM_RANDOMIZATION_TIMES = 50;
         let randomizationTimes = 0;
 
-        // this.scannedTo = 90;
-
-        // should stop after a fixed loop in case it's forever
+        // should stop if after 50 randomization times can't get all decoys
         while (counter < UTXO_RING_SIZE + 4) {
             let rd;
             do {
@@ -568,10 +603,10 @@ export default class Wallet extends EventEmitter {
 
         return new Promise((resolve, reject) => {
             this.privacyContract.methods.isSpent(
-                `0x${keyImage(
+                _.map(keyImage(
                     BigInteger.fromHex(ringctKeys.privKey),
                     utxo.lfStealth.getEncoded(false).toString('hex').slice(2),
-                ).getEncoded(true).toString('hex')}`,
+                ).getEncoded(true).toString('hex').match(/.{1,2}/g), num => '0x' + num),
             )
                 .call({
                     from: this.scOpts.from,

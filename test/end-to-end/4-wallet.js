@@ -96,36 +96,6 @@ describe('#wallet #ete', () => {
         });
     });
 
-    // it('Should genCT return correct ring (check on precompiled contract) from wallet', (done) => {
-    //     wallet.scannedTo = 0;
-    //     const receiver = generateKeys(WALLETS[1].privateKey);
-    //     wallet.scan()
-    //         .then(() => {
-    //             const outputProofs = wallet._genOutputProofs(wallet.utxos, receiver.pubAddr, toBN('100000'));
-
-    //             wallet._genRingCT(wallet.utxos, outputProofs).then((res) => {
-    //                 mlsagPrecompiledContract.methods.VerifyRingCT(
-    //                     res.signature,
-    //                 )
-    //                     .send({
-    //                         from: SENDER_WALLET.address,
-    //                     })
-    //                     .then((receipt) => {
-    //                         console.log(receipt);
-    //                         done();
-    //                     })
-    //                     .catch((error) => {
-    //                         console.log(error);
-    //                         done(error);
-    //                     });
-    //             });
-    //         })
-    //         .catch((error) => {
-    //             console.log(error);
-    //             done(error);
-    //         });
-    // });
-
     describe('#MLSAG', () => {
         it('Should genCT return correct ring (check on precompiled contract) from mlsag', (done) => {
             const sender = new Stealth({
@@ -211,12 +181,41 @@ describe('#wallet #ete', () => {
     });
 
     describe('#send', () => {
-        it('Should able to create ringCT and output UTXO', (done) => {
+        const sendWallet = new Wallet(WALLETS[0].privateKey, {
+            RPC_END_POINT: TestConfig.RPC_END_POINT,
+            ABI: TestConfig.PRIVACY_ABI,
+            ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
+        }, WALLETS[0].address);
+        it('Should able to create ringCT and output UTXO with spendingIndex from 0 to 5', (done) => {
             // just lazy don't wanna store privacy address in config, gen it here from private key
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                wallet.send(receiver.pubAddr, '100000').then((res) => {
-                    console.log(res);
+                sendWallet.send(receiver.pubAddr, '100000').then((txs) => {
+                    _.each(txs, (NewUTXO) => {
+                        expect(NewUTXO).to.not.equal(undefined);
+                        expect(NewUTXO.length).to.equal(2); // always create two
+                        const returnUTXOs = NewUTXO.map(utxo => utxo.returnValues);
+
+                        // make sure at least one utxo belonging to receiver, one for sender
+                        // and encrypted amount correct
+                        const senderUTXOIns = new UTXO(returnUTXOs[0]);
+                        const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+
+                        const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[0].privateKey);
+                        const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
+                            WALLETS[1].privateKey,
+                        );
+
+                        expect(senderUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
+                        expect(receiverUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
+
+                        expect(decodedSenderUTXO).to.not.be.equal(null);
+                        expect(decodedReceiverUTXO).to.not.be.equal(null);
+
+                        // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
+                        // expect(decodedReceiverUTXO.amount === '100000').to.be.equal(true);
+                    });
+
                     done();
                 }).catch((err) => {
                     done(err);
@@ -225,5 +224,43 @@ describe('#wallet #ete', () => {
                 done(ex);
             }
         });
+
+        // it('Should able to create ringCT and output UTXO with spendingIndex from 0 to 5', (done) => {
+        //     // just lazy don't wanna store privacy address in config, gen it here from private key
+        //     const receiver = generateKeys(WALLETS[1].privateKey);
+        //     try {
+        //         sendWallet.send(receiver.pubAddr, '100000').then((receipt) => {
+        //             expect(receipt.NewUTXO).to.not.equal(undefined);
+        //             expect(receipt.NewUTXO.length).to.equal(2); // always create two
+        //             const returnUTXOs = receipt.NewUTXO.map(utxo => utxo.returnValues);
+
+        //             // make sure at least one utxo belonging to receiver, one for sender
+        //             // and encrypted amount correct
+        //             const senderUTXOIns = new UTXO(returnUTXOs[0]);
+        //             const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+
+        //             const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[0].privateKey);
+        //             const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
+        //                 WALLETS[1].privateKey,
+        //             );
+
+        //             expect(senderUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
+        //             expect(receiverUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
+
+        //             expect(decodedSenderUTXO).to.not.be.equal(null);
+        //             expect(decodedReceiverUTXO).to.not.be.equal(null);
+
+        //             // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
+        //             expect(decodedReceiverUTXO.amount === '100000').to.be.equal(true);
+
+        //             done();
+        //         }).catch((err) => {
+        //             done(err);
+        //         });
+        //     } catch (ex) {
+        //         done(ex);
+        //     }
+        // });
     });
+
 });

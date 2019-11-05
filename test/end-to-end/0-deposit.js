@@ -17,13 +17,13 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-const amount = 1000000000000000000;
+const amount = 10000000000000000000;
 const sender = new Stealth({
     ...Address.generateKeys(SENDER_WALLET.privateKey),
 });
 
 describe('#deposit', () => {
-    for (let count = 0; count < 15; count++) {
+    for (let count = 0; count < 20; count++) {
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 const returnedValue = result.utxo;
@@ -68,7 +68,7 @@ describe('#deposit', () => {
         });
     }
 
-    for (let count = 0; count < 20; count++) {
+    for (let count = 0; count < 0; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
             TestUtils.deposit(10000000000000, privateKey, address).then(() => {

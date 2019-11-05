@@ -33,8 +33,6 @@ class Commitment {
                 ),
             ).getEncoded(encoded);
         }
-        console.log(amount);
-        console.log(mask);
 
         return basePointG.multiply(
             BigInteger.fromHex(mask),

@@ -1,6 +1,6 @@
 {
     "RPC_END_POINT": "http://206.189.39.242:8545",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0xAb1161620966f7E2bF4a148b288Ac5981130CE78",
+    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x7EA868806f17c30371A5a68D113B0c32F6C25bA0",
     "RINGCT_PRECOMPILED_CONTRACT": {
         "PRIVATE_KEY": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
         "ADDRESS": "0x12C0783d97FE6fa0A29EA42EE51eCB9392727b07",
@@ -285,42 +285,6 @@
         "inputs": [
           {
             "indexed": false,
-            "name": "_inputIDs",
-            "type": "uint256[]"
-          }
-        ],
-        "name": "Inputs",
-        "type": "event",
-        "signature": "0x721c5d38894e07b15bca1c1b2ab98e3ab9392ca6713dcbe2058df2033effffb7"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_input",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_checked",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "raw",
-            "type": "bytes1[33]"
-          }
-        ],
-        "name": "ParseBytes",
-        "type": "event",
-        "signature": "0x24693612be830b849595ccf9bee0a80de3a310110e92e8216017cfe2f2f8af8b"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
             "name": "_in1",
             "type": "uint256"
           },
@@ -453,6 +417,42 @@
         "signature": "0xbc6ead6fce2d97dfe1bfd967e9b4ed7ff7bee2e19321b14278cc6b08e234fa30"
       },
       {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "name": "_inputIDs",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "Inputs",
+        "type": "event",
+        "signature": "0x721c5d38894e07b15bca1c1b2ab98e3ab9392ca6713dcbe2058df2033effffb7"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "name": "_input",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "_checked",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "raw",
+            "type": "bytes1[33]"
+          }
+        ],
+        "name": "ParseBytes",
+        "type": "event",
+        "signature": "0x24693612be830b849595ccf9bee0a80de3a310110e92e8216017cfe2f2f8af8b"
+      },
+      {
         "constant": false,
         "inputs": [
           {
@@ -507,7 +507,7 @@
             "type": "uint256[]"
           },
           {
-            "name": "ringSignature",
+            "name": "_ringSignature",
             "type": "bytes"
           }
         ],
@@ -522,28 +522,28 @@
         "constant": false,
         "inputs": [
           {
-            "name": "_utxoIndex",
+            "name": "_inputIDs",
+            "type": "uint256[]"
+          },
+          {
+            "name": "_outputs",
+            "type": "uint256[]"
+          },
+          {
+            "name": "_withdrawalAmount",
             "type": "uint256"
           },
           {
-            "name": "_amount1",
-            "type": "uint256"
+            "name": "_amounts",
+            "type": "uint256[2]"
           },
           {
-            "name": "_amount2",
-            "type": "uint256"
-          },
-          {
-            "name": "_rs",
-            "type": "bytes32[2]"
-          },
-          {
-            "name": "recipient",
+            "name": "_recipient",
             "type": "address"
           },
           {
-            "name": "_commitmentAfter",
-            "type": "uint256[2]"
+            "name": "_ringSignature",
+            "type": "bytes"
           }
         ],
         "name": "withdrawFunds",
@@ -551,7 +551,7 @@
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function",
-        "signature": "0x1f5bba87"
+        "signature": "0x5b5011f3"
       },
       {
         "constant": true,

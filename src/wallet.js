@@ -196,28 +196,33 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
-     * Scan your utxo, notice scannedTo is keeping your latest inded that you scanned
-     * @param {number} [fromIndex] optinal index to start scanning, if not passed use this.scannedTo
+     * Scan all belong UTXOs
+     * this is recursive version, the old async/await inside loop throw Exception sometimes
+     * maybe the babel compiler is not optimized when using async, await inside loop
+     * @param {number} fromIndex start scanning utxos on smart-contract for find your balance
      */
     async scan(fromIndex: number) {
-        this.emit('START_SCANNING');
-        let index = fromIndex || this.scannedTo;
-        let utxo = {};
-        let balance = BigInteger.ZERO;
-        const utxos = [];
+        const _self = this;
+        return new Promise((resolve, reject) => {
+            _self.emit('START_SCANNING');
+            const index = fromIndex || _self.scannedTo;
+            let utxo = {};
+            let balance = BigInteger.ZERO;
+            const utxos = [];
 
-        do {
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                utxo = await this.getUTXO(index);
+            async function getUTXO(i) {
+                try {
+                    utxo = await _self.getUTXO(i);
+                } catch (ex) {
+                    return false;
+                }
+
                 const utxoInstance = new UTXO(utxo);
-
-                const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
+                const isMine = utxoInstance.checkOwnership(_self.addresses.privSpendKey);
 
                 if (isMine && parseFloat(isMine.amount).toString() === isMine.amount) {
-                    // check if utxo is spent already
-                    // eslint-disable-next-line no-await-in-loop
-                    const res = await this.isSpent(utxoInstance);
+                    const res = await _self.isSpent(utxoInstance);
+                    console.log(i, ' ', res, ' ', isMine.amount);
 
                     if (!res) {
                         balance = balance.add(
@@ -226,18 +231,24 @@ export default class Wallet extends EventEmitter {
                         utxos.push(utxoInstance);
                     }
                 }
-                index++;
-            } catch (exception) {
-                console.log('    .... Finish scanning ', exception.toString().substr(0, 10));
-                utxo = null;
-                break;
-            }
-        } while (utxo);
 
-        this.emit('FINISH_SCANNING');
-        this.balance = balance;
-        this.utxos = utxos;
-        this.scannedTo = index;
+                await getUTXO(i + 1);
+            }
+
+            getUTXO(index).then(() => {
+                _self.emit('FINISH_SCANNING');
+                _self.balance = balance;
+                _self.utxos = utxos;
+                _self.scannedTo = index;
+
+                console.log('Total Balance : ', Web3.utils.hexToNumberString(
+                    _self.balance.toHex(),
+                ));
+                resolve(_self.utxos);
+            }).catch((ex) => {
+                reject(ex);
+            });
+        });
     }
 
     store() {
@@ -253,7 +264,7 @@ export default class Wallet extends EventEmitter {
         while (amount.compareTo(justEnoughBalance) > 0) {
             justEnoughBalance = justEnoughBalance.add(
                 toBN(
-                    this.utxos[i].decodedAmount,
+                    this.utxos[i].decodedAmount, // TODO convert decoded amount to BigInteger
                 ),
             );
             spendingUTXOS.push(this.utxos[i]);
@@ -261,6 +272,23 @@ export default class Wallet extends EventEmitter {
         }
 
         return spendingUTXOS;
+    }
+
+    /**
+     * Sum amount of a group utxos
+     * @param {Array<UTXO>} utxos
+     * @returns {BigInteger}
+     */
+    _calTotal(utxos: Array<UTXO>): BigInteger {
+        let balance = BigInteger.ZERO;
+        _.each(utxos, (utxo) => {
+            balance = balance.add(
+                toBN(
+                    utxo.decodedAmount,
+                ),
+            );
+        });
+        return balance;
     }
 
     /**
@@ -283,8 +311,6 @@ export default class Wallet extends EventEmitter {
 
         this.emit('START_SENDING');
 
-        // TODO need divide into multiple tx if this.utxos.length > maximum allowed ring each TX
-        // the slice(0, 5) here just for testing
         const spendingUTXOs = this._getSpendingUTXO(biAmount);
         const totalResponse = [];
         const totalSpent = spendingUTXOs.length;
@@ -292,11 +318,13 @@ export default class Wallet extends EventEmitter {
         if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
             try {
                 while (spendingUTXOs.length > 0) {
+                    const spentThisRound = spendingUTXOs.splice(0, MAXIMUM_ALLOWED_RING_NUMBER);
                     // eslint-disable-next-line no-await-in-loop
                     const proof = await this._makePrivateSendProof(
                         privacyAddress,
-                        biAmount,
-                        spendingUTXOs.splice(0, MAXIMUM_ALLOWED_RING_NUMBER),
+                        this._calTotal(spentThisRound),
+                        spentThisRound,
+                        true, // flag for indicating spent all
                     );
 
                     // eslint-disable-next-line no-await-in-loop
@@ -306,9 +334,11 @@ export default class Wallet extends EventEmitter {
                     if (!spendingUTXOs.length) this.emit('FINISH_SENDING');
                 }
             } catch (ex) {
+                console.log('ex ', ex);
                 this.emit('STOP_SENDING', ex);
             }
 
+            this.utxos.splice(0, totalSpent);
             return totalResponse;
         }
 
@@ -338,7 +368,6 @@ export default class Wallet extends EventEmitter {
      */
     _send(proof: Array<any>): Promise<any> {
         return new Promise((resolve, reject) => {
-            // ugly syntax
             this.privacyContract.methods.privateSend(...proof)
                 .send({
                     from: this.scOpts.from,
@@ -404,8 +433,6 @@ export default class Wallet extends EventEmitter {
         const numberOfRing = spendingUTXOs.length;
         const ringSize = 12; // 11 decoys + one spending
 
-        // get random utxos for making ring from network
-        // number of random utxo = spendingUTXOs * 11 (maximum decoys per ring)
         let decoys = await this._getDecoys(numberOfRing, _.map(spendingUTXOs, utxo => utxo.index));
 
         // random index each time generating ringct
@@ -460,15 +487,10 @@ export default class Wallet extends EventEmitter {
             index,
         );
 
-        // console.log('message ', message);
-
         // put ct ring to ring-signature to make ringct
         privkeys.push(privKey);
-        // decoys.push(publicKeys);
 
         const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
-
-        // ring-signature of utxos
         const ringSignature = MLSAG.mulSign(
             privkeys,
             ringctDecoys,
@@ -518,29 +540,27 @@ export default class Wallet extends EventEmitter {
      * @param {Array<UTXO>} spendingUTXOs spending utxos
      * @param {string} receiver privacy address of receiver
      * @param {BigInteger} amount sending amount
+     * @param {boolean} [isSpentAll]
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
-    _genOutputProofs(spendingUTXOs: Array<UTXO>, receiver: string, amount: BigInteger): Array<Object> {
-        // let sumOfSpendingMasks = BigInteger.ZERO;
+    _genOutputProofs(spendingUTXOs: Array<UTXO>, receiver: string, amount: BigInteger, isSpentAll: ?boolean): Array<Object> {
         const UTXOs = spendingUTXOs;
-        // const { balance } = this;
-        let balance = BigInteger.ZERO;
-
-        _.each(UTXOs, (utxo) => {
-            // TODO when scan utxo, calculated and store this so we don't need this step
-            utxo.checkOwnership(this.addresses.privSpendKey);
-
-            // sumOfSpendingMasks = sumOfSpendingMasks.add(
-            //     BigInteger.fromHex(utxo.decodedMask),
-            // ).mod(secp256k1.n);
-
-            balance = balance.add(
-                toBN(utxo.decodedAmount),
+        const receiverStealth = Stealth.fromString(receiver);
+        if (isSpentAll) {
+            const proofOfReceiver = receiverStealth.genTransactionProof(
+                Web3.utils.hexToNumberString(amount.toHex()),
             );
-        });
+
+            const proofOfMe = this.stealth.genTransactionProof(
+                '0',
+            );
+            return [proofOfReceiver, proofOfMe];
+        }
+
+        const balance = this._calTotal(UTXOs);
 
         assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
-        const receiverStealth = Stealth.fromString(receiver);
+
         const proofOfReceiver = receiverStealth.genTransactionProof(
             Web3.utils.hexToNumberString(amount.toHex()),
         );
@@ -556,10 +576,11 @@ export default class Wallet extends EventEmitter {
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
+     * @param {boolean} [isSpentAll]
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>): Array {
-        const outputProofs = this._genOutputProofs(spendingUTXOs, receiver, amount);
+    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, isSpentAll: ?boolean): Array {
+        const outputProofs = this._genOutputProofs(spendingUTXOs, receiver, amount, isSpentAll);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
         // const rangeProof = this._genRangeProof(amount);
 
@@ -598,7 +619,12 @@ export default class Wallet extends EventEmitter {
 
     }
 
-    isSpent(utxo: UTXO): Promise<any> {
+    /**
+     * Check if the utxo spent or not by KeyImage (refer MLSAG)
+     * @param {UTXO} utxo
+     * @returns {boolean}
+     */
+    isSpent(utxo: UTXO): Promise<boolean> {
         const ringctKeys = utxo.getRingCTKeys(this.addresses.privSpendKey);
 
         return new Promise((resolve, reject) => {

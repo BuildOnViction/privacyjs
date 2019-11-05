@@ -19,16 +19,33 @@ class Commitment {
      */
     static genCommitment(amount, mask, encoded = true) {
         const basePointG = ecparams.G;
-        const commitment = basePointG.multiply(
+
+        if (!amount || amount.toString() === '0') {
+            return basePointG.multiply(
+                BigInteger.fromHex(mask),
+            ).getEncoded(encoded);
+        }
+
+        if (!mask || mask.toString() === '0') {
+            return basePointH.multiply(
+                BigInteger.fromHex(
+                    common.numberToHex(amount),
+                ),
+            ).getEncoded(encoded);
+        }
+        console.log(amount);
+        console.log(mask);
+
+        return basePointG.multiply(
             BigInteger.fromHex(mask),
         )
             .add(basePointH.multiply(
                 BigInteger.fromHex(
                     common.numberToHex(amount),
                 ),
-            ));
+            )).getEncoded(encoded);
 
-        return commitment.getEncoded(encoded);
+        // return commitment.getEncoded(encoded);
     }
 
     /**

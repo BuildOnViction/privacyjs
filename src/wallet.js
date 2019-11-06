@@ -119,6 +119,7 @@ export default class Wallet extends EventEmitter {
 
         // TODO get/set thru localstrage
         this.scannedTo = 0;
+        this.listenNewUTXO();
     }
 
     /**
@@ -230,8 +231,6 @@ export default class Wallet extends EventEmitter {
                     } catch (ex) {
                         console.log(ex);
                     }
-
-                    console.log(i, ' ', res, ' ', isMine.amount);
 
                     if (!res) {
                         balance = balance.add(
@@ -487,7 +486,6 @@ export default class Wallet extends EventEmitter {
      * @returns {object} new utxos and proof
      */
     _withdraw(proof: Array<any>): Promise<any> {
-        console.log(proof);
         return new Promise((resolve, reject) => {
             this.privacyContract.methods.withdrawFunds(...proof)
                 .send({
@@ -792,16 +790,16 @@ export default class Wallet extends EventEmitter {
             [
                 `0x${outputProofs[1].commitment.toString('hex').substr(2, 64)}`,
                 `0x${outputProofs[1].commitment.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].commitment.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].commitment.toString('hex').substr(-64)}`,
+                // `0x${outputProofs[0].commitment.toString('hex').substr(2, 64)}`,
+                // `0x${outputProofs[0].commitment.toString('hex').substr(-64)}`,
                 `0x${outputProofs[1].onetimeAddress.toString('hex').substr(2, 64)}`,
                 `0x${outputProofs[1].onetimeAddress.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].onetimeAddress.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].onetimeAddress.toString('hex').substr(-64)}`,
+                // `0x${outputProofs[0].onetimeAddress.toString('hex').substr(2, 64)}`,
+                // `0x${outputProofs[0].onetimeAddress.toString('hex').substr(-64)}`,
                 `0x${outputProofs[1].txPublicKey.toString('hex').substr(2, 64)}`,
                 `0x${outputProofs[1].txPublicKey.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].txPublicKey.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].txPublicKey.toString('hex').substr(-64)}`,
+                // `0x${outputProofs[0].txPublicKey.toString('hex').substr(2, 64)}`,
+                // `0x${outputProofs[0].txPublicKey.toString('hex').substr(-64)}`,
             ],
             '0x' + amount.toHex(),
             [
@@ -872,6 +870,25 @@ export default class Wallet extends EventEmitter {
     }
 
     listenNewUTXO() {
-        throw new Error('not implemented yet');
+        this.privacyContract.events
+            .NewUTXO({
+                fromBlock: 0,
+            }, (error, events) => {
+                console.log(events);
+            })
+            .on('data', (log) => {
+                const { returnValues: { from, to, value }, blockNumber } = log;
+                console.log(`----BlockNumber (${blockNumber})----`);
+                console.log(`from = ${from}`);
+                console.log(`to = ${to}`);
+                console.log(`value = ${value}`);
+                console.log(`----BlockNumber (${blockNumber})----`);
+            })
+            .on('changed', (log) => {
+                console.log(`Changed: ${log}`);
+            })
+            .on('error', (log) => {
+                console.log(`error:  ${log}`);
+            });
     }
 }

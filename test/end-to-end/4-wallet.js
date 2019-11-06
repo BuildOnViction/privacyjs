@@ -388,27 +388,10 @@ describe('#wallet #ete', () => {
                 withdrawWallet.withdraw(receiver, '10000000000').then((txs) => {
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
-                        expect(NewUTXO.length).to.equal(2); // always create two
-                        const returnUTXOs = NewUTXO.map(utxo => utxo.returnValues);
+                        const returnUTXO = NewUTXO.returnValues;
+                        const remainUTXOIns = new UTXO(returnUTXO);
 
-                        // make sure at least one utxo belonging to receiver, one for sender
-                        // and encrypted amount correct
-                        const senderUTXOIns = new UTXO(returnUTXOs[0]);
-                        const receiverUTXOIns = new UTXO(returnUTXOs[1]);
-
-                        const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[0].privateKey);
-                        const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
-                            WALLETS[1].privateKey,
-                        );
-
-                        expect(senderUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
-                        expect(receiverUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
-
-                        expect(decodedSenderUTXO).to.not.be.equal(null);
-                        expect(decodedReceiverUTXO).to.not.be.equal(null);
-
-                        // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
-                        // expect(decodedReceiverUTXO.amount === '100000').to.be.equal(true);
+                        expect(remainUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
                     });
 
                     done();
@@ -430,28 +413,12 @@ describe('#wallet #ete', () => {
                 withdrawWallet.withdraw(receiver, '13000000000000000000').then((txs) => {
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
-                        expect(NewUTXO.length).to.equal(2); // always create two
-                        const returnUTXOs = NewUTXO.map(utxo => utxo.returnValues);
+                        const returnUTXO = NewUTXO.returnValues;
+                        const remainUTXOIns = new UTXO(returnUTXO);
 
-                        // make sure at least one utxo belonging to receiver, one for sender
-                        // and encrypted amount correct
-                        const senderUTXOIns = new UTXO(returnUTXOs[0]);
-                        const receiverUTXOIns = new UTXO(returnUTXOs[1]);
-
-                        const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[0].privateKey);
-                        const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
-                            WALLETS[1].privateKey,
-                        );
-
-                        expect(senderUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
-                        expect(receiverUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
-
-                        expect(decodedSenderUTXO).to.not.be.equal(null);
-                        expect(decodedReceiverUTXO).to.not.be.equal(null);
-
-                        // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
-                        // expect(decodedReceiverUTXO.amount === '100000').to.be.equal(true);
+                        expect(remainUTXOIns.checkOwnership(WALLETS[0].privateKey)).to.not.equal(null);
                     });
+
                     done();
                 }).catch((err) => {
                     done(err);

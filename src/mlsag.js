@@ -242,7 +242,6 @@ export default class MLSAG {
         // prepare sum of output mask
 
         outputPoints.forEach((utxo) => {
-            console.log('utxo.decodedMask ', utxo.decodedMask);
             if (utxo.decodedMask.length % 2 === 1) {
                 utxo.decodedMask = '0' + utxo.decodedMask;
             }

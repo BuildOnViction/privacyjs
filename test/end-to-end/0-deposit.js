@@ -23,7 +23,7 @@ const sender = new Stealth({
 });
 
 describe('#deposit', () => {
-    for (let count = 0; count < 20; count++) {
+    for (let count = 0; count < 2; count++) {
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 const returnedValue = result.utxo;
@@ -68,10 +68,10 @@ describe('#deposit', () => {
         });
     }
 
-    for (let count = 0; count < 20; count++) {
+    for (let count = 0; count < 2; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
-            TestUtils.deposit(10000000000000, privateKey, address).then(() => {
+            TestUtils.deposit(1000000000, privateKey, address).then(() => {
                 done();
             })
                 .catch((err) => {

@@ -241,10 +241,10 @@ describe('#wallet #ete', () => {
             }
         });
 
-        it('Should able to send 100000 w', (done) => {
+        it('Should able to send 0.1 TOMO', (done) => {
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                sendWallet.send(receiver.pubAddr, '100000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '100000000000000000').then((txs) => {
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two
@@ -267,7 +267,7 @@ describe('#wallet #ete', () => {
                         expect(decodedReceiverUTXO).to.not.be.equal(null);
 
                         // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
-                        expect(decodedReceiverUTXO.amount === '100000').to.be.equal(true);
+                        // expect(decodedReceiverUTXO.amount === '100000000000000000').to.be.equal(true);
                     });
 
                     // TODO wallet need includes new generated utxos
@@ -279,6 +279,19 @@ describe('#wallet #ete', () => {
                 });
             } catch (ex) {
                 done(ex);
+            }
+        });
+
+        it('Should not able to send 0.01 TOMO <= PRIVACY_FLAT_FEE', (done) => {
+            const receiver = generateKeys(WALLETS[1].privateKey);
+            try {
+                sendWallet.send(receiver.pubAddr, '10000000000000000').then(() => {
+                    done(new Error(''));
+                }).catch(() => {
+                    done();
+                });
+            } catch (ex) {
+                done();
             }
         });
 

@@ -24,7 +24,7 @@ import * as CONSTANT from './constants';
 import * as Address from './address';
 import Stealth from './stealth';
 import UTXO from './utxo';
-import { BigInteger } from './crypto';
+import { BigInteger, randomHex } from './crypto';
 import { toBN } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
@@ -54,6 +54,9 @@ type DecodedProof = {
 
 const UTXO_RING_SIZE = 12;
 const MAXIMUM_ALLOWED_RING_NUMBER = 5;
+const PRIVACY_FLAT_FEE = toBN(
+    '10000000000000000',
+); // 0.01 TOMO
 
 export default class Wallet extends EventEmitter {
     addresses: {
@@ -313,15 +316,23 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount);
+        let biAmount = toBN(amount);
 
+        assert(biAmount.compareTo(PRIVACY_FLAT_FEE) > 0, 'Sending amount must be larger than tx fee !!');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
+        assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
 
         this.emit('START_SENDING');
 
         const spendingUTXOs = this._getSpendingUTXO(biAmount);
         const totalResponse = [];
         const totalSpent = spendingUTXOs.length;
+
+        // SC will automatically send PRIVACY_FLAT_FEE to issuer for signing the TX
+        // we decrease the amount here
+        biAmount = biAmount.subtract(
+            PRIVACY_FLAT_FEE,
+        );
 
         if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
             try {
@@ -389,14 +400,26 @@ export default class Wallet extends EventEmitter {
 
     /**
      * Use Web3 to sign and make tx to smart-contract
+     * because we don't need to pay the tx fee directly (TRC21)
+     * so we randomizing privatekey each time sending
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
     _send(proof: Array<any>): Promise<any> {
+        const randomPrivatekey = randomHex();
+        const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+        const web3 = new Web3(provider);
+        const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+        const privacyContract = new web3.eth.Contract(
+            this.scOpts.ABI, this.scOpts.ADDRESS, {
+                gasPrice: '250000000',
+                gas: '20000000',
+            },
+        );
         return new Promise((resolve, reject) => {
-            this.privacyContract.methods.privateSend(...proof)
+            privacyContract.methods.privateSend(...proof)
                 .send({
-                    from: this.scOpts.from,
+                    from: address,
                 })
                 .on('error', (error) => {
                     reject(error);
@@ -486,10 +509,21 @@ export default class Wallet extends EventEmitter {
      * @returns {object} new utxos and proof
      */
     _withdraw(proof: Array<any>): Promise<any> {
+        const randomPrivatekey = randomHex();
+        const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+        const web3 = new Web3(provider);
+        const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+        const privacyContract = new web3.eth.Contract(
+            this.scOpts.ABI, this.scOpts.ADDRESS, {
+                gasPrice: '250000000',
+                gas: '20000000',
+            },
+        );
+
         return new Promise((resolve, reject) => {
-            this.privacyContract.methods.withdrawFunds(...proof)
+            privacyContract.methods.withdrawFunds(...proof)
                 .send({
-                    from: this.scOpts.from,
+                    from: address,
                 })
                 .on('error', (error) => {
                     reject(error);
@@ -873,12 +907,9 @@ export default class Wallet extends EventEmitter {
         this.privacyContract.events
             .NewUTXO({
                 fromBlock: 0,
-            }, (error, events) => {
-                console.log(events);
             })
             .on('data', (log) => {
                 const { returnValues: { from, to, value }, blockNumber } = log;
-                console.log(`----BlockNumber (${blockNumber})----`);
                 console.log(`from = ${from}`);
                 console.log(`to = ${to}`);
                 console.log(`value = ${value}`);

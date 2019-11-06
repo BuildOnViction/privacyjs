@@ -240,7 +240,12 @@ export default class MLSAG {
         let outputCommitment; // a point in seccp256k1
 
         // prepare sum of output mask
+
         outputPoints.forEach((utxo) => {
+            console.log('utxo.decodedMask ', utxo.decodedMask);
+            if (utxo.decodedMask.length % 2 === 1) {
+                utxo.decodedMask = '0' + utxo.decodedMask;
+            }
             sumOutputMask = sumOutputMask.add(
                 BigInteger.fromHex(utxo.decodedMask),
             );

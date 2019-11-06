@@ -343,8 +343,8 @@ export default class Wallet extends EventEmitter {
                     if (!spendingUTXOs.length) this.emit('FINISH_SENDING');
                 }
             } catch (ex) {
-                console.log('ex ', ex);
                 this.emit('STOP_SENDING', ex);
+                throw ex;
             }
 
             this.utxos.splice(0, totalSpent);
@@ -381,8 +381,8 @@ export default class Wallet extends EventEmitter {
             totalResponse.push(res.NewUTXO);
             this.emit('FINISH_SENDING');
         } catch (ex) {
-            console.log(ex);
             this.emit('STOP_SENDING', ex);
+            throw ex;
         }
 
         return totalResponse;
@@ -427,7 +427,7 @@ export default class Wallet extends EventEmitter {
         assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
 
-        this.emit('START_SENDING');
+        this.emit('START_WITHDRAW');
 
         const spendingUTXOs = this._getSpendingUTXO(biAmount);
         const totalResponse = [];
@@ -449,11 +449,12 @@ export default class Wallet extends EventEmitter {
                     const res = await this._withdraw(proof);
                     totalResponse.push(res.NewUTXO);
 
-                    if (!spendingUTXOs.length) this.emit('FINISH_SENDING');
+                    if (!spendingUTXOs.length) this.emit('FINISH_WITHDRAW');
                 }
             } catch (ex) {
                 console.log('ex ', ex);
-                this.emit('STOP_SENDING', ex);
+                this.emit('STOP_WITHDRAW', ex);
+                throw ex;
             }
 
             this.utxos.splice(0, totalSpent);
@@ -471,9 +472,10 @@ export default class Wallet extends EventEmitter {
             const res = await this._withdraw(proof);
             this.utxos.splice(0, totalSpent);
             totalResponse.push(res.NewUTXO);
-            this.emit('FINISH_SENDING');
+            this.emit('FINISH_WITHDRAW');
         } catch (ex) {
-            this.emit('STOP_SENDING', ex);
+            this.emit('STOP_WITHDRAW', ex);
+            throw ex;
         }
 
         return totalResponse;
@@ -485,6 +487,7 @@ export default class Wallet extends EventEmitter {
      * @returns {object} new utxos and proof
      */
     _withdraw(proof: Array<any>): Promise<any> {
+        console.log(proof);
         return new Promise((resolve, reject) => {
             this.privacyContract.methods.withdrawFunds(...proof)
                 .send({
@@ -548,7 +551,8 @@ export default class Wallet extends EventEmitter {
      * 1. Generate ring-signature from spending utxos
      * 2. generate additional ring for proof commitment_input = commitment_output
      * @param {Array<UTXO>} spendingUTXOs
-     * @param
+     * @param {Array<Object>} UTXOs's proof generated for this tx
+     * @returns {Object} RingCT
      */
     async _genRingCT(spendingUTXOs: Array<UTXO>, proofs: Array<Object>) {
         const numberOfRing = spendingUTXOs.length;

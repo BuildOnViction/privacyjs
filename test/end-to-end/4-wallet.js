@@ -289,8 +289,7 @@ describe('#wallet #ete', () => {
              */
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                // 12999599996998000000
-                sendWallet.send(receiver.pubAddr, '13000000000000000000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '5000000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO;
 
                     _.each(txs, (NewUTXO) => {

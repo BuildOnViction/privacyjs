@@ -68,7 +68,7 @@ describe('#deposit', () => {
         });
     }
 
-    for (let count = 0; count < 0; count++) {
+    for (let count = 0; count < 20; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
             TestUtils.deposit(10000000000000, privateKey, address).then(() => {

@@ -4,6 +4,7 @@ import * as Address from './address';
 import * as common from './common';
 import * as Crypto from './crypto';
 import UTXO from './utxo';
+import Wallet from './wallet';
 
 module.exports = {
     Stealth,
@@ -12,4 +13,5 @@ module.exports = {
     Crypto,
     UTXO,
     Commitment,
+    Wallet,
 };

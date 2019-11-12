@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Tomo privacy wallet apis.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -31,7 +31,8 @@
     "env": {
       "production": {
         "presets": [
-          "minify"
+          "@babel/preset-env",
+          "@babel/preset-flow"
         ]
       }
     }
@@ -41,19 +42,24 @@
     "extends": "airbnb-base"
   },
   "dependencies": {
-    "@babel/runtime": "^7.0.0",
+    "@babel/polyfill": "^7.7.0",
+    "@truffle/hdwallet-provider": "^1.0.24",
     "aes-js": "^3.1.2",
     "bn.js": "^5.0.0",
     "bs58": "^2.0.1",
+    "crypto-js": "^3.1.9-1",
+    "dom-storage": "^2.1.0",
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "eventemitter3": "^4.0.0",
     "js-sha3": "^0.8.0",
     "lodash": "^4.17.15",
     "number-to-bn": "^1.7.0",
-    "utf8": "^3.0.0"
+    "utf8": "^3.0.0",
+    "web3": "^1.2.1"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.0.0",
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
     "@babel/node": "^7.6.1",
@@ -83,10 +89,10 @@
     "rollup": "^0.67.3",
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "sinon": "^7.5.0",
-    "truffle-hdwallet-provider": "^1.0.17",
-    "web3": "^1.2.1"
+    "sinon": "^7.5.0"
   },
   "scripts": {
     "start": "nodemon --exec babel-node test/unit/keccka.js",

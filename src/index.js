@@ -1,3 +1,4 @@
+// import '@babel/polyfill';
 import Stealth from './stealth';
 import Commitment from './commitment';
 import * as Address from './address';

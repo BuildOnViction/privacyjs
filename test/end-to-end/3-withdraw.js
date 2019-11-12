@@ -5,7 +5,7 @@
 
 // import Web3 from 'web3';
 // import chai from 'chai';
-// import HDWalletProvider from 'truffle-hdwallet-provider';
+// import HDWalletProvider from '@truffle/hdwallet-provider';
 // import TestConfig from '../config.json';
 // import UTXO from '../../src/utxo';
 // import Stealth from '../../src/stealth';

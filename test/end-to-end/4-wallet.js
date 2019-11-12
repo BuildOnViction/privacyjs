@@ -1,7 +1,7 @@
 /* eslint-disable no-loop-func */
 import chai from 'chai';
 import Web3 from 'web3';
-import HDWalletProvider from 'truffle-hdwallet-provider';
+import HDWalletProvider from '@truffle/hdwallet-provider';
 import * as _ from 'lodash';
 import numberToBN from 'number-to-bn';
 import TestConfig from '../config.json';
@@ -114,7 +114,7 @@ describe('#wallet #ete', () => {
                 toBN(ins.decodedAmount),
             );
             const proof = sender.genTransactionProof(
-                Web3.utils.hexToNumberString(totalSpending.toHex()),
+                Web3.utils.hexToNumberString(`0x${totalSpending.toHex()}`),
             );
 
             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
@@ -189,7 +189,7 @@ describe('#wallet #ete', () => {
             ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
         }, WALLETS[0].address);
         // });
-
+        sendWallet.scannedTo = 0;
         it('Should not able to send 0 TOMO', (done) => {
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
@@ -207,6 +207,8 @@ describe('#wallet #ete', () => {
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
                 sendWallet.send(receiver.pubAddr, '1000000000000000000').then((txs) => {
+                    expect(txs).to.be.an('array');
+
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two
@@ -245,6 +247,7 @@ describe('#wallet #ete', () => {
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
                 sendWallet.send(receiver.pubAddr, '100000000000000000').then((txs) => {
+                    expect(txs).to.be.an('array');
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two
@@ -304,7 +307,7 @@ describe('#wallet #ete', () => {
             try {
                 sendWallet.send(receiver.pubAddr, '5000000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO;
-
+                    expect(txs).to.be.an('array');
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two

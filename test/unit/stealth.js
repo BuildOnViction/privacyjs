@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { randomHex } from '../../src/crypto';
 import * as Address from '../../src/address';
+import { hexToNumberString } from '../../src/common';
 import Stealth from '../../src/stealth';
 
 const fixtures = require('./fixtures');
@@ -94,7 +95,10 @@ describe('#unittest #stealth', () => {
 
                 // prove above information belong to receiver
                 assert.notEqual(result, null);
-                assert.equal(result.amount, 5000);
+                assert.equal(
+                    result.amount,
+                    '5000',
+                );
             });
         });
     });

@@ -376,6 +376,13 @@ export const hexToNumber = (value) => {
 export const hexToNumberString = (value) => {
     if (!value) return value;
 
+    if (value.indexOf('0x') !== 0) {
+        value = '0x' + value;
+    }
+
+    // if (value.length % 2 === 1) {
+    //     value = '0' + value;
+    // }
     return numberToBN(value).toString(10);
 };
 

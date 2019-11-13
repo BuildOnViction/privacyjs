@@ -22,57 +22,42 @@ export function sha256x2(buffer) {
     return crypto.createHash('sha256').update(sha256).digest();
 }
 
-// export function aesEncrypt(data) {
-//     const password = '<8{Qu;rnB3RnSq/*+<FGEsaff9&J/{$V^p5FkZ}`m,!eAB(&.H]auDJsW=64{PW@';
-//     const passwordHash = crypto.createHash('md5').update(password, 'utf-8').digest('hex').toUpperCase();
-
-//     const iv = crypto.randomBytes(16);
-
-//     // encrypt data
-//     const cipher = crypto.createCipheriv('aes-256-cbc', passwordHash, iv);
-//     const encryptedData = cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
-
-//     return encryptedData;
-// }
-
-// export function aesDecrypt(data) {
-//     const password = '<8{Qu;rnB3RnSq/*+<FGEsaff9&J/{$V^p5FkZ}`m,!eAB(&.H]auDJsW=64{PW@';
-//     const passwordHash = crypto.createHash('md5').update(password, 'utf-8').digest('hex').toUpperCase();
-
-//     const iv = crypto.randomBytes(16);
-
-//     // encrypt data
-//     const cipher = crypto.createCipheriv('aes-256-cbc', passwordHash, iv);
-//     const encryptedData = cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
-
-//     return encryptedData;
-// }
-
-const algorithm = 'aes-256-cbc';
-const _iv = '8*5g!aU(.[LUBQ_2';
-
-export function aesEncrypt(plaintext, key) {
+export function encode(plaintext, key) {
     const sha256sum = crypto.createHash('sha256');
-    const _key = sha256sum.update(key).digest();
-    console.log(_key);
-    const cipher = crypto.createCipheriv(algorithm, _key, _iv);
-    console.log('plaintext ', plaintext);
-    const encrypted = cipher.update(plaintext, 'ascii', 'hex') + cipher.final('hex');
+    let _key = sha256sum.update(key).digest().toString('hex');
 
-    console.log('encrypted ', encrypted);
+    if (plaintext.length % 2 === 1) {
+        plaintext = '0' + plaintext;
+    }
 
-    return encrypted;
+    if (_key.length % 2 === 1) {
+        _key = '0' + _key;
+    }
+
+    const res = BigInteger.fromHex(_key)
+        .mod(ecparams.n).add(
+            BigInteger.fromHex(plaintext).mod(ecparams.n),
+        ).mod(ecparams.n)
+        .toHex();
+
+    return res;
 }
 
-export function aesDecrypt(encrypted, key) {
-    // const sha256sum = crypto.createHash('sha256');
-    // const _key = sha256sum.update(key).digest();
-    const decipher = crypto.createDecipheriv(algorithm, key, _iv);
-    const decrypted = decipher.update(encrypted, 'ascii', 'hex') + decipher.final('binary');
+export function decode(encrypted, key) {
+    const sha256sum = crypto.createHash('sha256');
+    let _key = sha256sum.update(key).digest().toString('hex');
 
-    console.log('decrypted ', decrypted);
+    if (encrypted.length % 2 === 1) {
+        encrypted = '0' + encrypted;
+    }
 
-    return decrypted;
+    if (_key.length % 2 === 1) {
+        _key = '0' + _key;
+    }
+
+    return BigInteger.fromHex(encrypted).subtract(
+        BigInteger.fromHex(_key).mod(ecparams.n),
+    ).mod(ecparams.n).toHex();
 }
 
 /**

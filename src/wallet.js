@@ -518,7 +518,6 @@ export default class Wallet extends EventEmitter {
         const totalSpent = spendingUTXOs.length;
 
         if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
-            console.log('spending multiple utxos ');
             try {
                 while (spendingUTXOs.length > 0) {
                     const spentThisRound = _.map(
@@ -552,7 +551,6 @@ export default class Wallet extends EventEmitter {
             return totalResponse;
         }
 
-        console.log('spending single utxo ');
         const proof = await this._makeWithdrawProof(
             address,
             biAmount,
@@ -982,7 +980,6 @@ export default class Wallet extends EventEmitter {
         const privacyContractSocket = new web3Socket.eth.Contract(scOpts.ABI, scOpts.ADDRESS);
 
         privacyContractSocket.events.NewUTXO().on('data', (evt) => {
-            console.log('checing if evt return in single or plural form ', evt);
             const utxoInstance = new UTXO(evt.returnValues);
             const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 

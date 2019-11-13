@@ -1,148 +1,149 @@
-import * as _ from 'lodash';
-import chai from 'chai';
-import Web3 from 'web3';
-import TestConfig from '../config.json';
-import MLSAG_DATA from './mlsag.json';
-import MLSAG, { hashToPoint } from '../../src/mlsag';
+// import * as _ from 'lodash';
+// import chai from 'chai';
+// // import Web3 from 'web3';
+// import TestConfig from '../config.json';
+// import MLSAG_DATA from './mlsag.json';
+// import MLSAG, { hashToPoint } from '../../src/mlsag';
 
-import UTXO from '../../src/utxo';
-import { BigInteger, randomHex } from '../../src/crypto';
-import { toBN } from '../../src/common';
-import Stealth from '../../src/stealth';
-import { generateKeys } from '../../src/address';
+// import { hexToNumberString, toBN } from '../../src/common';
+// import UTXO from '../../src/utxo';
+// import { BigInteger, randomHex } from '../../src/crypto';
 
-const ecurve = require('ecurve');
+// import Stealth from '../../src/stealth';
+// import { generateKeys } from '../../src/address';
 
-const ecparams = ecurve.getCurveByName('secp256k1');
-const EC = require('elliptic').ec;
+// const ecurve = require('ecurve');
 
-const ec = new EC('secp256k1');
+// const ecparams = ecurve.getCurveByName('secp256k1');
+// const EC = require('elliptic').ec;
 
-const { expect } = chai;
-chai.should();
+// const ec = new EC('secp256k1');
 
-const { WALLETS } = TestConfig;
-const SENDER_WALLET = WALLETS[2]; // hold around 1 mil tomo
+// const { expect } = chai;
+// chai.should();
 
-/**
- * Multilayered linkable spontaneous ad-hoc group signatures test
- * Cover unit test for
- * 1. Hash turn point to point in seccp256k1 ECC
- * 2. MLSAG sign message
- * 3. MLSAG verify signature
- */
+// const { WALLETS } = TestConfig;
+// const SENDER_WALLET = WALLETS[2]; // hold around 1 mil tomo
 
-// TODO write more test case
-describe('#unittest #ringct #mlsag', () => {
-    describe('#hashToPoint', () => {
-        // because of this randomization, we do this 50 times to make sure
-        // it always return new point on hash
-        for (let times = 0; times < 5; times++) {
-            it('Should turn a hex into a point in seccp256 ECC correctly', (done) => {
-                const publicKey = ec.genKeyPair().getPublic().encodeCompressed('hex');
-                const newPoint = hashToPoint(publicKey);
+// /**
+//  * Multilayered linkable spontaneous ad-hoc group signatures test
+//  * Cover unit test for
+//  * 1. Hash turn point to point in seccp256k1 ECC
+//  * 2. MLSAG sign message
+//  * 3. MLSAG verify signature
+//  */
 
-                expect(ecparams.isOnCurve(newPoint)).to.be.equal(true);
-                done();
-            });
-        }
-    });
+// // TODO write more test case
+// describe('#unittest #ringct #mlsag', () => {
+//     describe('#hashToPoint', () => {
+//         // because of this randomization, we do this 50 times to make sure
+//         // it always return new point on hash
+//         for (let times = 0; times < 5; times++) {
+//             it('Should turn a hex into a point in seccp256 ECC correctly', (done) => {
+//                 const publicKey = ec.genKeyPair().getPublic().encodeCompressed('hex');
+//                 const newPoint = hashToPoint(publicKey);
 
-    describe('#sign', () => {
-        it('Should able to verify signer belong belong to a group', (done) => {
-            const sender = new Stealth({
-                ...generateKeys(SENDER_WALLET.privateKey),
-            });
-            const index = 3;
+//                 expect(ecparams.isOnCurve(newPoint)).to.be.equal(true);
+//                 done();
+//             });
+//         }
+//     });
 
-            MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+//     describe('#sign', () => {
+//         it('Should able to verify signer belong belong to a group', (done) => {
+//             const sender = new Stealth({
+//                 ...generateKeys(SENDER_WALLET.privateKey),
+//             });
+//             const index = 3;
 
-            let totalSpending = BigInteger.ZERO;
-            const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
-            ins.checkOwnership(SENDER_WALLET.privateKey);
+//             MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-            totalSpending = totalSpending.add(
-                toBN(ins.decodedAmount),
-            );
-            const proof = sender.genTransactionProof(
-                Web3.utils.hexToNumberString(totalSpending.toHex()),
-            );
+//             let totalSpending = BigInteger.ZERO;
+//             const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
+//             ins.checkOwnership(SENDER_WALLET.privateKey);
 
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+//             totalSpending = totalSpending.add(
+//                 toBN(ins.decodedAmount),
+//             );
+//             const proof = sender.genTransactionProof(
+//                 hexToNumberString(totalSpending.toHex()),
+//             );
 
-            // ct ring
-            const {
-                privKey,
-                publicKeys,
-            } = MLSAG.genCTRing(
-                SENDER_WALLET.privateKey,
-                [inputUTXOS],
-                [{
-                    lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
-                    decodedMask: proof.mask,
-                }],
-                index,
-            );
+//             const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
-            // ring-signature of utxos
-            const signature = MLSAG.mulSign(
-                [
-                    BigInteger.fromHex(ins.privKey), privKey],
-                [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-                index,
-            );
-            expect(signature.I).not.to.equal(null);
-            expect(signature.c1).not.to.equal(null);
-            expect(signature.s).not.to.equal(null);
+//             // ct ring
+//             const {
+//                 privKey,
+//                 publicKeys,
+//             } = MLSAG.genCTRing(
+//                 SENDER_WALLET.privateKey,
+//                 [inputUTXOS],
+//                 [{
+//                     lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
+//                     decodedMask: proof.mask,
+//                 }],
+//                 index,
+//             );
+
+//             // ring-signature of utxos
+//             const signature = MLSAG.mulSign(
+//                 [
+//                     BigInteger.fromHex(ins.privKey), privKey],
+//                 [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+//                 index,
+//             );
+//             expect(signature.I).not.to.equal(null);
+//             expect(signature.c1).not.to.equal(null);
+//             expect(signature.s).not.to.equal(null);
 
 
-            expect(
-                MLSAG.verifyMul(
-                    [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-                    signature.I,
-                    signature.c1,
-                    signature.s,
-                ),
-            ).to.be.equal(true);
+//             expect(
+//                 MLSAG.verifyMul(
+//                     [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+//                     signature.I,
+//                     signature.c1,
+//                     signature.s,
+//                 ),
+//             ).to.be.equal(true);
 
-            done();
-        });
+//             done();
+//         });
 
-    });
+//     });
 
-    it('Should not able to verify a privatekey not in ring', (done) => {
-        const index = 3;
+//     it('Should not able to verify a privatekey not in ring', (done) => {
+//         const index = 3;
 
-        MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+//         MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-        const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
-        ins.checkOwnership(SENDER_WALLET.privateKey);
+//         const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
+//         ins.checkOwnership(SENDER_WALLET.privateKey);
 
-        const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+//         const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
-        // ring-signature of utxos
-        const signature = MLSAG.mulSign(
-            [
-                BigInteger.fromHex(
-                    randomHex(),
-                )],
-            [_.map(inputUTXOS, utxo => utxo.lfStealth)],
-            index,
-        );
-        expect(signature.I).not.to.equal(null);
-        expect(signature.c1).not.to.equal(null);
-        expect(signature.s).not.to.equal(null);
+//         // ring-signature of utxos
+//         const signature = MLSAG.mulSign(
+//             [
+//                 BigInteger.fromHex(
+//                     randomHex(),
+//                 )],
+//             [_.map(inputUTXOS, utxo => utxo.lfStealth)],
+//             index,
+//         );
+//         expect(signature.I).not.to.equal(null);
+//         expect(signature.c1).not.to.equal(null);
+//         expect(signature.s).not.to.equal(null);
 
-        expect(
-            MLSAG.verifyMul(
-                [_.map(inputUTXOS, utxo => utxo.lfStealth)],
-                signature.I,
-                signature.c1,
-                signature.s,
-            ),
-        ).to.be.equal(false);
+//         expect(
+//             MLSAG.verifyMul(
+//                 [_.map(inputUTXOS, utxo => utxo.lfStealth)],
+//                 signature.I,
+//                 signature.c1,
+//                 signature.s,
+//             ),
+//         ).to.be.equal(false);
 
-        done();
-    });
+//         done();
+//     });
 
-});
+// });

@@ -25,7 +25,7 @@ import * as Address from './address';
 import Stealth from './stealth';
 import UTXO from './utxo';
 import { BigInteger, randomHex } from './crypto';
-import { toBN } from './common';
+import { toBN, hexToNumberString } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -256,6 +256,7 @@ export default class Wallet extends EventEmitter {
                 const usableAmount = await _self._verifyUsableUTXO(utxo);
 
                 if (usableAmount) {
+                    console.log(usableAmount);
                     balance = balance.add(
                         toBN(usableAmount),
                     );
@@ -320,8 +321,11 @@ export default class Wallet extends EventEmitter {
         const spendingUTXOS = [];
         let i = 0;
 
+        // console.log('this.utxos ', this.utxos);
+
         let justEnoughBalance = BigInteger.ZERO;
-        while (amount.compareTo(justEnoughBalance) > 0) {
+
+        while (amount.compareTo(justEnoughBalance) > 0 && this.utxos[i]) {
             justEnoughBalance = justEnoughBalance.add(
                 toBN(
                     this.utxos[i].decodedAmount, // TODO convert decoded amount to BigInteger
@@ -507,6 +511,8 @@ export default class Wallet extends EventEmitter {
         }
 
         const biAmount = toBN(amount);
+
+        console.log(this.utxos.length);
 
         assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');

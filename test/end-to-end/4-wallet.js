@@ -427,7 +427,7 @@ describe('#wallet #ete', () => {
              */
             const receiver = WALLETS[0].address;
             try {
-                withdrawWallet.withdraw(receiver, '13000000000000000000').then((txs) => {
+                withdrawWallet.withdraw(receiver, '8000000000000000000').then((txs) => {
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         const returnUTXO = NewUTXO.returnValues;

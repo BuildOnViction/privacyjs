@@ -44,10 +44,8 @@
   "dependencies": {
     "@babel/polyfill": "^7.7.0",
     "@truffle/hdwallet-provider": "^1.0.24",
-    "aes-js": "^3.1.2",
     "bn.js": "^5.0.0",
     "bs58": "^2.0.1",
-    "crypto-js": "^3.1.9-1",
     "dom-storage": "^2.1.0",
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",

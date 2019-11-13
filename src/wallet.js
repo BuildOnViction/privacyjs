@@ -169,7 +169,6 @@ export default class Wallet extends EventEmitter {
         this.emit('START_DEPOSIT');
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(amount);
-
             this.privacyContract.methods.deposit(...proof)
                 .send({
                     from: this.scOpts.from,
@@ -196,7 +195,7 @@ export default class Wallet extends EventEmitter {
      */
     getUTXO(index: number): Promise<Object> {
         return new Promise((resolve, reject) => {
-            this.privacyContract.methods.getUTXO(index)
+            this.privacyContractSocket.methods.getUTXO(index)
                 .call({
                     from: this.scOpts.from,
                 })
@@ -425,15 +424,6 @@ export default class Wallet extends EventEmitter {
             this.balance = this._calTotal(this.utxos);
 
             this.updateWalletState(this.utxos, this.balance, this.scannedTo);
-
-            _.each(_.flatten(totalResponse), (utxo) => {
-                const utxoInstance = new UTXO(utxo.returnValues);
-                const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
-                if (isMine) {
-                    this.utxos.push(utxoInstance);
-                }
-            });
-
             return totalResponse;
         }
 
@@ -456,13 +446,6 @@ export default class Wallet extends EventEmitter {
 
             this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
-            _.each(res.NewUTXO, (utxo) => {
-                const utxoInstance = new UTXO(utxo.returnValues);
-                const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
-                if (isMine) {
-                    this.utxos.push(utxoInstance);
-                }
-            });
             totalResponse.push(res.NewUTXO);
 
             this.emit('FINISH_SENDING');
@@ -1000,9 +983,9 @@ export default class Wallet extends EventEmitter {
     listenNewUTXO(scOpts: SmartContractOpts) {
         const webSocketProvider = new Web3.providers.WebsocketProvider(scOpts.SOCKET_END_POINT);
         const web3Socket = new Web3(webSocketProvider);
-        const privacyContractSocket = new web3Socket.eth.Contract(scOpts.ABI, scOpts.ADDRESS);
+        this.privacyContractSocket = new web3Socket.eth.Contract(scOpts.ABI, scOpts.ADDRESS);
 
-        privacyContractSocket.events.NewUTXO().on('data', (evt) => {
+        this.privacyContractSocket.events.NewUTXO().on('data', (evt) => {
             const utxoInstance = new UTXO(evt.returnValues);
             const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 
@@ -1017,8 +1000,6 @@ export default class Wallet extends EventEmitter {
 
                 this.updateWalletState(this.utxos, this.balance, parseInt(rawutxo._index));
 
-                console.log(isMine.amount);
-                console.log(rawutxo);
                 this.emit('NEW_UTXO');
             }
         });
@@ -1050,11 +1031,7 @@ export default class Wallet extends EventEmitter {
     }
 
     _removeSpentUTXO(spentUTXOS) {
-        console.log('spentUTXOS ', spentUTXOS);
         const indexes = _.map(spentUTXOS, raw => parseInt(raw['3']));
-
-        console.log(indexes);
-
         const rawUTXOs = this._fromStorage('UTXOS');
 
         if (!rawUTXOs || !rawUTXOs.length) {
@@ -1062,9 +1039,6 @@ export default class Wallet extends EventEmitter {
         }
 
         _.remove(rawUTXOs, raw => parseInt(raw['3']) in indexes);
-
-        console.log('rawUTXOs ', rawUTXOs);
-
         this._updateStorage(
             'UTXOS',
             rawUTXOs,

@@ -4,6 +4,7 @@
  */
 
 import chai from 'chai';
+import * as _ from 'lodash';
 import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
 import * as Address from '../../src/address';
@@ -23,7 +24,8 @@ const sender = new Stealth({
 });
 
 describe('#deposit', () => {
-    for (let count = 0; count < 2; count++) {
+    for (let count = 0; count < 20; count++) {
+        // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
                 const returnedValue = result.utxo;
@@ -39,6 +41,7 @@ describe('#deposit', () => {
                 expect(isMineUTXO.amount).to.equal(amount.toString());
 
                 // make sure decoded mask = generated mask
+                expect(utxoIns.mask).to.equal(proof.encryptedMask);
                 expect(isMineUTXO.mask).to.equal(proof.mask);
 
                 // validate return commitment from amount,mask -
@@ -56,10 +59,7 @@ describe('#deposit', () => {
                 const expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
 
                 expect(
-                    Commitment.genCommitmentFromTxPub(amount, {
-                        X: utxoIns.txPubX,
-                        YBit: utxoIns.txPubYBit,
-                    }, sender.privViewKey).toString('hex') === expectedCommitment,
+                    utxoIns.lfCommitment.getEncoded(true).toString('hex') === expectedCommitment,
                 ).to.equal(true);
                 done();
             })
@@ -70,7 +70,7 @@ describe('#deposit', () => {
         });
     }
 
-    for (let count = 0; count < 2; count++) {
+    for (let count = 0; count < 20; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
             TestUtils.deposit(1000000000, privateKey, address).then(() => {

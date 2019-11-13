@@ -97,89 +97,90 @@ describe('#wallet #ete', () => {
         });
     });
 
-    describe('#MLSAG', () => {
-        it('Should genCT return correct ring (check on precompiled contract) from mlsag', (done) => {
-            const sender = new Stealth({
-                ...generateKeys(WALLETS[2].privateKey),
-            });
-            const index = 3;
+    // in the production or testnet, there is no verifier
+    // describe('#MLSAG', () => {
+    //     it('Should genCT return correct ring (check on precompiled contract) from mlsag', (done) => {
+    //         const sender = new Stealth({
+    //             ...generateKeys(WALLETS[2].privateKey),
+    //         });
+    //         const index = 3;
 
-            MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
+    //         MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-            let totalSpending = BigInteger.ZERO;
-            const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
-            ins.checkOwnership(WALLETS[2].privateKey);
+    //         let totalSpending = BigInteger.ZERO;
+    //         const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
+    //         ins.checkOwnership(WALLETS[2].privateKey);
 
-            totalSpending = totalSpending.add(
-                toBN(ins.decodedAmount),
-            );
-            const proof = sender.genTransactionProof(
-                Web3.utils.hexToNumberString(`0x${totalSpending.toHex()}`),
-            );
+    //         totalSpending = totalSpending.add(
+    //             toBN(ins.decodedAmount),
+    //         );
+    //         const proof = sender.genTransactionProof(
+    //             Web3.utils.hexToNumberString(`0x${totalSpending.toHex()}`),
+    //         );
 
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
+    //         const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
 
-            // ct ring
-            const {
-                privKey,
-                publicKeys,
-            } = MLSAG.genCTRing(
-                WALLETS[2].privateKey,
-                [inputUTXOS],
-                [{
-                    lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
-                    decodedMask: proof.mask,
-                }],
-                index,
-            );
+    //         // ct ring
+    //         const {
+    //             privKey,
+    //             publicKeys,
+    //         } = MLSAG.genCTRing(
+    //             WALLETS[2].privateKey,
+    //             [inputUTXOS],
+    //             [{
+    //                 lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
+    //                 decodedMask: proof.mask,
+    //             }],
+    //             index,
+    //         );
 
-            // ring-signature of utxos
-            const signature = MLSAG.mulSign(
-                [
-                    BigInteger.fromHex(ins.privKey), privKey],
-                [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-                index,
-            );
-            expect(signature.I).not.to.equal(null);
-            expect(signature.c1).not.to.equal(null);
-            expect(signature.s).not.to.equal(null);
+    //         // ring-signature of utxos
+    //         const signature = MLSAG.mulSign(
+    //             [
+    //                 BigInteger.fromHex(ins.privKey), privKey],
+    //             [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+    //             index,
+    //         );
+    //         expect(signature.I).not.to.equal(null);
+    //         expect(signature.c1).not.to.equal(null);
+    //         expect(signature.s).not.to.equal(null);
 
 
-            expect(
-                MLSAG.verifyMul(
-                    [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-                    signature.I,
-                    signature.c1,
-                    signature.s,
-                ),
-            ).to.be.equal(true);
+    //         expect(
+    //             MLSAG.verifyMul(
+    //                 [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+    //                 signature.I,
+    //                 signature.c1,
+    //                 signature.s,
+    //             ),
+    //         ).to.be.equal(true);
 
-            mlsagPrecompiledContract.methods.VerifyRingCT(
-                Buffer.from(
-                    `${numberToBN(1 + 1).toString(16, 16)
-                    }${numberToBN(MLSAG_DATA.NOISING_UTXOS[0].length).toString(16, 16)
-                    }${signature.message.toString('hex')
-                    }${signature.c1.toHex(32)
-                    }${_.map(_.flatten(signature.s), element => element.toHex(32)).join('')
-                    }${_.map(_.flatten([_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys]), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
-                    }${_.map(_.flatten(signature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
-                    'hex',
-                ),
-            )
-                .send({
-                    from: SENDER_WALLET.address,
-                })
-                .then((receipt) => {
-                    console.log(receipt);
-                    done();
-                })
-                .catch((error) => {
-                    console.log(error);
-                    done(error);
-                });
+    //         mlsagPrecompiledContract.methods.VerifyRingCT(
+    //             Buffer.from(
+    //                 `${numberToBN(1 + 1).toString(16, 16)
+    //                 }${numberToBN(MLSAG_DATA.NOISING_UTXOS[0].length).toString(16, 16)
+    //                 }${signature.message.toString('hex')
+    //                 }${signature.c1.toHex(32)
+    //                 }${_.map(_.flatten(signature.s), element => element.toHex(32)).join('')
+    //                 }${_.map(_.flatten([_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys]), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+    //                 }${_.map(_.flatten(signature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
+    //                 'hex',
+    //             ),
+    //         )
+    //             .send({
+    //                 from: SENDER_WALLET.address,
+    //             })
+    //             .then((receipt) => {
+    //                 console.log(receipt);
+    //                 done();
+    //             })
+    //             .catch((error) => {
+    //                 console.log(error);
+    //                 done(error);
+    //             });
 
-        });
-    });
+    //     });
+    // });
 
     describe('#send', () => {
         // beforeEach(() => {

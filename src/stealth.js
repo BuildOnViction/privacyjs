@@ -1,5 +1,5 @@
 import {
-    aesEncrypt, aesDecrypt, BigInteger, hmacSha256, randomHex,
+    encode, decode, BigInteger, hmacSha256, randomHex,
 } from './crypto';
 
 // eslint-disable-next-line import/no-cycle
@@ -67,7 +67,7 @@ class Stealth {
 
         const randomHexVal = randomHex();
 
-        // const hexAmount = common.numberToHex(amount.toString());
+        const hexAmount = common.numberToHex(amount.toString());
         // console.log('hexAmount ', hexAmount);
         // const randomHex = 'f042298df7ea67d6bd8cf8e32537f23656ae36d3d9e04955f86997addb2dc4ee';
 
@@ -86,43 +86,43 @@ class Stealth {
         // so we generate a hash 32 bytes from 33 bytes
         const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false)).toString('hex');
 
-        // const aesCtr = new aesjs.ModeOfOperation.cbc(aesKey, aesIv);
-        // const encryptedAmount = common.bintohex(
-        //     aesCtr.encrypt(common.hexToBytes(
-        //         hexAmount,
-        //     )),
-        // );
-        const encryptedAmount = aesEncrypt(amount.toString(), aesKey);
+        const encryptedAmount = encode(hexAmount, aesKey);
 
         // generate mask for sc managing balance
         let mask;
         let commitment;
 
+        // TODO refactor this calculating mask
+        /**
+         * We always want the mask is 32 bytes
+         * so if the prefix is 00 -> turn to 10
+         */
         if (!predefinedMask) {
-            mask = hs(ECDHSharedSerect.getEncoded(true)); // for smart contract only
-            commitment = Commitment.genCommitment(amount, common.bintohex(mask), false);
-            mask = mask.toString('hex');
+            mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
+
+            // Work around: mask should be a strictly hex 32 bytes
+            if (mask.indexOf('00') === 0) {
+                mask = '1' + mask.slice(1);
+            }
+
+            commitment = Commitment.genCommitment(amount, mask, false);
         } else {
             mask = predefinedMask;
+            if (mask.indexOf('00') === 0) {
+                mask = '1' + mask.slice(1);
+            }
             commitment = Commitment.genCommitment(amount, mask, false);
         }
 
-        // const aesCtrMask = new aesjs.ModeOfOperation.cbc(aesKey, aesIv);
-        // const encryptedMask = aesCtrMask.encrypt(common.hextobin(mask.toString('hex')));
-        const encryptedMask = aesEncrypt(mask.toString('hex'), aesKey);
+        const encryptedMask = encode(mask.toString('hex'), aesKey);
 
-        // encryptedAmount = common.utf8ToHex(encryptedAmount);
-        // encryptedMask = common.utf8ToHex(encryptedMask);
-
-        // console.log('encryptedAmount ', encryptedAmount);
-        // console.log('encryptedAmount ', encryptedAmount);
         return {
             onetimeAddress,
             txPublicKey,
             encryptedAmount,
             mask,
             commitment,
-            encryptedMask: common.bintohex(encryptedMask),
+            encryptedMask,
         };
     }
 
@@ -137,9 +137,6 @@ class Stealth {
     checkTransactionProof(txPublicKey, onetimeAddress, encryptedAmount, encryptedMask) {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
-
-        encryptedAmount = common.hexToUtf8(encryptedAmount);
-        encryptedMask = common.hexToUtf8(encryptedMask);
 
         if (txPublicKey.length !== 65) return null;
 
@@ -170,22 +167,12 @@ class Stealth {
         const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false)).toString('hex');
 
         if (encryptedAmount) {
-            // const encryptedBytes = common.hextobin(encryptedAmount);
-            // const aesCtr = new aesjs.ModeOfOperation.cbc(aesKey, aesIv);
-            // const decryptedBytes = aesCtr.decrypt(encryptedBytes);
-            // const amount = aesjs.utils.hex.fromBytes(decryptedBytes);
-
-            const amount = aesDecrypt(encryptedAmount, aesKey);
+            const amount = decode(encryptedAmount, aesKey);
             returnValue.amount = common.hexToNumberString(amount);
         }
 
         if (encryptedMask) {
-            // const encryptedBytesMask = common.hextobin(encryptedMask);
-            // const aesCtrMask = new aesjs.ModeOfOperation.cbc(aesKey, aesIv);
-            // const decryptedBytesMask = aesCtrMask.decrypt(encryptedBytesMask);
-            // const mask = common.bintohex(decryptedBytesMask);
-
-            const mask = aesDecrypt(encryptedMask, aesKey);
+            const mask = decode(encryptedMask, aesKey);
             returnValue.mask = mask;
         }
 
@@ -227,16 +214,14 @@ class Stealth {
         }
 
         const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false)).toString('hex');
-        // const aesCtr = new aesjs.ModeOfOperation.cbc(aesKey, aesIv);
-        // const hexAmount = common.numberToHex(newAmount.toString());
+        console.log(aesKey);
+        console.log('newAmount ', newAmount);
+        const ecptAmount = encode(
+            common.numberToHex(newAmount.toString()),
+            aesKey,
+        );
 
-        // const ecptAmount = common.bintohex(
-        //     aesCtr.encrypt(common.hexToBytes(
-        //         hexAmount,
-        //     )),
-        // );
-
-        const ecptAmount = aesEncrypt(newAmount.toString(), aesKey);
+        console.log('ecptAmount ', ecptAmount);
 
         return ecptAmount;
     }

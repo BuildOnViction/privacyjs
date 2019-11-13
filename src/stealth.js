@@ -212,14 +212,10 @@ class Stealth {
         }
 
         const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false)).toString('hex');
-        console.log(aesKey);
-        console.log('newAmount ', newAmount);
         const ecptAmount = encode(
             common.numberToHex(newAmount.toString()),
             aesKey,
         );
-
-        console.log('ecptAmount ', ecptAmount);
 
         return ecptAmount;
     }

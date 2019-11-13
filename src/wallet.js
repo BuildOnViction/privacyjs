@@ -25,7 +25,7 @@ import * as Address from './address';
 import Stealth from './stealth';
 import UTXO from './utxo';
 import { BigInteger, randomHex } from './crypto';
-import { toBN, hexToNumberString } from './common';
+import { toBN } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -58,6 +58,8 @@ const MAXIMUM_ALLOWED_RING_NUMBER = 5;
 const PRIVACY_FLAT_FEE = toBN(
     '10000000000000000',
 ); // 0.01 TOMO
+
+const STORAGE_PREFIX = '@TOMOPRIVACY/';
 
 export default class Wallet extends EventEmitter {
     addresses: {
@@ -256,7 +258,6 @@ export default class Wallet extends EventEmitter {
                 const usableAmount = await _self._verifyUsableUTXO(utxo);
 
                 if (usableAmount) {
-                    console.log(usableAmount);
                     balance = balance.add(
                         toBN(usableAmount),
                     );
@@ -297,7 +298,8 @@ export default class Wallet extends EventEmitter {
     }
 
     updateWalletState(rawUTXOs: Array<Object>, balance: BigInteger, scannedTo: number) {
-        this._addNewUTXOS(rawUTXOs, true);
+        // this._addNewUTXOS(rawUTXOs, true);
+        this._updateStorage('UTXOS', this.utxos);
         this._updateStorage('BALANCE', balance.toHex());
         this._updateStorage('SCANNEDTO', scannedTo);
     }
@@ -307,7 +309,7 @@ export default class Wallet extends EventEmitter {
             this._fromStorage('BALANCE') || '00',
         );
 
-        this.scannedTo = this._fromStorage('SCANNEDTO');
+        this.scannedTo = parseInt(this._fromStorage('SCANNEDTO')) || 0;
 
         // Load all UTXO object
         // TODO just load decodedAmount and index so the memory is very light
@@ -322,7 +324,6 @@ export default class Wallet extends EventEmitter {
         let i = 0;
 
         // console.log('this.utxos ', this.utxos);
-
         let justEnoughBalance = BigInteger.ZERO;
 
         while (amount.compareTo(justEnoughBalance) > 0 && this.utxos[i]) {
@@ -346,6 +347,9 @@ export default class Wallet extends EventEmitter {
     _calTotal(utxos: Array<UTXO>): BigInteger {
         let balance = BigInteger.ZERO;
         _.each(utxos, (utxo) => {
+            if (!utxo.decodedAmount) {
+                utxo.decodedAmount = new UTXO(utxo).checkOwnership(this.addresses.privSpendKey).amount;
+            }
             balance = balance.add(
                 toBN(
                     utxo.decodedAmount,
@@ -417,7 +421,10 @@ export default class Wallet extends EventEmitter {
             }
 
             this.utxos.splice(0, totalSpent);
+
             this.balance = this._calTotal(this.utxos);
+
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
             _.each(_.flatten(totalResponse), (utxo) => {
                 const utxoInstance = new UTXO(utxo.returnValues);
@@ -444,7 +451,10 @@ export default class Wallet extends EventEmitter {
             // eslint-disable-next-line no-await-in-loop
             const res = await this._send(proof);
             this.utxos.splice(0, totalSpent);
+
             this.balance = this._calTotal(this.utxos);
+
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
             _.each(res.NewUTXO, (utxo) => {
                 const utxoInstance = new UTXO(utxo.returnValues);
@@ -512,8 +522,6 @@ export default class Wallet extends EventEmitter {
 
         const biAmount = toBN(amount);
 
-        console.log(this.utxos.length);
-
         assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
 
@@ -553,7 +561,12 @@ export default class Wallet extends EventEmitter {
                 throw ex;
             }
 
+            // TODO duplicated code
             this.utxos.splice(0, totalSpent);
+
+            this.balance = this._calTotal(this.utxos);
+
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
             return totalResponse;
         }
 
@@ -571,6 +584,10 @@ export default class Wallet extends EventEmitter {
             // eslint-disable-next-line no-await-in-loop
             const res = await this._withdraw(proof);
             this.utxos.splice(0, totalSpent);
+
+            this.balance = this._calTotal(this.utxos);
+
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
             totalResponse.push(res.NewUTXO);
             this.emit('FINISH_WITHDRAW');
         } catch (ex) {
@@ -979,7 +996,7 @@ export default class Wallet extends EventEmitter {
         return this.balance ? '0x' + this.balance.toHex() : '0x0';
     }
 
-    // TODO find way to test on browser
+    // TODO find way to do automation test on browser
     listenNewUTXO(scOpts: SmartContractOpts) {
         const webSocketProvider = new Web3.providers.WebsocketProvider(scOpts.SOCKET_END_POINT);
         const web3Socket = new Web3(webSocketProvider);
@@ -989,13 +1006,20 @@ export default class Wallet extends EventEmitter {
             const utxoInstance = new UTXO(evt.returnValues);
             const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 
-            if (isMine) {
-                this.utxos.push({
+            if (isMine && isMine.amount) {
+                const rawutxo = {
                     ...evt.returnValues,
-                    decodedAmount: isMine.decodedAmount,
-                });
-                this._addNewUTXOS([evt.returnValues]);
+                    decodedAmount: isMine.amount,
+                };
+                this.utxos.push(rawutxo);
+
                 this.balance = this._calTotal(this.utxos);
+
+                this.updateWalletState(this.utxos, this.balance, parseInt(rawutxo._index));
+
+                console.log(isMine.amount);
+                console.log(rawutxo);
+                this.emit('NEW_UTXO');
             }
         });
     }
@@ -1012,46 +1036,59 @@ export default class Wallet extends EventEmitter {
             return false;
         }
 
-        const utxos = localStorage.getItem(`${this.storeagePrefix}UTXOS`) ? JSON.parse(localStorage.getItem(`${this.storeagePrefix}UTXOS`)) : null;
+        let utxos = localStorage.getItem(`${STORAGE_PREFIX}UTXOS`) ? JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}UTXOS`)) : null;
         if (utxos && utxos.length > 0 && !forceReplace) {
-            localStorage.setItem(`${this.storeagePrefix}UTXOS`, JSON.stringify(
-                utxos.concat(rawutxos),
+            utxos = utxos.concat(rawutxos);
+            localStorage.setItem(`${STORAGE_PREFIX}UTXOS`, JSON.stringify(
+                utxos,
             ));
         } else {
-            localStorage.setItem(`${this.storeagePrefix}UTXOS`, JSON.stringify(
+            localStorage.setItem(`${STORAGE_PREFIX}UTXOS`, JSON.stringify(
                 rawutxos,
             ));
         }
     }
 
-    _removeSpentUTXO(indexes) {
+    _removeSpentUTXO(spentUTXOS) {
+        console.log('spentUTXOS ', spentUTXOS);
+        const indexes = _.map(spentUTXOS, raw => parseInt(raw['3']));
+
+        console.log(indexes);
+
         const rawUTXOs = this._fromStorage('UTXOS');
 
         if (!rawUTXOs || !rawUTXOs.length) {
             return;
         }
 
+        _.remove(rawUTXOs, raw => parseInt(raw['3']) in indexes);
+
+        console.log('rawUTXOs ', rawUTXOs);
+
         this._updateStorage(
             'UTXOS',
-            _.remove(rawUTXOs, raw => parseInt(raw['3']) in indexes),
+            rawUTXOs,
         );
     }
 
     _updateStorage(field, data) {
         const { localStorage } = this;
-        if (!localStorage || !localStorage.getItem(`${this.storeagePrefix}${field}`)) {
+        if (!localStorage) {
             return null;
         }
-
-        return localStorage.setItem(`${this.storeagePrefix}${field}`, JSON.stringify(data));
+        console.log(`Updating ${field} `, data);
+        // TODO remove cloneDeep
+        return localStorage.setItem(`${STORAGE_PREFIX}${field}`, JSON.stringify(
+            _.cloneDeep(data),
+        ));
     }
 
     _fromStorage(field) {
         const { localStorage } = this;
-        if (!localStorage || !localStorage.getItem(`${this.storeagePrefix}${field}`)) {
+        if (!localStorage || !localStorage.getItem(`${STORAGE_PREFIX}${field}`)) {
             return null;
         }
 
-        return JSON.parse(localStorage.getItem(`${this.storeagePrefix}${field}`));
+        return JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${field}`));
     }
 }

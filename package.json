@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Tomo privacy wallet apis.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -32,7 +32,12 @@
       "production": {
         "presets": [
           "@babel/preset-env",
-          "@babel/preset-flow"
+          "@babel/preset-flow",
+          ["babel-preset-minify", {
+            "builtIns": false,
+            "evaluate": false,
+            "mangle": false
+          }]
         ]
       }
     }

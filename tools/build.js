@@ -19,20 +19,7 @@ promise = promise.then(() => del(['dist/*']));
 ['es', 'cjs', 'umd'].forEach((format) => {
   promise = promise.then(() => rollup.rollup({
     input: 'src/index.js',
-    external: Object.keys({
-      'aes-js': '^3.1.2',
-      'bn.js': '^5.0.0',
-      bs58: '^2.0.1',
-      ecurve: '^1.0.1',
-      elliptic: '^6.5.1',
-      eventemitter3: '^4.0.0',
-      'js-sha3': '^0.8.0',
-      lodash: '^4.17.15',
-      'number-to-bn': '^1.7.0',
-      '@truffle/hdwallet-provider': '^1.0.17',
-      utf8: '^3.0.0',
-      web3: '^1.2.1',
-    }),
+    external: Object.keys(pkg.dependencies),
     plugins: [
       resolve(),
       rollJson(),

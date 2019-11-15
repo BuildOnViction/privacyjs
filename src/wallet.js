@@ -195,7 +195,7 @@ export default class Wallet extends EventEmitter {
      */
     getUTXO(index: number): Promise<Object> {
         return new Promise((resolve, reject) => {
-            this.privacyContractSocket.methods.getUTXO(index)
+            this.privacyContract.methods.getUTXO(index)
                 .call({
                     from: this.scOpts.from,
                 })

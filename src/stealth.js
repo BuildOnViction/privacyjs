@@ -162,8 +162,8 @@ class Stealth {
             privKey: common.bintohex(e.toBuffer(32)),
             pubKey: E.getEncoded(true),
         };
-
         const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false));
+
         if (encryptedAmount) {
             const amount = decode(encryptedAmount, aesKey);
             returnValue.amount = common.hexToNumberString(amount);
@@ -211,7 +211,7 @@ class Stealth {
             return null;
         }
 
-        const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false)).toString('hex');
+        const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false));
         const ecptAmount = encode(
             common.numberToHex(newAmount.toString()),
             aesKey,

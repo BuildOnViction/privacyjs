@@ -33,11 +33,14 @@
         "presets": [
           "@babel/preset-env",
           "@babel/preset-flow",
-          ["babel-preset-minify", {
-            "builtIns": false,
-            "evaluate": false,
-            "mangle": false
-          }]
+          [
+            "babel-preset-minify",
+            {
+              "builtIns": false,
+              "evaluate": false,
+              "mangle": false
+            }
+          ]
         ]
       }
     }
@@ -62,7 +65,6 @@
     "web3": "^1.2.1"
   },
   "devDependencies": {
-    "@babel/runtime": "^7.0.0",
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
     "@babel/node": "^7.6.1",
@@ -70,6 +72,7 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/register": "^7.0.0",
+    "@babel/runtime": "^7.0.0",
     "babel-eslint": "^10.0.3",
     "babel-minify": "^0.5.1",
     "babel-preset-minify": "^0.5.1",
@@ -85,6 +88,7 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-mocha": "^6.2.0",
     "flow-bin": "^0.109.0",
+    "husky": "^3.0.9",
     "istanbul": "^1.1.0-alpha.1",
     "mocha": "^6.0.0",
     "nodemon": "^1.19.2",
@@ -107,6 +111,12 @@
     "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "build": "npm run lint &&  node tools/build",
     "minify": "minify ./dist/*.js --out-dir ./dist/",
-    "prepublish": "npm run build"
+    "prepublish": "npm test && npm run build"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test",
+      "pre-push": "npm test"
+    }
   }
 }

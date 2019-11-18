@@ -127,7 +127,7 @@ export default class Wallet extends EventEmitter {
         this.scannedTo = 0;
 
         if (scOpts.SOCKET_END_POINT) {
-            this.listenNewUTXO(scOpts);
+            // this.listenNewUTXO(scOpts);
         }
 
         this.localStorage = localStorage;

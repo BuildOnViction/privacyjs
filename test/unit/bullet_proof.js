@@ -72,8 +72,6 @@ describe('#unittest #bulletproof', () => {
 
         const c = innerProduct(a, b);
 
-        console.log('c ', hexToNumberString(c.toHex()));
-
         const P = TwoVectorPCommitWithGens(EC.Gi, EC.Hi, a, b);
 
         const ipp = BulletProof.InnerProductProve(a, b, c, P, EC.U, EC.Gi, EC.Hi);
@@ -86,57 +84,57 @@ describe('#unittest #bulletproof', () => {
         }
     });
 
-    // it('Should gen/verify correctly 8b', (done) => {
-    //     const EC = genECPrimeGroupKey(8);
-    //     const a = _.map(Array(8), () => BigInteger.fromHex(
-    //         randomHex(),
-    //     ));
-    //     const b = _.map(Array(8), () => BigInteger.fromHex(
-    //         randomHex(),
-    //     ));
+    it('Should gen/verify correctly 8b', (done) => {
+        const EC = genECPrimeGroupKey(8);
+        const a = _.map(Array(8), () => BigInteger.fromHex(
+            randomHex(),
+        ));
+        const b = _.map(Array(8), () => BigInteger.fromHex(
+            randomHex(),
+        ));
 
-    //     // a[0] = BigInteger.ONE;
-    //     // b[0] = BigInteger.ONE;
+        // a[0] = BigInteger.ONE;
+        // b[0] = BigInteger.ONE;
 
-    //     const c = innerProduct(a, b);
+        const c = innerProduct(a, b);
 
-    //     const P = TwoVectorPCommitWithGens(EC.Gi, EC.Hi, a, b);
+        const P = TwoVectorPCommitWithGens(EC.Gi, EC.Hi, a, b);
 
-    //     const ipp = BulletProof.InnerProductProve(a, b, c, P, EC.U, EC.Gi, EC.Hi);
+        const ipp = BulletProof.InnerProductProve(a, b, c, P, EC.U, EC.Gi, EC.Hi);
 
-    //     // EC = genECPrimeGroupKey(10);
-    //     if (BulletProof.InnerProductVerify(c, P, EC.U, EC.Gi, EC.Hi, ipp)) {
-    //         done();
-    //     } else {
-    //         done(new Error('Verifying failed !!!'));
-    //     }
-    // });
+        // EC = genECPrimeGroupKey(10);
+        if (BulletProof.InnerProductVerify(c, P, EC.U, EC.Gi, EC.Hi, ipp)) {
+            done();
+        } else {
+            done(new Error('Verifying failed !!!'));
+        }
+    });
 
-    // it('Should gen/verify correctly 64b', (done) => {
-    //     const EC = genECPrimeGroupKey(64);
-    //     const a = _.map(Array(64), () => BigInteger.fromHex(
-    //         randomHex(),
-    //     ).mod(secp256k1.n));
-    //     const b = _.map(Array(64), () => BigInteger.fromHex(
-    //         randomHex(),
-    //     ).mod(secp256k1.n));
+    it('Should gen/verify correctly 64b', (done) => {
+        const EC = genECPrimeGroupKey(64);
+        const a = _.map(Array(64), () => BigInteger.fromHex(
+            randomHex(),
+        ).mod(secp256k1.n));
+        const b = _.map(Array(64), () => BigInteger.fromHex(
+            randomHex(),
+        ).mod(secp256k1.n));
 
-    //     // a[0] = BigInteger.ONE;
-    //     // b[0] = BigInteger.ONE;
+        // a[0] = BigInteger.ONE;
+        // b[0] = BigInteger.ONE;
 
-    //     const c = innerProduct(a, b);
+        const c = innerProduct(a, b);
 
-    //     const P = TwoVectorPCommitWithGens(EC.Gi, EC.Hi, a, b);
+        const P = TwoVectorPCommitWithGens(EC.Gi, EC.Hi, a, b);
 
-    //     const ipp = BulletProof.InnerProductProve(a, b, c, P, EC.U, EC.Gi, EC.Hi);
+        const ipp = BulletProof.InnerProductProve(a, b, c, P, EC.U, EC.Gi, EC.Hi);
 
-    //     // EC = genECPrimeGroupKey(64);
-    //     if (BulletProof.InnerProductVerify(c, P, EC.U, EC.Gi, EC.Hi, ipp)) {
-    //         done();
-    //     } else {
-    //         done(new Error('Verifying failed !!!'));
-    //     }
-    // });
+        // EC = genECPrimeGroupKey(64);
+        if (BulletProof.InnerProductVerify(c, P, EC.U, EC.Gi, EC.Hi, ipp)) {
+            done();
+        } else {
+            done(new Error('Verifying failed !!!'));
+        }
+    });
 });
 
 

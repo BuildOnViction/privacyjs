@@ -708,13 +708,24 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} RingCT
      */
     async _genRingCT(spendingUTXOs: Array<UTXO>, proofs: Array<Object>) {
+        console.log('Start _genRingct ', new Date());
         const numberOfRing = spendingUTXOs.length;
         const ringSize = UTXO_RING_SIZE; // 11 decoys + one spending
 
+        let t1 = new Date();
+        let t2;
+        console.log('Start _getDecoys ', t1);
+
         let decoys = await this._getDecoys(numberOfRing, _.map(spendingUTXOs, utxo => utxo.index));
+        t2 = new Date();
+
+        console.log('Finish _getDecoys - cost  ', (t2.valueOf() - t1.valueOf()) / 1000);
 
         // random index each time generating ringct
         const index = Math.round(Math.random() * (ringSize - 1));
+
+        console.log('Start ringct ', t1 = new Date());
+
 
         // TODO need rewrite - not optimized
         const pubkeys = []; // public keys of utxo
@@ -777,15 +788,18 @@ export default class Wallet extends EventEmitter {
             message,
         );
 
-        assert(
-            MLSAG.verifyMul(
-                ringctDecoys,
-                ringSignature.I,
-                ringSignature.c1,
-                ringSignature.s,
-                message,
-            ) === true, 'Wrong signature !!',
-        );
+        t2 = new Date();
+        console.log('Finish ringct - cost  ', (t2.valueOf() - t1.valueOf()) / 1000);
+
+        // assert(
+        //     MLSAG.verifyMul(
+        //         ringctDecoys,
+        //         ringSignature.I,
+        //         ringSignature.c1,
+        //         ringSignature.s,
+        //         message,
+        //     ) === true, 'Wrong signature !!',
+        // );
 
         return {
             decoys,
@@ -871,8 +885,19 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} proof output
      */
     async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
+        let t1 = new Date();
+        console.log('start genoutput ', t1);
+
         const outputProofs = this._genOutputProofs(receiver, amount, remain);
+
+        const t2 = new Date();
+        console.log('end genoutput - cost ', (t2.valueOf() - t1.valueOf()) / 1000);
+
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
+
+        t1 = new Date();
+
+        console.log('total _genRingCT - cost ', (t1.valueOf() - t2.valueOf()) / 1000);
 
         return [
             // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]

@@ -13,11 +13,10 @@ import BN from 'bn.js';
 import assert from 'assert';
 import { BigInteger } from './crypto';
 
+// const atob = require('atob') || window.atob;
 const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
-
-
 /**
  * hextobin converts string to Buffer
  * @param {string} hex Hex string wants to conver to buffer

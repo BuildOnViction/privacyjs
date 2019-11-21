@@ -7,8 +7,6 @@ import chai from 'chai';
 import * as _ from 'lodash';
 import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
-import * as Address from '../../src/address';
-import Stealth from '../../src/stealth';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
 

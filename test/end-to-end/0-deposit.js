@@ -18,13 +18,13 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-const amount = 50000000000000000000;
+const amount = 10000000000000000000;
 const sender = new Stealth({
     ...Address.generateKeys(SENDER_WALLET.privateKey),
 });
 
-describe('#deposit', () => {
-    for (let count = 0; count < 5; count++) {
+describe('#ete #deposit', () => {
+    for (let count = 0; count < 10; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {

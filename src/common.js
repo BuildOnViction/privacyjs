@@ -10,11 +10,7 @@ import isNull from 'lodash/isNull';
 import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
-import ecurve from 'ecurve';
 import { BigInteger } from './crypto';
-import { basePointH } from './constants';
-
-const secp256k1 = ecurve.getCurveByName('secp256k1');
 
 // const atob = require('atob') || window.atob;
 /**
@@ -815,34 +811,11 @@ export const d2b = (val) => {
  * @param {number} size if length output < size we need to pad zero before
  * @returns {array} array include 0, 1
  */
-export const bn2b = (bn, size) => {
-    let result = bn.toString('2');
-    if (size) {
-        while (result.length < (size || 2)) { result = '0' + result; }
-        return result.split('');
-    }
-    return result.split('');
-};
-
-export const genECPrimeGroupKey = (n) => {
-    const Gi = [];
-    const Hi = [];
-    for (let i = 0; i < n; ++i) {
-        Hi[i] = basePointH.multiply(
-            toBN(i * 2 + 1),
-        );
-        Gi[i] = secp256k1.G.multiply(
-            toBN(i * 2 + 2),
-        );
-    }
-
-    const U = secp256k1.G.multiply(
-        toBN(n + 3),
-    );
-    return {
-        ...secp256k1,
-        Gi,
-        Hi,
-        U,
-    };
-};
+// export const bn2b = (bn, size) => {
+//     let result = bn.toString('2');
+//     if (size) {
+//         while (result.length < (size || 2)) { result = '0' + result; }
+//         return result.split('');
+//     }
+//     return result.split('');
+// };

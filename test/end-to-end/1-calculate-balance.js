@@ -14,7 +14,7 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-describe('#balance', () => {
+describe('#ete #balance', () => {
     it('#scanUTXOs and sum balance', (done) => {
         // scan all UTXO
         scanUTXOs(SENDER_WALLET.privateKey, 10).then((ret) => {

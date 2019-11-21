@@ -43,7 +43,7 @@ const mlsagPrecompiledContract = new web3.eth.Contract(
  * change config in ./test/config.json ./test/config.json
  */
 
-describe('#wallet #ete', () => {
+describe('#ete #wallet', () => {
     let wallet: Wallet;
     let sendWallet: Wallet;
 
@@ -59,7 +59,7 @@ describe('#wallet #ete', () => {
     describe('#decoys', () => {
         for (let count = 0; count < 5; count++) {
             it('Should get decoys successfully for 5 rings', (done) => {
-                wallet.scannedTo = 30;
+                wallet.scannedTo = 15;
                 wallet._getDecoys(5, [1, 5]).then((res) => {
                     expect(res.length).to.equal(5);
                     expect(res[0].length).to.equal(11);
@@ -84,7 +84,7 @@ describe('#wallet #ete', () => {
 
     describe('#getUTXO', () => {
         it('Should get single utxo successfully', (done) => {
-            wallet.scannedTo = 30;
+            wallet.scannedTo = 15;
             wallet.getUTXO(10).then((res) => {
                 expect(res[0].length).to.equal(3);
                 expect(res[1].length).to.equal(3);
@@ -97,8 +97,9 @@ describe('#wallet #ete', () => {
         });
     });
 
-    // in the production or testnet, there is no verifier
-    // describe('#MLSAG', () => {
+    // Testing the verifier separately, should happend on devnet only
+    // because inside wallet generation proof, we integrated this
+    // describe('#mlsag', () => {
     //     it('Should genCT return correct ring (check on precompiled contract) from mlsag', (done) => {
     //         const sender = new Stealth({
     //             ...generateKeys(WALLETS[2].privateKey),
@@ -209,6 +210,7 @@ describe('#wallet #ete', () => {
             try {
                 sendWallet.send(receiver.pubAddr, '1000000000000000000').then((txs) => {
                     expect(txs).to.be.an('array');
+                    expect(txs.length).to.be.above(0);
 
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
@@ -249,6 +251,7 @@ describe('#wallet #ete', () => {
             try {
                 sendWallet.send(receiver.pubAddr, '100000000000000000').then((txs) => {
                     expect(txs).to.be.an('array');
+                    expect(txs.length).to.be.above(0);
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two
@@ -306,9 +309,10 @@ describe('#wallet #ete', () => {
              */
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                sendWallet.send(receiver.pubAddr, '5000000000000000000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '10000000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO;
                     expect(txs).to.be.an('array');
+                    expect(txs.length).to.be.above(0);
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         expect(NewUTXO.length).to.equal(2); // always create two

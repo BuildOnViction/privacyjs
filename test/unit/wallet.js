@@ -2,16 +2,17 @@ import sinon from 'sinon';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import ecurve from 'ecurve';
+import toBN from 'number-to-bn';
 import Wallet from '../../src/wallet';
 import Configs from '../config.json';
 import * as CONSTANT from '../../src/constants';
 // import UTXO from '../../src/utxo';
-import { BigInteger } from '../../src/crypto';
-import { randomUTXOS } from '../utils';
-import { toBN, hexToNumberString } from '../../src/common';
 
+import { randomUTXOS } from '../utils';
+import { toPoint } from '../../src/stealth';
+
+const { BigInteger } = CONSTANT;
 const ecparams = ecurve.getCurveByName('secp256k1');
-const { Point } = ecurve;
 const { expect } = chai;
 chai.should();
 chai.use(chaiAsPromised);
@@ -79,12 +80,9 @@ describe('#unittest #wallet', () => {
             }, SENDER_WALLET.address);
 
             proof = wallet._genUTXOProof(1000000000);
-            stealthPoint = Point.fromAffine(ecparams,
-                new BigInteger(proof[0].slice(2), 16),
-                new BigInteger(proof[1].slice(2), 16));
-            txPubkeyPoint = Point.fromAffine(ecparams,
-                new BigInteger(proof[2].slice(2), 16),
-                new BigInteger(proof[3].slice(2), 16));
+
+            stealthPoint = toPoint(proof[0].slice(2) + proof[1].slice(2));
+            txPubkeyPoint = toPoint(proof[2].slice(2) + proof[3].slice(2));
 
             done();
         });
@@ -97,7 +95,7 @@ describe('#unittest #wallet', () => {
 
         it('should able to create a belonging utxo', (done) => {
             decodedProof = wallet.isMine(
-                txPubkeyPoint.getEncoded(false), stealthPoint.getEncoded(false), proof[5].slice(2),
+                txPubkeyPoint.encode('hex', false), stealthPoint.encode('hex', false), proof[5].slice(2),
             );
             expect(decodedProof).to.not.equal(null);
             expect(decodedProof.amount).to.be.equal('1000000000');
@@ -108,7 +106,7 @@ describe('#unittest #wallet', () => {
         it('should not able to decoded wallet\'s proof ', (done) => {
             // make sure other can't decode
             decodedProof = wallet1.isMine(
-                txPubkeyPoint.getEncoded(false), stealthPoint.getEncoded(false), proof[5].slice(2),
+                txPubkeyPoint.encode('hex', false), stealthPoint.encode('hex', false), proof[5].slice(2),
             );
             expect(decodedProof).to.equal(null);
 
@@ -212,11 +210,11 @@ describe('#unittest #wallet', () => {
                 toBN(GWEI),
             );
             expect(utxos.length === 2).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(2 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -227,11 +225,11 @@ describe('#unittest #wallet', () => {
                 toBN(1.5 * GWEI),
             );
             expect(utxos.length === 2).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(2 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 2 utxos', (done) => {
@@ -241,11 +239,11 @@ describe('#unittest #wallet', () => {
                 toBN(2 * GWEI),
             );
             expect(utxos.length === 3).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(5 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 4 utxos', (done) => {
@@ -255,11 +253,11 @@ describe('#unittest #wallet', () => {
                 toBN(10 * GWEI),
             );
             expect(utxos.length === 5).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(10.1 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum 6 utxos', (done) => {
@@ -269,11 +267,11 @@ describe('#unittest #wallet', () => {
                 toBN(11.1 * GWEI),
             );
             expect(utxos.length === 7).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(12.1 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -284,11 +282,11 @@ describe('#unittest #wallet', () => {
                 toBN(20.1 * GWEI),
             );
             expect(utxos.length === 10).to.be.equal(true);
-            expect(totalAmount.equals(
+            expect(totalAmount.eq(
                 toBN(20.2 * GWEI),
             )).to.be.equal(true);
             expect(txTimes === 3).to.be.equal(true);
-            expect(totalFee.equals(toBN(0.03 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.03 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -337,8 +335,8 @@ describe('#unittest #wallet', () => {
             const txs = wallet._splitTransaction(utxos, txTimes, toBN(GWEI));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(2);
-            expect(txs[0].receivAmount.equals(toBN(GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(0.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0.99 * GWEI))).to.be.equal(true);
 
             done();
         });
@@ -352,8 +350,8 @@ describe('#unittest #wallet', () => {
             const txs = wallet._splitTransaction(utxos, txTimes, toBN(1.5 * GWEI));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(2);
-            expect(txs[0].receivAmount.equals(toBN(1.5 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(0.49 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(1.5 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0.49 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -366,8 +364,8 @@ describe('#unittest #wallet', () => {
             const txs = wallet._splitTransaction(utxos, txTimes, toBN(2 * GWEI));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(3);
-            expect(txs[0].receivAmount.equals(toBN(2 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(2.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(2 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(2.99 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -381,11 +379,11 @@ describe('#unittest #wallet', () => {
             expect(txs.length).to.be.equal(2);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
             expect(txs[1].utxos.length).to.be.equal(1);
-            expect(txs[1].receivAmount.equals(toBN(0.01 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.equals(toBN(0.08 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0.08 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -399,12 +397,12 @@ describe('#unittest #wallet', () => {
             expect(txs.length).to.be.equal(2);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
 
             expect(txs[1].utxos.length).to.be.equal(3);
-            expect(txs[1].receivAmount.equals(toBN(1.11 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.equals(toBN(0.98 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(1.11 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0.98 * GWEI))).to.be.equal(true);
             done();
         });
 
@@ -418,16 +416,16 @@ describe('#unittest #wallet', () => {
             expect(txs.length).to.be.equal(3);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
 
             expect(txs[1].utxos.length).to.be.equal(4);
-            expect(txs[1].receivAmount.equals(toBN(5.09 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
 
             expect(txs[2].utxos.length).to.be.equal(1);
-            expect(txs[2].receivAmount.equals(toBN(0.02 * GWEI))).to.be.equal(true);
-            expect(txs[2].remainAmount.equals(toBN(4.97 * GWEI))).to.be.equal(true);
+            expect(txs[2].receivAmount.eq(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(txs[2].remainAmount.eq(toBN(4.97 * GWEI))).to.be.equal(true);
             done();
         });
 

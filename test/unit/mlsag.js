@@ -1,23 +1,21 @@
+/* eslint-disable no-loop-func */
 import * as _ from 'lodash';
 import chai from 'chai';
 // import Web3 from 'web3';
+import toBN from 'number-to-bn';
 import TestConfig from '../config.json';
 import MLSAG_DATA from './mlsag.json';
 import MLSAG, { hashToPoint } from '../../src/mlsag';
-
-import { hexToNumberString, toBN } from '../../src/common';
+import Stealth, { toPoint } from '../../src/stealth';
+import { hexToNumberString } from '../../src/common';
 import UTXO from '../../src/utxo';
-import { BigInteger, randomBI } from '../../src/crypto';
-
-import Stealth from '../../src/stealth';
+import { randomBI } from '../../src/crypto';
+import { BigInteger } from '../../src/constants';
 import { generateKeys } from '../../src/address';
 
-const ecurve = require('ecurve');
-
-const ecparams = ecurve.getCurveByName('secp256k1');
 const EC = require('elliptic').ec;
 
-const ec = new EC('secp256k1');
+const secp256k1 = new EC('secp256k1');
 
 const { expect } = chai;
 chai.should();
@@ -40,10 +38,10 @@ describe('#unittest #ringct #mlsag', () => {
         // it always return new point on hash
         for (let times = 0; times < 5; times++) {
             it('Should turn a hex into a point in seccp256 ECC correctly', (done) => {
-                const publicKey = ec.genKeyPair().getPublic().encodeCompressed('hex');
+                const publicKey = secp256k1.genKeyPair().getPublic().encodeCompressed('hex');
                 const newPoint = hashToPoint(publicKey);
 
-                expect(ecparams.isOnCurve(newPoint)).to.be.equal(true);
+                expect(newPoint.validate()).to.be.equal(true);
                 done();
             });
         }
@@ -58,7 +56,7 @@ describe('#unittest #ringct #mlsag', () => {
 
             MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
 
-            let totalSpending = BigInteger.ZERO;
+            let totalSpending = BigInteger.ZERO();
             const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
             ins.checkOwnership(SENDER_WALLET.privateKey);
 
@@ -66,30 +64,31 @@ describe('#unittest #ringct #mlsag', () => {
                 toBN(ins.decodedAmount),
             );
             const proof = sender.genTransactionProof(
-                hexToNumberString(totalSpending.toHex()),
+                hexToNumberString(totalSpending.toString(16)),
             );
 
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-
+            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => (new UTXO(ut)).lfStealth);
+            // console.log('inputUTXOS ', inputUTXOS);
+            // console.log('proof.commitment ', proof.commitment);
             // ct ring
-            const {
-                privKey,
-                publicKeys,
-            } = MLSAG.genCTRing(
-                SENDER_WALLET.privateKey,
-                [inputUTXOS],
-                [{
-                    lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
-                    decodedMask: proof.mask,
-                }],
-                index,
-            );
+            // const {
+            //     privKey,
+            //     publicKeys,
+            // } = MLSAG.genCTRing(
+            //     SENDER_WALLET.privateKey,
+            //     [inputUTXOS],
+            //     [{
+            //         lfCommitment: toPoint(proof.commitment),
+            //         decodedMask: proof.mask,
+            //     }],
+            //     index,
+            // );
 
             // ring-signature of utxos
             const signature = MLSAG.mulSign(
                 [
-                    BigInteger.fromHex(ins.privKey), privKey],
-                [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+                    BigInteger.fromHex(ins.privKey)],
+                [inputUTXOS],
                 index,
             );
             expect(signature.I).not.to.equal(null);
@@ -99,7 +98,7 @@ describe('#unittest #ringct #mlsag', () => {
 
             expect(
                 MLSAG.verifyMul(
-                    [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
+                    [inputUTXOS],
                     signature.I,
                     signature.c1,
                     signature.s,

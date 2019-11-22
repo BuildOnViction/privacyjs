@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { randomHex } from '../../src/crypto';
 import * as Address from '../../src/address';
-import { hexToNumberString } from '../../src/common';
 import Stealth from '../../src/stealth';
 
 const fixtures = require('./fixtures');
@@ -22,8 +21,8 @@ describe('#unittest #stealth', () => {
                 const stealth = Stealth.fromString(fixture.base58);
                 const proof = stealth.genTransactionProof(1000);
 
-                assert.equal(proof.onetimeAddress.toString('hex').length, 130);
-                assert.equal(proof.txPublicKey.toString('hex').length, 130);
+                assert.equal(proof.onetimeAddress.length, 130);
+                assert.equal(proof.txPublicKey.length, 130);
                 // assert.equal(proof.encryptedAmount.length, 28)
                 assert.equal(proof.mask.length, 64);
             });
@@ -41,6 +40,9 @@ describe('#unittest #stealth', () => {
                 // create proof for a transaction
                 const proof = sender.genTransactionProof(1000,
                     receiver.pubSpendKey, receiver.pubViewKey);
+
+                console.log('result ', proof);
+
                 // prove above information belong to receiver
                 const result = receiver.checkTransactionProof(
                     proof.txPublicKey, proof.onetimeAddress, proof.encryptedAmount,

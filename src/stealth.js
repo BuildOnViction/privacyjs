@@ -1,20 +1,48 @@
 import {
-    encode, decode, BigInteger, hmacSha256, randomHex,
+    encode, decode, hmacSha256, randomBI,
 } from './crypto';
-
+import { BigInteger } from './constants';
 // eslint-disable-next-line import/no-cycle
 import Commitment from './commitment';
 import * as common from './common';
 
 const assert = require('assert');
 const bs58 = require('bs58');
-const ecurve = require('ecurve');
 
-const ecparams = ecurve.getCurveByName('secp256k1');
-const { Point } = ecurve;
+// const ecparams = ecurve.getCurveByName('secp256k1');
+// const { Point } = ecurve;
+const EC = require('elliptic').ec;
 
-// The initialization vector (must be 16 bytes) for ctr aes256 encrypt/decrypt
-// const aesIv = [27, 34, 23, 26, 33, 31, 24, 22, 19, 30, 49, 11, 36, 35, 59, 21];
+// type Point = Curve.short.ShortPoint;
+
+const secp256k1 = new EC('secp256k1');
+
+export const toPoint = (data: Buffer | Array | String) : secp256k1.curve.point => {
+    if (typeof (data) !== 'string') {
+        data = data.toString('hex');
+    }
+
+    // just X + Y as input, add prefix 04
+    if (data.length === 128) {
+        data = '04' + data;
+    }
+
+    // short form
+    if (data.length === 66) {
+        return secp256k1.curve.pointFromX(
+            data.substr(2, 64),
+            parseInt(data.substr(0, 2)) % 2 === 1,
+        );
+    }
+
+    // long form
+    if (data.length === 130) {
+        return secp256k1.curve.pointFromJSON([
+            data.substr(2, 64),
+            data.substr(66, 64),
+        ]);
+    }
+};
 
 class Stealth {
     constructor(config) {
@@ -43,6 +71,7 @@ class Stealth {
         });
     }
 
+
     /**
      * GenTransactionProof generates one-time address (stealth address) and
      * tx public key - base on ECDH algorithm for sharing serect_key
@@ -60,30 +89,38 @@ class Stealth {
      */
     genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask) {
         const hs = hmacSha256; // hasing function return a scalar
-        const basePoint = ecparams.G; // secp256k1 standard base point
-        const receiverPubViewKey = Point.decodeFrom(ecparams, pubViewKey || this.pubViewKey);
-        const receiverPubSpendKey = Point.decodeFrom(ecparams, pubSpendKey || this.pubSpendKey);
+        const basePoint = secp256k1.g; // secp256k1 standard base point
 
-        const randomHexVal = randomHex();
+        pubViewKey = pubViewKey || this.pubViewKey;
+        pubSpendKey = pubSpendKey || this.pubSpendKey;
+
+        const receiverPubViewKey = toPoint(pubViewKey);
+        const receiverPubSpendKey = toPoint(pubSpendKey);
 
         const hexAmount = common.numberToHex(amount.toString());
         // console.log('hexAmount ', hexAmount);
         // const randomHex = 'f042298df7ea67d6bd8cf8e32537f23656ae36d3d9e04955f86997addb2dc4ee';
 
-        const blindingFactor = BigInteger.fromBuffer(new Buffer(randomHexVal, 'hex'));
+        const blindingFactor = randomBI();
 
-        const ECDHSharedSerect = receiverPubViewKey.multiply(blindingFactor);
+        const ECDHSharedSerect = receiverPubViewKey.mul(blindingFactor);
 
-        const f = BigInteger.fromBuffer(hs(ECDHSharedSerect.getEncoded(true)));
+        const f = BigInteger.fromBuffer(
+            hs(
+                Buffer.from(ECDHSharedSerect.encode('array', true)),
+            ),
+        );
 
-        const F = basePoint.multiply(f);
+        const F = basePoint.mul(f);
 
-        const onetimeAddress = receiverPubSpendKey.add(F).getEncoded(false);
+        const onetimeAddress = receiverPubSpendKey.add(F).encode('hex', false);
 
-        const txPublicKey = basePoint.multiply(blindingFactor).getEncoded(false);
+        const txPublicKey = basePoint.mul(blindingFactor).encode('hex', false);
         // encoded return format: 1 byte (odd or even of ECC) + X (32 bytes)
         // so we generate a hash 32 bytes from 33 bytes
-        const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false));
+        const aesKey = hs(
+            Buffer.from(ECDHSharedSerect.encode('array', false)),
+        );
 
         const encryptedAmount = encode(hexAmount, aesKey);
 
@@ -97,7 +134,9 @@ class Stealth {
          * so if the prefix is 00 -> turn to 10
          */
         if (!predefinedMask) {
-            mask = hs(ECDHSharedSerect.getEncoded(true)).toString('hex'); // for smart contract only
+            mask = hs(
+                Buffer.from(ECDHSharedSerect.encode('hex', true)),
+            ).toString('hex'); // for smart contract only
 
             // Work around: mask should be a strictly hex 32 bytes
             if (mask.indexOf('00') === 0) {
@@ -127,8 +166,8 @@ class Stealth {
 
     /**
      * checkTransactionProof check if this user owns the UTXO or not
-     * @param {Buffer} onetimeAddress UTXO's steal address
-     * @param {Buffer} txPublicKey UTXO's transaction public key
+     * @param {string} onetimeAddress UTXO's steal address
+     * @param {string} txPublicKey UTXO's transaction public key
      * @param {string} [encryptedAmount] optional = aes256(sharedSecret, amount)
      * @param {string} [encryptedMask] optional = aes256(sharedSecret, mask)
      * @returns {object} amount
@@ -137,32 +176,32 @@ class Stealth {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
 
-        if (txPublicKey.length !== 65) return null;
+        if (txPublicKey.length !== 130) return null;
 
         const hs = hmacSha256;
 
-        const B = Point.decodeFrom(ecparams, txPublicKey);
+        const B = toPoint(txPublicKey);
 
-        const ECDHSharedSerect = B.multiply(BigInteger.fromBuffer(this.privViewKey));
+        const ECDHSharedSerect = B.mul(BigInteger.fromBuffer(this.privViewKey));
 
-        const d = hs(ECDHSharedSerect.getEncoded(true));
+        const d = hs(Buffer.from(ECDHSharedSerect.encode('array', true)));
         const e = BigInteger.fromBuffer(this.privSpendKey)
             .add(BigInteger.fromBuffer(d))
-            .mod(ecparams.n);
+            .mod(secp256k1.n);
 
-        const E = ecparams.G.multiply(e);
+        const E = secp256k1.g.mul(e);
 
-        const onetimeAddressCalculated = E.getEncoded(false);
+        const onetimeAddressCalculated = E.encode('hex', false);
 
-        if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
+        if (onetimeAddressCalculated !== onetimeAddress) {
             return null;
         }
 
         const returnValue = {
             privKey: common.bintohex(e.toBuffer(32)),
-            pubKey: E.getEncoded(true),
+            pubKey: E.encode('hex', true),
         };
-        const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false));
+        const aesKey = hmacSha256(Buffer.from(ECDHSharedSerect.encode('array', false)));
 
         if (encryptedAmount) {
             const amount = decode(encryptedAmount, aesKey);
@@ -181,8 +220,8 @@ class Stealth {
      * encryptedAmount decode the ecdh secretkey and encrypted for new amount
      * we would use this many times for withdraw money from utxo
      * You can use checkTransactionProof above to decode the amount
-     * @param {Buffer} onetimeAddress UTXO's steal address
-     * @param {Buffer} txPublicKey UTXO's transaction public key
+     * @param {string} onetimeAddress UTXO's steal address
+     * @param {string} txPublicKey UTXO's transaction public key
      * @param {string} newAmount plain amount for encrypting
      * @returns {object} encrypted amount
      */
@@ -190,28 +229,32 @@ class Stealth {
         assert(this.privViewKey, 'privViewKey required');
         assert(this.privSpendKey, 'privSpendKey required');
 
-        if (txPublicKey.length !== 65) return null;
+        if (txPublicKey.length !== 130) return null;
 
         const hs = hmacSha256;
 
-        const B = Point.decodeFrom(ecparams, txPublicKey);
+        // const B = secp256k1.curve.decodePoint(txPublicKey);
+        const B = secp256k1.curve.pointFromJSON([
+            txPublicKey.substr(2, 64),
+            txPublicKey.substr(66, 64),
+        ]);
 
-        const ECDHSharedSerect = B.multiply(BigInteger.fromBuffer(this.privViewKey));
+        const ECDHSharedSerect = B.mul(BigInteger.fromBuffer(this.privViewKey));
 
-        const d = hs(ECDHSharedSerect.getEncoded(true));
+        const d = hs(Buffer.from(ECDHSharedSerect.encode('array', true)));
         const e = BigInteger.fromBuffer(this.privSpendKey)
             .add(BigInteger.fromBuffer(d))
-            .mod(ecparams.n);
+            .mod(secp256k1.n);
 
-        const E = ecparams.G.multiply(e);
+        const E = secp256k1.g.mul(e);
 
-        const onetimeAddressCalculated = E.getEncoded(false);
+        const onetimeAddressCalculated = E.encode('hex', false);
 
         if (onetimeAddressCalculated.toString('hex') !== onetimeAddress.toString('hex')) {
             return null;
         }
 
-        const aesKey = hmacSha256(ECDHSharedSerect.getEncoded(false));
+        const aesKey = hmacSha256(Buffer.from(ECDHSharedSerect.encode('array', false)));
         const ecptAmount = encode(
             common.numberToHex(newAmount.toString()),
             aesKey,

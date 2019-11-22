@@ -77,7 +77,7 @@
 //             .add(ecparams.p)
 //             .subtract(BigInteger.fromHex(proofOfReceiver.mask).mod(ecparams.p))
 //             .subtract(sumOfSpendingMasks)
-//             .toHex();
+//             .toString(16);
 
 //         const proofOfMe = sender.genTransactionProof(2.5 * TOMO,
 //             sender.pubSpendKey, sender.pubViewKey, myRemainMask);
@@ -99,7 +99,7 @@
 //         // expect(inputCommitments.getEncoded(true).toString('hex'))
 //         // .to.equal(outputCommitments.getEncoded(true).toString('hex'));
 //         const pfm = inputCommitments.add(
-//             Point.decodeFrom(ecparams, proofOfReceiver.commitment).negate(),
+//             Point.decodeFrom(ecparams, proofOfReceiver.commitment).neg(),
 //         ).getEncoded(false);
 
 //         privacyContract.methods.privateSend(

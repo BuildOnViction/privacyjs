@@ -1,22 +1,23 @@
 /* eslint-disable quote-props */
 // @flow
-import ecurve from 'ecurve';
 import assert from 'assert';
+import toBN from 'number-to-bn';
 import { generateKeys } from './address';
 import Stealth from './stealth';
-import { BigInteger } from './crypto';
+
+// import { BigInteger } from './constants';
 import {
     numberToHex,
     bconcat,
     hextobin,
     bintohex,
     soliditySha3,
+    // toBN,
 } from './common';
 
-
-const ecparams = ecurve.getCurveByName('secp256k1');
 const EC = require('elliptic').ec;
 
+const secp256k1 = new EC('secp256k1');
 type Signature = EC.Signature;
 
 // type Signature = require('elliptic').Signature;
@@ -74,11 +75,11 @@ class UTXO {
 
     index: number;
 
-    lfStealth: ecurve.Point;
+    lfStealth: secp256k1.curve.point;
 
-    lfTxPublicKey: ecurve.Point;
+    lfTxPublicKey: secp256k1.curve.point;
 
-    lfCommitment: ecurve.Point;
+    lfCommitment: secp256k1.curve.point;
 
     decodedAmount: string;
 
@@ -100,14 +101,20 @@ class UTXO {
         this.txPubYBit = utxo['1']['2'];
         this.index = utxo['3'];
 
-        this.lfStealth = ecparams.pointFromX(parseInt(this.pubkeyYBit) % 2 === 1,
-            BigInteger(this.pubkeyX));
+        this.lfStealth = secp256k1.curve.pointFromX(
+            toBN(this.pubkeyX),
+            parseInt(this.pubkeyYBit) % 2 === 1,
+        );
 
-        this.lfTxPublicKey = ecparams.pointFromX(parseInt(this.txPubYBit) % 2 === 1,
-            BigInteger(this.txPubX));
+        this.lfTxPublicKey = secp256k1.curve.pointFromX(
+            toBN(this.txPubX),
+            parseInt(this.txPubYBit) % 2 === 1,
+        );
 
-        this.lfCommitment = ecparams.pointFromX(parseInt(this.commitmentYBit) % 2 === 1,
-            BigInteger(this.commitmentX));
+        this.lfCommitment = secp256k1.curve.pointFromX(
+            toBN(this.commitmentX),
+            parseInt(this.commitmentYBit) % 2 === 1,
+        );
     }
 
     /**
@@ -121,8 +128,8 @@ class UTXO {
         });
 
         const decodedData = receiver.checkTransactionProof(
-            this.lfTxPublicKey.getEncoded(false),
-            this.lfStealth.getEncoded(false),
+            this.lfTxPublicKey.encode('hex', false),
+            this.lfStealth.encode('hex', false),
             this.amount,
             this.mask,
         );
@@ -144,8 +151,8 @@ class UTXO {
     getHashData(targetAddress: string) {
         return soliditySha3(
             bintohex(bconcat([
-                this.lfCommitment.getEncoded(false),
-                this.lfStealth.getEncoded(false),
+                this.lfCommitment.encode('array', false),
+                this.lfStealth.encode('array', false),
                 hextobin(targetAddress),
             ])),
         );
@@ -158,8 +165,6 @@ class UTXO {
      * @results {ec.Signature} include the ec.Signature you can convert to anyform after that
      */
     sign(privateKey: string, targetAddress: string): Signature {
-        const secp256k1 = new EC('secp256k1');
-
         // Generate keys
         const key = secp256k1.keyFromPrivate(privateKey);
 

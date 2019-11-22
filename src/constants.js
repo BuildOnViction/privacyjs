@@ -11,8 +11,16 @@ export const DEFAULT_GAS_PRICE = '250000000';
 export const DEFAULT_GAS = '20000000';
 
 BN.fromHex = hexstring => new BN(hexstring, 16);
+BN.fromBuffer = buffer => new BN(buffer.toString('hex'), 16);
 BN.TWO = () => new BN('10', 2);
 BN.ZERO = () => new BN('0', 2);
 BN.ONE = () => new BN('01', 2);
 
 export const BigInteger = BN;
+const EC = require('elliptic').ec;
+
+const secp256k1 = new EC('secp256k1');
+export const baseH = secp256k1.curve.point(
+    '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+    '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
+);

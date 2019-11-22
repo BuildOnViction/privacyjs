@@ -55,7 +55,7 @@ export const deposit = (amount, privateKey, from) => new Promise((resolve, rejec
     // create proof for a transaction
     const proof = sender.genTransactionProof(
         hexToNumberString(
-            toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex(),
+            toBN(amount).divide(PRIVACY_TOKEN_UNIT).toString(16),
         ), sender.pubSpendKey, sender.pubViewKey,
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);

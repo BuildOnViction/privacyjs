@@ -102,7 +102,7 @@
     "sinon": "^7.5.0"
   },
   "scripts": {
-    "start": "nodemon --exec babel-node test/unit/keccka.js",
+    "start": "nodemon --exec babel-node index.js",
     "lint": "eslint src",
     "test": "npm run lint && mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
     "testcase": "npm run lint && mocha --require @babel/register --exit -g ",

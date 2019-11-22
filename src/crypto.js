@@ -1,10 +1,13 @@
+import { BigInteger as BN } from './constants';
+
 const crypto = require('crypto');
-const ecurve = require('ecurve');
 const EC = require('elliptic').ec;
 
-const ec = new EC('secp256k1');
+const secp256k1 = new EC('secp256k1');
 
-// hack to get bigi without including it as a dep
+// TODO will be remove after finishing adapting elliptic
+const ecurve = require('ecurve');
+
 const ecparams = ecurve.getCurveByName('secp256k1');
 export const BigInteger = ecparams.n.constructor;
 
@@ -24,40 +27,24 @@ export function sha256x2(buffer) {
 
 export function encode(plaintext, key) {
     const sha256sum = crypto.createHash('sha256');
-    let _key = sha256sum.update(key).digest().toString('hex');
+    const _key = sha256sum.update(key).digest().toString('hex');
 
-    if (plaintext.length % 2 === 1) {
-        plaintext = '0' + plaintext;
-    }
+    const res = BN.fromHex(_key)
+        .mod(secp256k1.n).add(
+            BN.fromHex(plaintext).mod(secp256k1.n),
+        ).mod(secp256k1.n);
 
-    if (_key.length % 2 === 1) {
-        _key = '0' + _key;
-    }
-
-    const res = BigInteger.fromHex(_key)
-        .mod(ecparams.n).add(
-            BigInteger.fromHex(plaintext).mod(ecparams.n),
-        ).mod(ecparams.n)
-        .toHex();
-
-    return res;
+    return res.toString(16);
 }
 
 export function decode(encrypted, key) {
     const sha256sum = crypto.createHash('sha256');
-    let _key = sha256sum.update(key).digest().toString('hex');
+    const _key = sha256sum.update(key).digest().toString('hex');
+    const res = BN.fromHex(encrypted).sub(
+        BN.fromHex(_key),
+    ).mod(secp256k1.n).toString(16);
 
-    if (encrypted.length % 2 === 1) {
-        encrypted = '0' + encrypted;
-    }
-
-    if (_key.length % 2 === 1) {
-        _key = '0' + _key;
-    }
-
-    return BigInteger.fromHex(encrypted).subtract(
-        BigInteger.fromHex(_key).mod(ecparams.n),
-    ).mod(ecparams.n).toHex();
+    return res;
 }
 
 /**
@@ -66,7 +53,7 @@ export function decode(encrypted, key) {
  * @returns {string} Hex string without prefix 0x
  */
 export function randomHex(n) {
-    let result = ec.genKeyPair().getPrivate().toString('hex');
+    let result = secp256k1.genKeyPair().getPrivate().toString('hex');
 
     if (n && result.length * 4 > n) { // each hex = 4 bit
         return result.slice(0, n / 4);
@@ -76,12 +63,12 @@ export function randomHex(n) {
         result = '0' + result;
     }
 
-    return BigInteger.fromHex(result).mod(ecparams.n).toHex(n);
+    return BN.fromHex(result).mod(secp256k1.n).toString(16, n);
 }
 
 /**
- * Random a 32 bits BigInteger
+ * Random a 32 bits BN
  */
 export function randomBI() {
-    return ec.genKeyPair().getPrivate().mod(ec.n);
+    return secp256k1.genKeyPair().getPrivate().mod(secp256k1.n);
 }

@@ -14,16 +14,21 @@ const { expect } = chai;
 chai.should();
 
 const { WALLETS } = TestConfig;
-const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const SENDER_WALLET = WALLETS[1]; // hold around 1 mil tomo
 
 const amount = 1000000000000000000; // 1tomo
 const TX_VALUE = '1000000000'; // privacy protocol use gwei as unit
+
+const trimPrefix = (str, char) => {
+    char = char || '0';
+    str.replace(new RegExp(`^${char}+`), '');
+};
 
 describe('#ete #deposit', () => {
     for (let count = 0; count < 15; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
-            TestUtils.deposit(amount).then((result) => {
+            TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {
                 const returnedValue = result.utxo;
                 const { proof } = result;
 
@@ -32,13 +37,29 @@ describe('#ete #deposit', () => {
                 const isMineUTXO = utxoIns.checkOwnership(SENDER_WALLET.privateKey);
 
                 // make sure SC doesn't change anything
-                expect(proof.encryptedAmount).to.equal(utxoIns.amount);
+                expect(
+                    trimPrefix(proof.encryptedAmount),
+                ).to.equal(
+                    trimPrefix(utxoIns.amount),
+                );
                 expect(isMineUTXO).to.not.equal(null);
-                expect(isMineUTXO.amount).to.equal(TX_VALUE);
+                expect(
+                    trimPrefix(isMineUTXO.amount),
+                ).to.equal(
+                    trimPrefix(TX_VALUE),
+                );
 
                 // make sure decoded mask = generated mask
-                expect(utxoIns.mask).to.equal(proof.encryptedMask);
-                expect(isMineUTXO.mask).to.equal(proof.mask);
+                expect(
+                    trimPrefix(utxoIns.mask),
+                ).to.equal(
+                    trimPrefix(proof.encryptedMask),
+                );
+                expect(
+                    trimPrefix(isMineUTXO.mask),
+                ).to.equal(
+                    trimPrefix(proof.mask),
+                );
 
                 // validate return commitment from amount,mask -
                 expect(
@@ -55,7 +76,7 @@ describe('#ete #deposit', () => {
                 const expectedCommitment = Commitment.genCommitment(TX_VALUE.toString(), proof.mask).toString('hex');
 
                 expect(
-                    utxoIns.lfCommitment.getEncoded(true).toString('hex') === expectedCommitment,
+                    utxoIns.lfCommitment.encode('hex', true) === expectedCommitment,
                 ).to.equal(true);
                 done();
             }).catch((err) => {
@@ -65,7 +86,7 @@ describe('#ete #deposit', () => {
         });
     }
 
-    for (let count = 0; count < 5; count++) {
+    for (let count = 0; count < 10; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
             TestUtils.deposit(10000000000000, privateKey, address).then(() => {

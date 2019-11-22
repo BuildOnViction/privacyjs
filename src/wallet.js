@@ -14,21 +14,24 @@
  */
 
 import Web3 from 'web3';
-import ecurve from 'ecurve';
 import EventEmitter from 'eventemitter3';
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import assert from 'assert';
 import * as _ from 'lodash';
-import numberToBN from 'number-to-bn'; // this is converter to bn.js, this lib support more utils than bigi
+import toBN from 'number-to-bn'; // this is converter to bn.js, this lib support more utils than bigi
 import * as CONSTANT from './constants';
 import * as Address from './address';
-import Stealth from './stealth';
+import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
-import { BigInteger, randomHex } from './crypto';
-import { toBN, hexToNumberString } from './common';
+import { randomHex } from './crypto';
+import { hexToNumberString } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
-const ecparams = ecurve.getCurveByName('secp256k1');
+const BigInteger = CONSTANT.BigInteger;
+
+// const EC = require('elliptic').ec;
+
+// const secp256k1 = new EC('secp256k1');
 
 type SmartContractOpts = {
     RPC_END_POINT: string,
@@ -159,10 +162,10 @@ export default class Wallet extends EventEmitter {
         const proof = this.stealth.genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask);
 
         return [
-            `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of point
-            `0x${proof.onetimeAddress.toString('hex').substr(-64)}`, // the Y part of point
-            `0x${proof.txPublicKey.toString('hex').substr(2, 64)}`, // the X part of point
-            `0x${proof.txPublicKey.toString('hex').substr(-64)}`, // the Y par of point,
+            `0x${proof.onetimeAddress.substr(2, 64)}`, // the X part of point
+            `0x${proof.onetimeAddress.substr(-64)}`, // the Y part of point
+            `0x${proof.txPublicKey.substr(2, 64)}`, // the X part of point
+            `0x${proof.txPublicKey.substr(-64)}`, // the Y par of point,
             `0x${proof.mask}`,
             `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
             `0x${proof.encryptedMask}`,
@@ -177,10 +180,10 @@ export default class Wallet extends EventEmitter {
     deposit(amount: number): Promise<any> {
         this.emit('START_DEPOSIT');
         console.log('Making deposit proof ',
-            hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex()));
+            hexToNumberString(toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(16)));
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(
-                hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex()),
+                hexToNumberString(toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(16)),
             );
             this.privacyContract.methods.deposit(...proof)
                 .send({
@@ -278,7 +281,7 @@ export default class Wallet extends EventEmitter {
             const index = fromIndex || _self.scannedTo;
             let scannedTo = 0;
             let utxo = {};
-            let balance = BigInteger.ZERO;
+            let balance = BigInteger.ZERO();
             // const utxos = [];
             const rawUTXOs = [];
 
@@ -320,7 +323,7 @@ export default class Wallet extends EventEmitter {
                 this.updateWalletState(rawUTXOs, _self.balance, _self.scannedTo);
 
                 console.log('Total Balance : ', Web3.utils.hexToNumberString(
-                    '0x' + _self.balance.toHex(),
+                    '0x' + _self.balance.toString(16),
                 ));
                 resolve({
                     utxos: rawUTXOs,
@@ -335,7 +338,7 @@ export default class Wallet extends EventEmitter {
     updateWalletState(rawUTXOs: Array<Object>, balance: BigInteger, scannedTo: number) {
         // this._addNewUTXOS(rawUTXOs, true);
         this._updateStorage('UTXOS', this.utxos);
-        this._updateStorage('BALANCE', balance.toHex());
+        this._updateStorage('BALANCE', balance.toString(16));
         this._updateStorage('SCANNEDTO', scannedTo);
     }
 
@@ -362,14 +365,12 @@ export default class Wallet extends EventEmitter {
     _getSpendingUTXO(amount: BigInteger): Array<UTXO> {
         const spendingUTXOS = [];
         let i = 0;
-
-        let justEnoughBalance = BigInteger.ZERO;
-
+        let justEnoughBalance = BigInteger.ZERO();
         let txTimes = 1;
 
-        while (amount.compareTo(
-            justEnoughBalance.subtract(
-                toBN(txTimes).multiply(PRIVACY_FLAT_FEE),
+        while (amount.cmp(
+            justEnoughBalance.sub(
+                toBN(txTimes).mul(PRIVACY_FLAT_FEE),
             ),
         ) > 0 && this.utxos[i]) {
             justEnoughBalance = justEnoughBalance.add(
@@ -390,9 +391,9 @@ export default class Wallet extends EventEmitter {
         console.log('... Split into ', txTimes, ' sub-tx');
 
         // not enough balance to pay fee + amount
-        if (amount.compareTo(
-            justEnoughBalance.subtract(
-                toBN(txTimes).multiply(PRIVACY_FLAT_FEE),
+        if (amount.cmp(
+            justEnoughBalance.sub(
+                toBN(txTimes).mul(PRIVACY_FLAT_FEE),
             ),
         ) > 0) {
             return {
@@ -404,7 +405,7 @@ export default class Wallet extends EventEmitter {
             utxos: spendingUTXOS,
             totalAmount: justEnoughBalance,
             txTimes,
-            totalFee: toBN(txTimes).multiply(PRIVACY_FLAT_FEE),
+            totalFee: toBN(txTimes).mul(PRIVACY_FLAT_FEE),
         };
     }
 
@@ -418,15 +419,15 @@ export default class Wallet extends EventEmitter {
      */
     _splitTransaction(utxos: Array<UTXO>, txTimes: number, txAmount: BigInteger) : Array<Object> {
         const txs = [];
-        let sentAmount = BigInteger.ZERO;
+        let sentAmount = BigInteger.ZERO();
 
         for (let index = 0; index < txTimes - 1; index++) {
             const spendingUTXO = utxos.splice(0, MAXIMUM_ALLOWED_RING_NUMBER);
-            const sentAmountThisTx = this._calTotal(spendingUTXO).subtract(PRIVACY_FLAT_FEE);
+            const sentAmountThisTx = this._calTotal(spendingUTXO).sub(PRIVACY_FLAT_FEE);
             txs.push({
                 utxos: spendingUTXO,
                 receivAmount: sentAmountThisTx,
-                remainAmount: BigInteger.ZERO,
+                remainAmount: BigInteger.ZERO(),
             });
             sentAmount = sentAmount.add(sentAmountThisTx);
         }
@@ -434,8 +435,8 @@ export default class Wallet extends EventEmitter {
         const remain = this._calTotal(utxos);
         txs.push({
             utxos,
-            receivAmount: txAmount.subtract(sentAmount),
-            remainAmount: remain.add(sentAmount).subtract(PRIVACY_FLAT_FEE).subtract(txAmount),
+            receivAmount: txAmount.sub(sentAmount),
+            remainAmount: remain.add(sentAmount).sub(PRIVACY_FLAT_FEE).sub(txAmount),
         });
 
         return txs;
@@ -447,7 +448,7 @@ export default class Wallet extends EventEmitter {
      * @returns {BigInteger}
      */
     _calTotal(utxos: Array<UTXO>): BigInteger {
-        let balance = BigInteger.ZERO;
+        let balance = BigInteger.ZERO();
         _.each(utxos, (utxo) => {
             if (!utxo.decodedAmount) {
                 utxo.decodedAmount = new UTXO(utxo).checkOwnership(this.addresses.privSpendKey).amount;
@@ -476,10 +477,10 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount).divide(PRIVACY_TOKEN_UNIT);
+        const biAmount = toBN(amount).div(PRIVACY_TOKEN_UNIT);
 
-        assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
-        assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
+        assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
+        assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
 
         this.emit('START_SENDING');
 
@@ -578,10 +579,10 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount).divide(PRIVACY_TOKEN_UNIT);
+        const biAmount = toBN(amount).div(PRIVACY_TOKEN_UNIT);
 
-        assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
-        assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
+        assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
+        assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
 
         this.emit('START_WITHDRAW');
 
@@ -726,7 +727,6 @@ export default class Wallet extends EventEmitter {
 
         console.log('Start ringct ', t1 = new Date());
 
-
         // TODO need rewrite - not optimized
         const pubkeys = []; // public keys of utxo
 
@@ -738,7 +738,7 @@ export default class Wallet extends EventEmitter {
             pubkeys.push(decoy.lfStealth);
         });
 
-        let totalSpending = BigInteger.ZERO;
+        let totalSpending = BigInteger.ZERO();
 
         const privkeys = [];
 
@@ -763,10 +763,10 @@ export default class Wallet extends EventEmitter {
             this.addresses.privSpendKey,
             decoys,
             _.map(proofs, (proof) => {
-                const lfCommitment = ecurve.Point.decodeFrom(ecparams, proof.commitment);
+                const lfCommitment = toPoint(proof.commitment);
                 message = Buffer.concat([
                     message,
-                    proof.onetimeAddress.slice(-64),
+                    Buffer.from(proof.onetimeAddress.slice(-64), 'hex'),
                 ]);
                 return {
                     lfCommitment,
@@ -791,26 +791,26 @@ export default class Wallet extends EventEmitter {
         t2 = new Date();
         console.log('Finish ringct - cost  ', (t2.valueOf() - t1.valueOf()) / 1000);
 
-        // assert(
-        //     MLSAG.verifyMul(
-        //         ringctDecoys,
-        //         ringSignature.I,
-        //         ringSignature.c1,
-        //         ringSignature.s,
-        //         message,
-        //     ) === true, 'Wrong signature !!',
-        // );
+        assert(
+            MLSAG.verifyMul(
+                ringctDecoys,
+                ringSignature.I,
+                ringSignature.c1,
+                ringSignature.s,
+                message,
+            ) === true, 'Wrong signature !!',
+        );
 
         return {
             decoys,
             signature: Buffer.from(
-                `${numberToBN(numberOfRing + 1).toString(16, 16)
-                }${numberToBN(ringSize).toString(16, 16)
+                `${toBN(numberOfRing + 1).toString(16, 16)
+                }${toBN(ringSize).toString(16, 16)
                 }${ringSignature.message.toString('hex')
-                }${ringSignature.c1.toHex(32)
-                }${_.map(_.flatten(ringSignature.s), element => element.toHex(32)).join('')
-                // }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
-                }${_.map(_.flatten(ringSignature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
+                }${ringSignature.c1.toString(16, 32)
+                }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 32)).join('')
+                // }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.encode('hex', true)).join('')
+                }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
                 'hex',
             ),
         };
@@ -839,15 +839,15 @@ export default class Wallet extends EventEmitter {
     _genWithdrawProofs(amount: BigInteger, remain: BigInteger): Array<Object> {
         // When withdraw, we set mask = 0, so commitment  = value*H
         const proofOfReceiver = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + amount.toHex()), null, null, '0',
+            Web3.utils.hexToNumberString('0x' + amount.toString(16)), null, null, '0',
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + remain.toHex()),
+            Web3.utils.hexToNumberString('0x' + remain.toString(16)),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toHex()), null, null, '0',
+            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toString(16)), null, null, '0',
         );
         return [proofOfReceiver, proofOfMe, proofOfFee];
     }
@@ -863,15 +863,15 @@ export default class Wallet extends EventEmitter {
         const receiverStealth = Stealth.fromString(receiver);
 
         const proofOfReceiver = receiverStealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + amount.toHex()),
+            Web3.utils.hexToNumberString('0x' + amount.toString(16)),
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + remain.toHex()),
+            Web3.utils.hexToNumberString('0x' + remain.toString(16)),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toHex()), null, null, '0',
+            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toString(16)), null, null, '0',
         );
 
         return [proofOfReceiver, proofOfMe, proofOfFee];
@@ -948,7 +948,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[1].txPublicKey.toString('hex').substr(2, 64)}`,
                 `0x${outputProofs[1].txPublicKey.toString('hex').substr(-64)}`,
             ],
-            '0x' + amount.multiply(PRIVACY_TOKEN_UNIT).toHex(), // withdaw need multiple with 10^9, convert gwei to wei
+            '0x' + amount.mul(PRIVACY_TOKEN_UNIT).toString(16), // withdaw need multiple with 10^9, convert gwei to wei
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
@@ -970,8 +970,8 @@ export default class Wallet extends EventEmitter {
             this.privacyContract.methods.isSpent(
                 _.map(keyImage(
                     BigInteger.fromHex(ringctKeys.privKey),
-                    utxo.lfStealth.getEncoded(false).toString('hex').slice(2),
-                ).getEncoded(true).toString('hex').match(/.{1,2}/g), num => '0x' + num),
+                    utxo.lfStealth.encode('hex', false).slice(2),
+                ).encode('hex', true).match(/.{1,2}/g), num => '0x' + num),
             )
                 .call({
                     from: this.scOpts.from,
@@ -985,12 +985,12 @@ export default class Wallet extends EventEmitter {
     /**
      * Check utxo's proof belongs
      * consider changing input format
-     * @param {Buffer} txPubkey long-form point = Point.getEncoded(false)
-     * @param {*} stealth long-form point = Point.getEncoded(false)
-     * @param {*} encryptedAmount AES(ECDH, amount) in hex string
+     * @param {Buffer | string} txPubkey transaction public key
+     * @param {Buffer | string} stealth one time address or public key of UTXO
+     * @param {string} encryptedAmount AES(ECDH, amount) in hex string
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
      */
-    isMine(txPubkey: Buffer, stealth: Buffer, encryptedAmount: string): DecodedProof {
+    isMine(txPubkey: Buffer | string, stealth: Buffer | string, encryptedAmount: string): DecodedProof {
         return this.stealth.checkTransactionProof(
             txPubkey, stealth, encryptedAmount,
         );
@@ -1006,17 +1006,17 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        console.log('this.balance ', this.balance.toHex());
+        console.log('this.balance ', this.balance.toString(16));
 
         return this.balance ? Web3.utils.fromWei(
             Web3.utils.hexToNumberString(
-                '0x' + this.balance.multiply(PRIVACY_TOKEN_UNIT).toHex(),
+                '0x' + this.balance.mul(PRIVACY_TOKEN_UNIT).toString(16),
             ),
         ) : '0';
     }
 
     hexBalance() {
-        return this.balance ? '0x' + this.balance.multiply(PRIVACY_TOKEN_UNIT).toHex() : '0x0';
+        return this.balance ? '0x' + this.balance.mul(PRIVACY_TOKEN_UNIT).toString(16) : '0x0';
     }
 
     // TODO find way to do automation test on browser

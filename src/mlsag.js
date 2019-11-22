@@ -88,9 +88,7 @@ export default class MLSAG {
         const c = [];
 
         let pj = new Buffer([]);
-
         let i;
-        // const privKeys = [];
 
         // prepare HP
         for (i = 0; i < numberOfRing; i++) {
@@ -101,10 +99,11 @@ export default class MLSAG {
 
             I[i] = keyImage(privKeys[i], decoys[i][index].encode('hex', false).slice(2));
             HP[i] = _.map(decoys[i], (utxo) => {
-                pj = Buffer.concat([pj, utxo.encode('array', true)]);
+                pj = Buffer.concat([pj, Buffer.from(utxo.encode('array', true))]);
                 return hashToPoint(utxo.encode('hex', false).slice(2));
             });
-            s.push(_.map(new Array(decoys[i].length), () => randomBI()));
+            // TODO compute probability of randomBI > secp256k1
+            s.push(_.map(new Array(decoys[i].length), () => randomBI().umod(secp256k1.n)));
         }
 
         for (i = 0; i < numberOfRing; i++) {
@@ -119,11 +118,15 @@ export default class MLSAG {
         let tohash = _.cloneDeep(pj); // pj = message || all_pubkeys
 
         for (i = 0; i < numberOfRing; i++) {
-            tohash = Buffer.concat([tohash, L[i][index].encode('array', false).slice(1), R[i][index].encode('array', false).slice(1)]);
+            tohash = Buffer.concat([tohash,
+                Buffer.from(L[i][index].encode('array', false).slice(1)),
+                Buffer.from(R[i][index].encode('array', false).slice(1)),
+            ]);
         }
 
         // calculate c[index+1] first, used for calculating R,L next round
         c[j] = hashRingCT(tohash);
+        console.log(`c[${j}] `, c[j].toString(16));
         while (j !== index) {
             tohash = _.cloneDeep(pj);
             for (i = 0; i < numberOfRing; i++) {
@@ -133,23 +136,32 @@ export default class MLSAG {
                 R[i][j] = HP[i][j].mul(s[i][j]).add(
                     I[i].mul(c[j]),
                 ); // Rj = sH + cxH
-                tohash = Buffer.concat([tohash, L[i][j].encode('array', false).slice(1), R[i][j].encode('array', false).slice(1)]);
+                console.log(`L[${i}][${j}] `, L[i][j].encode('hex', true));
+                console.log(`R[${i}][${j}] `, R[i][j].encode('hex', true));
+                tohash = Buffer.concat([tohash,
+                    Buffer.from(L[i][j].encode('array', false).slice(1)),
+                    Buffer.from(R[i][j].encode('array', false).slice(1)),
+                ]);
             }
             j = (j + 1) % ringSize;
             c[j] = hashRingCT(tohash);
+            console.log(`c[${j}] `, c[j].toString(16));
         }
 
         // si = a - c x so a = s + c x
         // actually here we should use an other random alpha
         // but s[i] is also random
         for (i = 0; i < numberOfRing; i++) {
-            s[i][index] = s[i][index].subtract(
+            s[i][index] = s[i][index].sub(
                 c[index].mul(
                     privKeys[i],
+                ).umod(
+                    secp256k1.n,
                 ),
-            ).mod(
+            ).umod(
                 secp256k1.n,
             );
+            console.log(s[i][index].toString(16));
         }
 
         return {
@@ -168,7 +180,7 @@ export default class MLSAG {
      * @param {Array<Point>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
      * @param {Array<Point>} I Key image list
      * @param {BigInteger} c1 the first item of commitment list
-     * @param {Array<BigInteger>} s random array
+     * @param {Array<BigI>} s random array
      * @returns {Boolean} true if message is verify
      */
     static verifyMul(decoys: Array<Array<secp256k1.curve.point>>, I: secp256k1.curve.point, c1: BigInteger, s: Array<BigInteger>, message: ?Buffer) {
@@ -177,14 +189,16 @@ export default class MLSAG {
         const L = [];
         const R = [];
         const HP = [];
-        // const pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
+        // const pj = message || Buffer.from(BigInteger.ZERO().toString(16, 32).match(/.{2}/g));
         let pj = new Buffer([]);
 
         for (let i = 0; i < numberOfRing; i++) {
             L.push([]);
             R.push([]);
             HP[i] = _.map(decoys[i], (utxo) => {
-                pj = Buffer.concat([pj, utxo.encode('array', true)]);
+                pj = Buffer.concat([pj,
+                    Buffer.from(utxo.encode('array', true)),
+                ]);
                 return hashToPoint(utxo.encode('hex', false).slice(2));
             });
         }
@@ -204,12 +218,19 @@ export default class MLSAG {
                 R[i][j] = HP[i][j].mul(s[i][j]).add(
                     I[i].mul(c[j]),
                 ); // Rj = sH + cxH
-                tohash = Buffer.concat([tohash, L[i][j].encode('array', false).slice(1), R[i][j].encode('array', false).slice(1)]);
+                tohash = Buffer.concat([tohash,
+                    Buffer.from(L[i][j].encode('array', false).slice(1)),
+                    Buffer.from(R[i][j].encode('array', false).slice(1)),
+                ]);
+                console.log(`L[${i}][${j}] `, L[i][j].encode('hex', true));
+                console.log(`R[${i}][${j}] `, R[i][j].encode('hex', true));
             }
             j++;
             c[j] = hashRingCT(tohash);
+            console.log('c[j] ', c[j].toString(16));
         }
-        return (c[0].toString('16') === c[ringSize].toString('16'));
+        console.log('\n\n');
+        return (c[0].toString(16) === c[ringSize].toString(16));
     }
 
     /**
@@ -234,12 +255,11 @@ export default class MLSAG {
         // decoys lengh, here we set default as 11
         const ringSize = decoys[0].length;
 
-        let sumSpendingMask = BigInteger.ZERO; // for calculating private key in ring
-        let sumOutputMask = BigInteger.ZERO; // big number
+        let sumSpendingMask = BigInteger.ZERO(); // for calculating private key in ring
+        let sumOutputMask = BigInteger.ZERO(); // big number
         let outputCommitment; // a point in seccp256k1
 
         // prepare sum of output mask
-
         outputPoints.forEach((utxo) => {
             if (utxo.decodedMask.length % 2 === 1) {
                 utxo.decodedMask = '0' + utxo.decodedMask;
@@ -279,7 +299,7 @@ export default class MLSAG {
             }
         }
 
-        outputCommitment = outputCommitment ? outputCommitment.negate() : outputCommitment;
+        outputCommitment = outputCommitment ? outputCommitment.neg() : outputCommitment;
         for (let j = 0; j < ringSize; j++) {
             publicKeys[j] = publicKeys[j].add(
                 outputCommitment,
@@ -288,8 +308,8 @@ export default class MLSAG {
 
         // prepare data for ring include private key, key image, HP, s
         const privKey = sumSpendingMask
-            .subtract(sumOutputMask)
-            .mod(secp256k1.n);
+            .sub(sumOutputMask)
+            .umod(secp256k1.n);
 
         return {
             privKey,

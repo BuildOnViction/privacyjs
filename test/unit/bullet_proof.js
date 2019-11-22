@@ -1,6 +1,5 @@
 
 import chai from 'chai';
-import * as _ from 'lodash';
 import BigInteger from 'bn.js';
 import BulletProof from '../../src/bullet_proof';
 

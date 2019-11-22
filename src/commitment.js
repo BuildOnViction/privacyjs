@@ -1,11 +1,15 @@
-import { hmacSha256, BigInteger } from './crypto';
+import { BigI } from './crypto';
 import * as common from './common';
-import { basePointH } from './constants';
+// import { baseH } from './constants';
 
-const ecurve = require('ecurve');
+const EC = require('elliptic').ec;
 
-const ecparams = ecurve.getCurveByName('secp256k1');
-const { Point } = ecurve;
+const secp256k1 = new EC('secp256k1');
+const baseH = secp256k1.curve.point(
+    '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+    '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
+);
+// const { Point } = ecurve;
 
 class Commitment {
     /**
@@ -18,100 +22,30 @@ class Commitment {
      * @returns {object} commitment = mask*G + amount*H
      */
     static genCommitment(amount, mask, encoded = true) {
-        const basePointG = ecparams.G;
+        const basePointG = secp256k1.g;
 
         if (!amount || amount.toString() === '0') {
-            return basePointG.multiply(
-                BigInteger.fromHex(mask),
-            ).getEncoded(encoded);
+            return basePointG.mul(
+                BigI.fromHex(mask),
+            ).encode('hex', encoded);
         }
 
         if (!mask || mask.toString() === '0') {
-            return basePointH.multiply(
-                BigInteger.fromHex(
+            return baseH.mul(
+                BigI.fromHex(
                     common.numberToHex(amount),
                 ),
-            ).getEncoded(encoded);
+            ).encode('hex', encoded);
         }
 
-        return basePointG.multiply(
-            BigInteger.fromHex(mask),
+        return basePointG.mul(
+            BigI.fromHex(mask),
         )
-            .add(basePointH.multiply(
-                BigInteger.fromHex(
+            .add(baseH.mul(
+                BigI.fromHex(
                     common.numberToHex(amount),
                 ),
-            )).getEncoded(encoded);
-
-        // return commitment.getEncoded(encoded);
-    }
-
-    /**
-     * Generate Pedersen-commitment from transaction public key
-     * this use will be use when you don't have
-     * mask - normally base on utxo return from smart-contract
-     * @param {number} amount You want to hide
-     * @param {object} txpub Object includes X and YBit returns from utxo
-     * @param {Buffer} privateViewKey Hex string private view key
-     * @param {boolean} encoded output in long-form or short-form,
-     * encoded = true -> short-form, encoded = false -> long-form
-     * @returns {object} commitment = hs(txpub*private_view_key)*G + amount*H
-     */
-    static genCommitmentFromTxPub(amount, txpub, privateViewKey, encoded = true) {
-        const lfTx = ecparams.pointFromX(parseInt(txpub.YBit) % 2 === 1,
-            BigInteger(txpub.X)).getEncoded(false);
-
-        const B = Point.decodeFrom(ecparams, lfTx);
-
-        const ECDHSharedSerect = B.multiply(BigInteger.fromBuffer(privateViewKey));
-
-        const basePointG = ecparams.G;
-        const commitment = basePointG.multiply(
-            BigInteger.fromBuffer(
-                hmacSha256(ECDHSharedSerect.getEncoded(true)),
-            ),
-        )
-            .add(basePointH.multiply(
-                BigInteger.fromHex(
-                    common.numberToHex(amount),
-                ),
-            ));
-
-        return commitment.getEncoded(encoded);
-    }
-
-    /**
-     * Sum commitments from a set of UTXO instance
-     * @param {object - UTXO} UTXO instance
-     * @param {string} privateKey privatekey for decode amount, ecdh and prove those utxo
-     * belonging
-     * @returns {Point} result from sum
-     */
-    static sumCommitmentsFromUTXOs(inputUtxos, privateKey) {
-        let sumInput = null;
-        for (let index = 0; index < inputUtxos.length; index++) {
-            const UTXOIns = inputUtxos[index];
-
-            const decodedData = UTXOIns.checkOwnership(privateKey);
-            const basePointG = ecparams.G;
-
-            const commitment = basePointG.multiply(
-                BigInteger.fromHex(decodedData.mask),
-            )
-                .add(basePointH.multiply(
-                    BigInteger.fromHex(
-                        common.numberToHex(decodedData.amount),
-                    ),
-                ));
-
-            if (!sumInput) {
-                sumInput = commitment;
-            } else {
-                sumInput = sumInput.add(commitment);
-            }
-        }
-
-        return sumInput;
+            )).encode('hex', encoded);
     }
 
     /**
@@ -122,7 +56,7 @@ class Commitment {
     static sumCommitments(commitments) {
         let sumInput = null;
         for (let index = 0; index < commitments.length; index++) {
-            const commitment = Point.decodeFrom(ecparams, commitments[index]);
+            const commitment = secp256k1.curve.decodePoint(commitments[index]);
 
             if (!sumInput) {
                 sumInput = commitment;
@@ -142,9 +76,10 @@ class Commitment {
      * @returns {boolean} true if this is my signed commitment elsewise return false
      */
     static verifyCommitment(amount, mask, commitment) {
-        const lfCommitment = ecparams.pointFromX(parseInt(commitment.YBit) % 2 === 1,
-            BigInteger(commitment.X));
-        return this.genCommitment(amount, mask).toString('hex') === lfCommitment.getEncoded(true).toString('hex');
+        const lfCommitment = secp256k1.curve.pointFromX(
+            BigI(commitment.X), parseInt(commitment.YBit) % 2 === 1,
+        );
+        return this.genCommitment(amount, mask) === lfCommitment.encode('hex', true);
     }
 }
 

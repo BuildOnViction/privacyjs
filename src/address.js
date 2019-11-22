@@ -1,21 +1,18 @@
-import { BigInteger } from './crypto';
 import * as common from './common';
 
 const Base58 = require('bs58');
-const ecurve = require('ecurve');
 
-const ecparams = ecurve.getCurveByName('secp256k1');
+const EC = require('elliptic').ec;
+// type Point = Curve.short.ShortPoint;
+
+const secp256k1 = new EC('secp256k1');
 
 /**
  * Generate public key from a private key
  * @param {string} Any private key
  * @returns {string} Public key in hex string using secp256k1
  */
-export const privateKeyToPub = function (privKey) {
-    return ecparams.G.multiply(
-        BigInteger.fromHex(privKey),
-    ).getEncoded(true).toString('hex');
-};
+export const privateKeyToPub = privKey => secp256k1.keyFromPrivate(privKey).getPublic().encodeCompressed('hex');
 
 /**
  * Generate privacy address from public spend key, public view key

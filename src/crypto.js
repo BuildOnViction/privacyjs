@@ -1,12 +1,23 @@
+import BN from 'bn.js';
+
 const crypto = require('crypto');
-const ecurve = require('ecurve');
 const EC = require('elliptic').ec;
 
-const ec = new EC('secp256k1');
+const secp256k1 = new EC('secp256k1');
 
-// hack to get bigi without including it as a dep
+BN.fromHex = hexstring => new BN(hexstring, 16);
+BN.fromBuffer = buffer => new BN(buffer.toString('hex'), 16);
+
+BN.toHex = () => this.toString(16);
+
+export const BigI = BN;
+
+// TODO will be remove after finishing adapting elliptic
+const ecurve = require('ecurve');
+
 const ecparams = ecurve.getCurveByName('secp256k1');
 export const BigInteger = ecparams.n.constructor;
+
 
 export function hash160(buffer) {
     const sha256 = crypto.createHash('sha256').update(buffer).digest();
@@ -34,13 +45,12 @@ export function encode(plaintext, key) {
         _key = '0' + _key;
     }
 
-    const res = BigInteger.fromHex(_key)
-        .mod(ecparams.n).add(
-            BigInteger.fromHex(plaintext).mod(ecparams.n),
-        ).mod(ecparams.n)
-        .toHex();
+    const res = BN.fromHex(_key)
+        .mod(secp256k1.n).add(
+            BN.fromHex(plaintext).mod(secp256k1.n),
+        ).mod(secp256k1.n);
 
-    return res;
+    return res.toString(16);
 }
 
 export function decode(encrypted, key) {
@@ -55,9 +65,9 @@ export function decode(encrypted, key) {
         _key = '0' + _key;
     }
 
-    return BigInteger.fromHex(encrypted).subtract(
-        BigInteger.fromHex(_key).mod(ecparams.n),
-    ).mod(ecparams.n).toHex();
+    return BN.fromHex(encrypted).subtract(
+        BN.fromHex(_key).mod(secp256k1.n),
+    ).mod(secp256k1.n).toString(16);
 }
 
 /**
@@ -66,7 +76,7 @@ export function decode(encrypted, key) {
  * @returns {string} Hex string without prefix 0x
  */
 export function randomHex() {
-    const result = ec.genKeyPair().getPrivate().toString('hex');
+    const result = secp256k1.genKeyPair().getPrivate().toString('hex');
     if (result.length % 2 === 1) {
         return '0' + result;
     }

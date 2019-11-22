@@ -13,19 +13,16 @@ import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
 
-import BigInteger from 'bn.js';
 import toBN from 'number-to-bn';
-import { randomHex } from './crypto';
+import { randomHex, BigI } from './crypto';
 import InnerProduct from './inner_product';
 import {
     bconcat,
 } from './common';
 
-// TODO move to one place
-BigInteger.fromHex = hexstring => new BigInteger(hexstring, 16);
 
-const ZERO = new BigInteger('0', 16);
-const ONE = new BigInteger('01', 2);
+const ZERO = new BigI('0', 16);
+const ONE = new BigI('01', 2);
 
 const EC = require('elliptic').ec;
 // type Point = Curve.short.ShortPoint;
@@ -39,7 +36,7 @@ const baseH = secp256k1.curve.point(
 );
 
 const N = 64; // bitsize of the elements whose range one wants to prove
-const MAX_2_EXPN = BigInteger.fromHex('0100000000000000000000000000000000');
+const MAX_2_EXPN = BigI.fromHex('0100000000000000000000000000000000');
 
 const bn2b = (bn, size) => {
     let result = bn.toString(2);
@@ -74,29 +71,11 @@ const genECPrimeGroupKey = (n) => {
     };
 };
 
-
-/**
- * Bulletproof is composed of:
- * V: a vector o curve points, = Pedersen commitments to v[i] with hiding values masks[i],
- *    V[i] = G*masks[i] + H*v[i]
- * A: a curve point, vector commitment to aL and aR with hiding value alpha
- * S: a curve point, vector commitment to sL and sR with hiding value rho
- * T1: a curve point, Pedersen commitment to t1 with hiding value tau1
- * T2: a curve point, Pedersen commitment to t2 with hiding value tau2
- * taux: a scalar, hiding value related to T1,T2,V and t
- * mu: a scalar, hiding value related to A and S
- * L: a vector of curve points of size log2(M*N) computed in the inner product protocol
- * R: a vector of curve points of size log2(M*N) computed in the inner product protocol
- * a: a scalar computed in the inner product protocol
- * b: a scalar computed in the inner product protocol
- * t: a scalar, inner product value to be verifie
- */
-
 export const hashToPoint = (shortFormPoint) => {
     assert(shortFormPoint && shortFormPoint.length, 'Invalid input public key to hash');
     let hex = shortFormPoint.substring(2); // ignore first two bit
     while (hex) {
-        const newPoint = baseG.mul(BigInteger.fromHex(keccak256(hex)));
+        const newPoint = baseG.mul(BigI.fromHex(keccak256(hex)));
         if (secp256k1.isOnCurve(newPoint)) {
             return newPoint;
         }
@@ -104,7 +83,7 @@ export const hashToPoint = (shortFormPoint) => {
     }
 };
 
-const hashToScalar = data => BigInteger.fromHex(
+const hashToScalar = data => BigI.fromHex(
     keccak256(data),
 ).mod(
     secp256k1.n,
@@ -338,7 +317,7 @@ const range_proof_innerProduct_poly_hiding_value = (tau1, tau2, masks, x, z) => 
 };
 
 let M;
-const twoN = vectorPowers(BigInteger.fromHex('02'),
+const twoN = vectorPowers(BigI.fromHex('02'),
     toBN(N));
 
 const inner_product_batch_verify = (
@@ -350,6 +329,22 @@ const inner_product_batch_verify = (
     throw new Error('Not implemented yet ');
 };
 
+/**
+ * Bulletproof is composed of:
+ * V: a vector o curve points, = Pedersen commitments to v[i] with hiding values masks[i],
+ *    V[i] = G*masks[i] + H*v[i]
+ * A: a curve point, vector commitment to aL and aR with hiding value alpha
+ * S: a curve point, vector commitment to sL and sR with hiding value rho
+ * T1: a curve point, Pedersen commitment to t1 with hiding value tau1
+ * T2: a curve point, Pedersen commitment to t2 with hiding value tau2
+ * taux: a scalar, hiding value related to T1,T2,V and t
+ * mu: a scalar, hiding value related to A and S
+ * L: a vector of curve points of size log2(M*N) computed in the inner product protocol
+ * R: a vector of curve points of size log2(M*N) computed in the inner product protocol
+ * a: a scalar computed in the inner product protocol
+ * b: a scalar computed in the inner product protocol
+ * t: a scalar, inner product value to be verify
+ */
 export default class BulletProof {
     /**
       * Provide amounts and mask for constructing range-proof
@@ -412,16 +407,16 @@ export default class BulletProof {
         assert(innerProduct(aL, aR).toString(10) === '0', 'Wrong aL, aR !!');
 
         // Compute A: a curve point, vector commitment to aL and aR with hiding value alpha
-        const alpha = BigInteger.fromHex(randomHex());
+        const alpha = BigI.fromHex(randomHex());
         // const A = pedersenVectorCommitment(alpha, H, [...aL, ...aR], [...Gi, ...Hi]); // (Gi*aL + Hi*aR + H*alpha)
         const A = TwoVectorPCommitWithGens(Gi, Hi, aL, aR).add(baseH.mul(alpha));
 
         MRPResult.A = A.encode('array', false).slice(1).toString('hex');
 
         // Compute S: a curve point, vector commitment to sL and sR with hiding value rho
-        const sL = _.map(Array(N * M), () => BigInteger.fromHex(randomHex()));
-        const sR = _.map(Array(N * M), () => BigInteger.fromHex(randomHex()));
-        const rho = BigInteger.fromHex(randomHex());
+        const sL = _.map(Array(N * M), () => BigI.fromHex(randomHex()));
+        const sR = _.map(Array(N * M), () => BigI.fromHex(randomHex()));
+        const rho = BigI.fromHex(randomHex());
 
         // const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
         const S = TwoVectorPCommitWithGens(Gi, Hi, sL, sR).add(baseH.mul(rho));
@@ -461,13 +456,13 @@ export default class BulletProof {
         } = range_proof_innerProduct_poly_coeff(aL, sL, aR, sR, cy, cz);
 
         // Compute T1: a curve point, Pedersen commitment to t1 with hiding value tau1
-        const tau1 = BigInteger.fromHex(randomHex());
+        const tau1 = BigI.fromHex(randomHex());
         const T1 = pedersenCommitment(tau1, t1);
 
         MRPResult.T1 = T1.encode('array', false).slice(1).toString('hex');
 
         // Compute T2: a curve point, Pedersen commitment to t2 with hiding value tau2
-        const tau2 = BigInteger.fromHex(randomHex());
+        const tau2 = BigI.fromHex(randomHex());
         const T2 = pedersenCommitment(tau2, t2);
 
         MRPResult.T2 = T2.encode('array', false).slice(1).toString('hex');

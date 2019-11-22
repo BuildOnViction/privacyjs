@@ -1,18 +1,21 @@
 /* eslint-disable no-loop-func */
 // @flow
-import ecurve from 'ecurve';
+// import ecurve from 'ecurve';
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
-import { BigInteger, randomHex } from './crypto';
+import { BigI, randomHex } from './crypto';
 
 // import { bconcat } from './common';
 
-const secp256k1 = ecurve.getCurveByName('secp256k1');
-const baseG = secp256k1.G;
+// const secp256k1 = ecurve.getCurveByName('secp256k1');
+const EC = require('elliptic').ec;
+
+const secp256k1 = new EC('secp256k1');
+const baseG = secp256k1.g;
 
 // fixed string length
-type Point = ecurve.Point;
+// type Point = ecurve.Point;
 
 /**
  * Turn a hex into secp256k1 point, we do it by repeating hashing and multiply baseG
@@ -28,7 +31,7 @@ export const hashToPoint = (longFormPoint: string) => {
     if (hashed.length % 2 === 1) {
         hashed = '0' + hashed;
     }
-    const newPoint = baseG.multiply(BigInteger.fromHex(hashed));
+    const newPoint = baseG.multiply(BigI.fromHex(hashed));
     return newPoint;
 };
 
@@ -36,10 +39,10 @@ export const hashToPoint = (longFormPoint: string) => {
  * Turn a buffer into a hex value in secp256k1 prime field Zp
  * Use internal inside MLSAG only
  * @param {Buffer} message
- * @returns {BigInteger}
+ * @returns {BigI}
  */
 function hashRingCT(message: Buffer) {
-    return BigInteger.fromHex(
+    return BigI.fromHex(
         keccak256(
             message,
         ),
@@ -49,11 +52,11 @@ function hashRingCT(message: Buffer) {
 /**
  * Generate key image for single stealth pair private/public
  * keyImage = Hp(Public_key)*private_key
- * @param {BigInteger} privKey 32 bytes hex
+ * @param {BigI} privKey 32 bytes hex
  * @param {string} pubKey 32 bytes hex
  * @returns {ecurve.Point}
  */
-export const keyImage = (privKey: BigInteger, pubKey: string) => hashToPoint(pubKey).multiply(
+export const keyImage = (privKey: BigI, pubKey: string) => hashToPoint(pubKey).multiply(
     privKey,
 );
 
@@ -75,7 +78,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static mulSign(privKeys: Array<string>, decoys: Array<Array<Point>>, index: number, message: ?Buffer) {
+    static mulSign(privKeys: Array<string>, decoys: Array<Array<any>>, index: number, message: ?Buffer) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -98,14 +101,14 @@ export default class MLSAG {
             L.push([]);
             R.push([]);
             // const ringctKeys = decoys[i][index].getRingCTKeys(userPrivateKey);
-            // privKeys[i] = BigInteger.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
+            // privKeys[i] = BigI.fromHex(ringctKeys.privKey); // ignore first two byte 02/03
 
             I[i] = keyImage(privKeys[i], decoys[i][index].getEncoded(false).toString('hex').slice(2));
             HP[i] = _.map(decoys[i], (utxo) => {
                 pj = Buffer.concat([pj, utxo.getEncoded(true)]);
                 return hashToPoint(utxo.getEncoded(false).toString('hex').slice(2));
             });
-            s.push(_.map(new Array(decoys[i].length), () => BigInteger.fromHex(randomHex())));
+            s.push(_.map(new Array(decoys[i].length), () => BigI.fromHex(randomHex())));
         }
 
         for (i = 0; i < numberOfRing; i++) {
@@ -168,17 +171,17 @@ export default class MLSAG {
      * @param {Buffer} message whatever message you wanna sign
      * @param {Array<Point>} decoys an 2-d array, each rows is a decoys-ring(included the spending utxo itself) utxo
      * @param {Array<Point>} I Key image list
-     * @param {BigInteger} c1 the first item of commitment list
-     * @param {Array<BigInteger>} s random array
+     * @param {BigI} c1 the first item of commitment list
+     * @param {Array<BigI>} s random array
      * @returns {Boolean} true if message is verify
      */
-    static verifyMul(decoys: Array<Array<Point>>, I: Point, c1: BigInteger, s: Array<BigInteger>, message: ?Buffer) {
+    static verifyMul(decoys: Array<Array<any>>, I: any, c1: BigI, s: Array<BigI>, message: ?Buffer) {
         const numberOfRing = decoys.length;
         const ringSize = decoys[0].length;
         const L = [];
         const R = [];
         const HP = [];
-        // const pj = message || Buffer.from(BigInteger.ZERO.toHex(32).match(/.{2}/g));
+        // const pj = message || Buffer.from(BigI.ZERO.toHex(32).match(/.{2}/g));
         let pj = new Buffer([]);
 
         for (let i = 0; i < numberOfRing; i++) {
@@ -228,15 +231,15 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static genCTRing(userPrivateKey: string, decoys: Array<Array<Point>>, outputPoints: Array<Point>, index: number) {
+    static genCTRing(userPrivateKey: string, decoys: Array<Array<any>>, outputPoints: Array<any>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
         // decoys lengh, here we set default as 11
         const ringSize = decoys[0].length;
 
-        let sumSpendingMask = BigInteger.ZERO; // for calculating private key in ring
-        let sumOutputMask = BigInteger.ZERO; // big number
+        let sumSpendingMask = BigI.ZERO; // for calculating private key in ring
+        let sumOutputMask = BigI.ZERO; // big number
         let outputCommitment; // a point in seccp256k1
 
         // prepare sum of output mask
@@ -246,7 +249,7 @@ export default class MLSAG {
                 utxo.decodedMask = '0' + utxo.decodedMask;
             }
             sumOutputMask = sumOutputMask.add(
-                BigInteger.fromHex(utxo.decodedMask),
+                BigI.fromHex(utxo.decodedMask),
             );
         });
         // prepare sum of output commitment
@@ -264,8 +267,8 @@ export default class MLSAG {
         const publicKeys = [];
         for (let i = 0; i < numberOfRing; i++) {
             decoys[i][index].checkOwnership(userPrivateKey);
-            sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].decodedMask));
-            sumSpendingMask = sumSpendingMask.add(BigInteger.fromHex(decoys[i][index].privKey));
+            sumSpendingMask = sumSpendingMask.add(BigI.fromHex(decoys[i][index].decodedMask));
+            sumSpendingMask = sumSpendingMask.add(BigI.fromHex(decoys[i][index].privKey));
 
             for (let j = 0; j < ringSize; j++) {
                 // + Commitment

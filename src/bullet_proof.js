@@ -116,13 +116,13 @@ const hashToScalar = data => BigInteger.fromHex(
  * @param {*} amount
  */
 const pedersenCommitment = (mask, amount) => {
-    let temp = baseG.mul(
+    let temp = baseH.mul(
         mask,
     );
     const am = typeof amount === 'object' ? amount : toBN(amount);
     if (am.toString(16) !== '0') {
         temp = temp.add(
-            baseH.mul(
+            baseG.mul(
                 am,
             ),
         );
@@ -402,7 +402,7 @@ export default class BulletProof {
             );
         }
 
-        MRPResult.Comms = _.map(V, v => v.encode('array', false).slice(1).toString('hex'));
+        MRPResult.Comms = _.map(V, v => v.encode('hex', false).slice(2));
 
         // flatten aL, aR and convert to BI for easier calculation
         aL = _.map(_.flatten(aL), element => toBN(element));
@@ -416,7 +416,7 @@ export default class BulletProof {
         // const A = pedersenVectorCommitment(alpha, H, [...aL, ...aR], [...Gi, ...Hi]); // (Gi*aL + Hi*aR + H*alpha)
         const A = TwoVectorPCommitWithGens(Gi, Hi, aL, aR).add(baseH.mul(alpha));
 
-        MRPResult.A = A.encode('array', false).slice(1).toString('hex');
+        MRPResult.A = A.encode('hex', false).slice(2);
 
         // Compute S: a curve point, vector commitment to sL and sR with hiding value rho
         const sL = _.map(Array(N * M), () => BigInteger.fromHex(randomHex()));
@@ -425,7 +425,7 @@ export default class BulletProof {
 
         // const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
         const S = TwoVectorPCommitWithGens(Gi, Hi, sL, sR).add(baseH.mul(rho));
-        MRPResult.S = S.encode('array', false).slice(1).toString('hex');
+        MRPResult.S = S.encode('hex', false).slice(2);
 
         // V is array of Point, convert to array of buffer for ready hashing
         // and used in multi-place
@@ -433,24 +433,30 @@ export default class BulletProof {
 
         // Random challenges to build the inner product to prove the values of aL and aR
         // non-interactive
-        const cy = hashToScalar(
-            bconcat([
-                // ...VinBuffer,
-                A.encode('array', false).slice(1), // A is a point
-                S.encode('array', false).slice(1), // S is a point
-            ]),
-        ); // y now is Big integer
+        // const cy = hashToScalar(
+        // bconcat([
+        //     // ...VinBuffer,
+        //     // A.encode('array', false), // A is a point
+        //     new Buffer([...A.getX().toBuffer(32), A.getY().toBuffer(32)]),
+        //     // S.encode('array', false).slice(1), // S is a point
+        // ]),
+        // ); // y now is Big integer
+        const cy = BigInteger.fromHex(keccak256(A.encode('array', false).slice(1)));
+
+        console.log('in buffer ', cy.toBuffer());
 
         MRPResult.cy = cy.toString(16);
 
-        const cz = hashToScalar(
-            bconcat([
-                // ...VinBuffer,
-                A.encode('array', false).slice(1),
-                S.encode('array', false).slice(1),
-                // cy.toBuffer(),
-            ]),
-        );
+        // const cz = hashToScalar(
+        //     bconcat([
+        //         // ...VinBuffer,
+        //         // A.encode('array', false).slice(1),
+        //         S.encode('array', false).slice(1),
+        //         // cy.toBuffer(),
+        //     ]),
+        // );
+
+        const cz = BigInteger.fromHex(keccak256(S.encode('array', false).slice(1)));
 
         MRPResult.cz = cz.toString(16);
 
@@ -464,27 +470,31 @@ export default class BulletProof {
         const tau1 = BigInteger.fromHex(randomHex());
         const T1 = pedersenCommitment(tau1, t1);
 
-        MRPResult.T1 = T1.encode('array', false).slice(1).toString('hex');
+        MRPResult.T1 = T1.encode('hex', false).slice(2);
 
         // Compute T2: a curve point, Pedersen commitment to t2 with hiding value tau2
         const tau2 = BigInteger.fromHex(randomHex());
         const T2 = pedersenCommitment(tau2, t2);
 
-        MRPResult.T2 = T2.encode('array', false).slice(1).toString('hex');
+        MRPResult.T2 = T2.encode('hex', false).slice(2);
 
         // Random challenge to prove the commitment to t1 and t2
         //  plus non-interactive
-        const cx = hashToScalar(
-            bconcat([
-                // ...VinBuffer,
-                // A.encode('array', false),
-                // S.encode('array', false),
-                // cy.toBuffer(),
-                // cz.toBuffer(),
-                T1.encode('array', false).slice(1),
-                T2.encode('array', false).slice(1),
-            ]),
-        );
+        // const cx = hashToScalar(
+        //     bconcat([
+        //         // ...VinBuffer,
+        //         // A.encode('array', false),
+        //         // S.encode('array', false),
+        //         // cy.toBuffer(),
+        //         // cz.toBuffer(),
+        //         T1.encode('array', false).slice(1),
+        //         T2.encode('array', false).slice(1),
+        //     ]),
+        // );
+        const cx = BigInteger.fromHex(keccak256([
+            ...T1.encode('array', false).slice(1),
+            ...T2.encode('array', false).slice(1),
+        ]));
 
         MRPResult.cx = cx.toString(16);
 
@@ -537,17 +547,31 @@ export default class BulletProof {
 
         MRPResult.Ipp = InnerProduct.prove(l, r, t, P, U, Gi, Hiprime);
 
-        // TODO log proof size at this step
-        console.log(MRPResult);
-        return MRPResult;
-    }
+        // For verifying in SC onley
+        // TODO will be remove
+        MRPResult.Ipp.L = _.map(MRPResult.Ipp.L, (point) => {
+            const pointInHex = point.encode('hex', false).slice(2);
+            return {
+                x: pointInHex.slice(64),
+                y: pointInHex.slice(-64),
+            };
+        });
+        MRPResult.Ipp.R = _.map(MRPResult.Ipp.R, (point) => {
+            const pointInHex = point.encode('hex', false).slice(2);
+            return {
+                x: pointInHex.slice(64),
+                y: pointInHex.slice(-64),
+            };
+        });
+        console.log(MRPResult.Ipp.A.toString(10));
 
-    // Checks that the sizes are coherent,
-    // that the scalars are reduced,
-    // that the points are on the right curve
-    // that the points are on the right subgroup
-    static bulletproof_early_checks(proof) {
-        return !!proof;
+        MRPResult.Ipp.A = MRPResult.Ipp.A.toString(16);
+        MRPResult.Ipp.B = MRPResult.Ipp.B.toString(16);
+        MRPResult.Ipp.Challenges = _.map(MRPResult.Ipp.Challenges, bi => bi.toString(16));
+
+        console.log(JSON.stringify(MRPResult));
+
+        return MRPResult;
     }
 
     static verify(proofs) {

@@ -65,11 +65,16 @@ export function decode(encrypted, key) {
  * a common private key (length 64) = 32 bytes
  * @returns {string} Hex string without prefix 0x
  */
-export function randomHex() {
-    const result = ec.genKeyPair().getPrivate().toString('hex');
+export function randomHex(n) {
+    let result = ec.genKeyPair().getPrivate().toString('hex');
+
     if (result.length % 2 === 1) {
-        return '0' + result;
+        result = '0' + result;
     }
 
-    return result;
+    return BigInteger.fromHex(result).mod(ecparams.n).toHex(n);
+}
+
+export function randomBI() {
+    return ec.genKeyPair().getPrivate().mod(ec.n);
 }

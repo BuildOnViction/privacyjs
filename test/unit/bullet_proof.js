@@ -15,7 +15,7 @@ describe('#unittest #bulletproof', () => {
     describe('#mrprove', () => {
         it('should able to prove and verify for zero', (done) => {
             const result = BulletProof.prove([
-                BigInteger.fromHex('5000000000'),
+                BigInteger.fromHex('50000'),
             ], [
                 BigInteger.fromHex(
                     '636FD3B1F731A590EDD4D2CCF863E37E68D54E3542F4A29ACFD1D5CF0CCDD5A5',

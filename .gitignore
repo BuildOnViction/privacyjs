@@ -4,3 +4,5 @@ package-lock.json
 coverage/
 dist/
 .vscode/
+go.mod
+go.sum

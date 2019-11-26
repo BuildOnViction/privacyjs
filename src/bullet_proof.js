@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 /**
  * The bulletproof implementation bases on https://eprint.iacr.org/2017/1066.pdf
  * please refer below for denoting, we replace some denotes in the paper by our owns
@@ -25,6 +24,7 @@ import { randomBI } from './crypto';
 // TODO move to one place
 BigInteger.fromHex = hexstring => new BigInteger(hexstring, 16);
 
+const TWO = new BigInteger('10', 2);
 const ZERO = new BigInteger('0', 16);
 const ONE = new BigInteger('01', 2);
 
@@ -76,6 +76,44 @@ const genECPrimeGroupKey = (n) => {
     };
 };
 
+const vectorSum = (y) => {
+    const result = ZERO;
+
+    for (let j = 0; j < y.length; j++) {
+        result.iadd(
+            toBN(y[j]),
+        ).mod(secp256k1.n);
+    }
+
+    return result;
+};
+
+
+const DeltaMRP = (y, z, m) => {
+    let result = ZERO;
+
+    // (z-z^2)<1^n, y^n>
+    const z2 = z.mul(z).mod(secp256k1.n);
+    const t1 = z.sub(z2).mod(secp256k1.n);
+    const t2 = t1.mul(vectorSum(y)).mod(secp256k1.n);
+
+    // \sum_j z^3+j<1^n, 2^n>
+    // <1^n, 2^n> = 2^n - 1
+    const po2sum = TWO.pow(toBN(N)).mod(secp256k1.n).sub(ONE);
+    let t3 = ZERO;
+
+    for (let j = 0; j < m; j++) {
+        const zp = z.pow(
+            toBN(3 + j),
+        ).mod(secp256k1.n);
+        const tmp1 = zp.mul(po2sum).mod(secp256k1.n);
+        t3 = t3.add(tmp1).mod(secp256k1.n);
+    }
+
+    result = t2.sub(t3).mod(secp256k1.n);
+
+    return result;
+};
 
 /**
  * Bulletproof is composed of:
@@ -135,7 +173,7 @@ const pedersenCommitment = (mask, amount) => {
  * @param {*} a
  * @param {*} b
  */
-function TwoVectorPCommitWithGens(Gi, Hi, a, b) {
+function twoVectorPCommitWithGens(Gi, Hi, a, b) {
     let commitment;
 
     for (let i = 0; i < Gi.length; i++) {
@@ -226,21 +264,21 @@ const muladd = (a, b, c) => a.mul(b).add(c).mod(secp256k1.n);
 const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).mod(secp256k1.n));
 const vectorAdd = (vector, scalar) => _.map(vector, element => element.add(scalar).mod(secp256k1.n));
 
-const range_proof_innerProduct_poly_coeff = (aL, sL, aR, sR, y, z) => {
+const rangeProofInnerProductPolyCoeff = (aL, sL, aR, sR, y, z) => {
     const l0 = vectorSub(aL, z);
     const l1 = sL;
 
     // This computes the ugly sum/concatenation from PAPER LINE 65
-    const zero_twos = [];
+    const zeroTwos = [];
     const zpow = vectorPowers(z, M + 2);
 
     for (let i = 0; i < M * N; ++i) {
-        zero_twos[i] = ZERO;
+        zeroTwos[i] = ZERO;
         for (let j = 1; j <= M; ++j) {
             if (i >= (j - 1) * N && i < j * N) {
                 assert(1 + j < zpow.length, 'invalid zpow index');
                 assert(i - (j - 1) * N < twoN.length, 'invalid twoN index');
-                zero_twos[i] = muladd(zpow[1 + j], twoN[i - (j - 1) * N], zero_twos[i]);
+                zeroTwos[i] = muladd(zpow[1 + j], twoN[i - (j - 1) * N], zeroTwos[i]);
             }
         }
     }
@@ -248,22 +286,23 @@ const range_proof_innerProduct_poly_coeff = (aL, sL, aR, sR, y, z) => {
     const yMN = vectorPowers(y, M * N);
 
     r0 = hadamard(r0, yMN);
-    r0 = vectorAddVector(r0, zero_twos);
+    r0 = vectorAddVector(r0, zeroTwos);
     const r1 = hadamard(yMN, sR);
 
     // Polynomial construction before PAPER LINE 46
-
-    const t1_1 = innerProduct(l0, r1);
-    const t1_2 = innerProduct(l1, r0);
+    const t1P1 = innerProduct(l0, r1);
+    const t1P2 = innerProduct(l1, r0);
 
     let t1 = ZERO;
-    t1 = t1_1.add(t1_2).mod(secp256k1.n);
+    t1 = t1P1.add(t1P2).mod(secp256k1.n);
     const t2 = innerProduct(l1, r1).mod(secp256k1.n);
 
     return {
         t1, t2, r0, r1, l0, l1, yMN,
     };
 };
+
+const hashToScalar = (array: Array<Number>) : BigInteger => BigInteger.fromHex(keccak256(array));
 
 const vectorScalar = (a, x) => {
     const res = [];
@@ -272,11 +311,11 @@ const vectorScalar = (a, x) => {
     }
     return res;
 };
-const range_proof_innerProduct_lhs = (l0, l1, x) => vectorAddVector(l0, vectorScalar(l1, x));
+const rangeProofInnerProductLhs = (l0, l1, x) => vectorAddVector(l0, vectorScalar(l1, x));
 
-const range_proof_innerProduct_rhs = (r0, r1, x) => vectorAddVector(r0, vectorScalar(r1, x));
+const rangeProofInnerProductRhs = (r0, r1, x) => vectorAddVector(r0, vectorScalar(r1, x));
 
-const range_proof_innerProduct_poly_hiding_value = (tau1, tau2, masks, x, z) => {
+const rangeProofInnerProductPolyHidingValue = (tau1, tau2, masks, x, z) => {
     let taux = tau1.mul(x);
     const xsq = x.mul(x);
     taux = tau2.mul(xsq).add(taux).mod(secp256k1.n);
@@ -303,15 +342,9 @@ export default class BulletProof {
     static prove(values, masks) {
         assert(values.length === masks.length, 'Incompatible sizes of V and masks');
 
-        // Compute V: a list of curve points, Pedersen commitments to v[i]
-        // with hiding values masks[i]
-        // Compute aL[i] the vector containing the binary representation of v[i]
-        // Compute aR[i] the opposite of the complementary to one of aL[i]
         const MRPResult = {};
         let aL = [];
         let aR = [];
-        // const Hi = [];
-        // const Gi = [];
         const V = [];
         M = values.length; // number of proofs to aggregate
 
@@ -324,8 +357,8 @@ export default class BulletProof {
          * They allow to get rid of any trusted set-up.The use of the hash function ensures there is no discrete log relation between the generators.
          */
 
-        // simple generators for testing
-        const { Hi, Gi, U } = genECPrimeGroupKey(N);
+        // TODO improve the trusted setup
+        const { Hi, Gi, U } = genECPrimeGroupKey(M * N);
 
         for (let j = 0; j < M; j++) {
             if (values[j].cmp(ZERO) < 0) {
@@ -346,8 +379,8 @@ export default class BulletProof {
             );
         }
 
-        MRPResult.Comms = _.map(V, v => v.encode('hex', false).slice(2));
-
+        // MRPResult.Comms = _.map(V, v => v.encode('hex', false).slice(2));
+        MRPResult.Comms = V;
         // flatten aL, aR and convert to BI for easier calculation
         aL = _.map(_.flatten(aL), element => toBN(element));
         aR = _.flatten(aR);
@@ -357,104 +390,94 @@ export default class BulletProof {
 
         // Compute A: a curve point, vector commitment to aL and aR with hiding value alpha
         const alpha = randomBI();
-        // const A = pedersenVectorCommitment(alpha, H, [...aL, ...aR], [...Gi, ...Hi]); // (Gi*aL + Hi*aR + H*alpha)
+        const A = twoVectorPCommitWithGens(Gi, Hi, aL, aR).add(baseH.mul(alpha));
 
-        const A = TwoVectorPCommitWithGens(Gi, Hi, aL, aR).add(baseH.mul(alpha));
-
-        MRPResult.A = A.encode('hex', false).slice(2);
+        // MRPResult.A = A.encode('hex', false).slice(2);
+        MRPResult.A = A;
 
         // Compute S: a curve point, vector commitment to sL and sR with hiding value rho
         const sL = _.map(Array(N * M), () => randomBI());
         const sR = _.map(Array(N * M), () => randomBI());
         const rho = randomBI();
 
-        // const S = pedersenVectorCommitment(rho, H, [...sL, ...sR], [...Gi, ...Hi]); // (Gi*sL + Hi*sR + H*rho)
-        const S = TwoVectorPCommitWithGens(Gi, Hi, sL, sR).add(baseH.mul(rho));
-        MRPResult.S = S.encode('hex', false).slice(2);
+        const S = twoVectorPCommitWithGens(Gi, Hi, sL, sR).add(baseH.mul(rho));
+
+        // MRPResult.S = S.encode('hex', false).slice(2);
+        MRPResult.S = S;
 
         // V is array of Point, convert to array of buffer for ready hashing
         // and used in multi-place
-        // const VinBuffer = _.map(V, vi => vi.encode('array', false));
+        let VinBuffer = _.flatten(_.map(V, vi => vi.encode('array', false).slice(1)));
 
         // Random challenges to build the inner product to prove the values of aL and aR
         // non-interactive
-        // const cy = hashToScalar(
-        // bconcat([
-        //     // ...VinBuffer,
-        //     // A.encode('array', false), // A is a point
-        //     new Buffer([...A.getX().toBuffer(32), A.getY().toBuffer(32)]),
-        //     // S.encode('array', false).slice(1), // S is a point
-        // ]),
-        // ); // y now is Big integer
-        const cy = BigInteger.fromHex(keccak256(A.encode('array', false).slice(1)));
+        VinBuffer = VinBuffer.concat(
+            A.encode('array', false).slice(1),
+            S.encode('array', false).slice(1),
+        );
 
-        MRPResult.cy = cy.toString(16);
+        const cy = hashToScalar(
+            VinBuffer,
+        );
 
-        // const cz = hashToScalar(
-        //     bconcat([
-        //         // ...VinBuffer,
-        //         // A.encode('array', false).slice(1),
-        //         S.encode('array', false).slice(1),
-        //         // cy.toBuffer(),
-        //     ]),
-        // );
+        // MRPResult.cy = cy.toString(16);
+        MRPResult.cy = cy;
 
-        const cz = BigInteger.fromHex(keccak256(S.encode('array', false).slice(1)));
+        VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        const cz = hashToScalar(
+            VinBuffer,
+        );
 
-        MRPResult.cz = cz.toString(16);
+        // MRPResult.cz = cz.toString(16);
+        MRPResult.cz = cz;
 
         // reconstruct the coefficients of degree 1 and of degree 2 of the
         // range proof inner product polynomial
         const {
             t1, t2, r0, r1, l0, l1, yMN,
-        } = range_proof_innerProduct_poly_coeff(aL, sL, aR, sR, cy, cz);
+        } = rangeProofInnerProductPolyCoeff(aL, sL, aR, sR, cy, cz);
 
         // Compute T1: a curve point, Pedersen commitment to t1 with hiding value tau1
         const tau1 = randomBI();
         const T1 = pedersenCommitment(tau1, t1);
 
-        MRPResult.T1 = T1.encode('hex', false).slice(2);
+        // MRPResult.T1 = T1.encode('hex', false).slice(2);
+        MRPResult.T1 = T1;
 
         // Compute T2: a curve point, Pedersen commitment to t2 with hiding value tau2
         const tau2 = randomBI();
         const T2 = pedersenCommitment(tau2, t2);
 
-        MRPResult.T2 = T2.encode('hex', false).slice(2);
+        // MRPResult.T2 = T2.encode('hex', false).slice(2);
+        MRPResult.T2 = T2;
 
         // Random challenge to prove the commitment to t1 and t2
         //  plus non-interactive
-        // const cx = hashToScalar(
-        //     bconcat([
-        //         // ...VinBuffer,
-        //         // A.encode('array', false),
-        //         // S.encode('array', false),
-        //         // cy.toBuffer(),
-        //         // cz.toBuffer(),
-        //         T1.encode('array', false).slice(1),
-        //         T2.encode('array', false).slice(1),
-        //     ]),
-        // );
-        const cx = BigInteger.fromHex(keccak256([
-            ...T1.encode('array', false).slice(1),
-            ...T2.encode('array', false).slice(1),
-        ]));
+        VinBuffer = VinBuffer.concat(cz.toArray('be', 32), T1.encode('array', false).slice(1), T2.encode('array', false).slice(1));
+        const cx = hashToScalar(
+            VinBuffer,
+        );
 
-        MRPResult.cx = cx.toString(16);
+        // MRPResult.cx = cx.toString(16);
+        MRPResult.cx = cx;
 
         // Compute t: a scalar, inner product value to be verified
-        const l = range_proof_innerProduct_lhs(l0, l1, cx);
-        const r = range_proof_innerProduct_rhs(r0, r1, cx);
+        const l = rangeProofInnerProductLhs(l0, l1, cx);
+        const r = rangeProofInnerProductRhs(r0, r1, cx);
         const t = innerProduct(l, r);
 
-        MRPResult.Th = t.toString(16);
+        // MRPResult.Th = t.toString(16);
+        MRPResult.Th = t;
 
         // Compute taux: a scalar, hiding value related to x.T1, x^2.T2, z^2.V and t
-        const taux = range_proof_innerProduct_poly_hiding_value(tau1, tau2, masks, cx, cz);
-        MRPResult.Tau = taux.toString(16);
+        const taux = rangeProofInnerProductPolyHidingValue(tau1, tau2, masks, cx, cz);
+        // MRPResult.Tau = taux.toString(16);
+        MRPResult.Tau = taux;
 
         // Compute mu: a scalar, hiding value related to A and x.S
         const mu = cx.mul(rho).add(alpha).mod(secp256k1.n);
-        MRPResult.Mu = mu.toString(16);
+        // MRPResult.Mu = mu.toString(16);
+        MRPResult.Mu = mu;
 
         // Adapt Hi, the vector of generators
         // to apply an inner product argument of knowledge on l and r
@@ -462,58 +485,151 @@ export default class BulletProof {
             yMN[index].invm(secp256k1.n),
         ));
 
-        // Random challenge
-        // plus non-interactive
-        // const x_ip = hashToScalar(bconcat([
-        //     ...VinBuffer,
-        //     A.encode('array', false),
-        //     S.encode('array', false),
-        //     cy.toBuffer(),
-        //     cz.toBuffer(),
-        //     T1.encode('array', false),
-        //     T2.encode('array', false),
-        //     cx.toBuffer(),
-        //     taux.toBuffer(),
-        //     mu.toBuffer(),
-        //     t.toBuffer(),
-        // ]));
-
-        // // TODO
-        // const Hx = baseH.mul(
-        //     x_ip,
-        // );
-
-        // Compute L, R, curve points, and a, b, scalars
-        // Output of the inner product argument of knowledge
-        // const {
-        //     L, R, a, b,
-        // } = this.innerProductProve(Gi, Hiprime, Hx, l, Hiprime);
-        const P = TwoVectorPCommitWithGens(Gi, Hiprime, l, r);
+        const P = twoVectorPCommitWithGens(Gi, Hiprime, l, r);
 
         MRPResult.Ipp = InnerProduct.prove(l, r, t, P, U, Gi, Hiprime);
 
-        // For verifying in SC onley
-        // TODO will be remove
-        MRPResult.Ipp.L = _.map(MRPResult.Ipp.L, (point) => {
-            const pointInHex = point.encode('hex', false).slice(2);
-            return {
-                x: pointInHex.slice(0, 64),
-                y: pointInHex.slice(-64),
-            };
-        });
-        MRPResult.Ipp.R = _.map(MRPResult.Ipp.R, (point) => {
-            const pointInHex = point.encode('hex', false).slice(2);
-            return {
-                x: pointInHex.slice(0, 64),
-                y: pointInHex.slice(-64),
-            };
-        });
+        // MRPResult.Ipp.L = _.map(MRPResult.Ipp.L, (point) => {
+        //     const pointInHex = point.encode('hex', false).slice(2);
+        //     return {
+        //         x: pointInHex.slice(0, 64),
+        //         y: pointInHex.slice(-64),
+        //     };
+        // });
+        // MRPResult.Ipp.R = _.map(MRPResult.Ipp.R, (point) => {
+        //     const pointInHex = point.encode('hex', false).slice(2);
+        //     return {
+        //         x: pointInHex.slice(0, 64),
+        //         y: pointInHex.slice(-64),
+        //     };
+        // });
 
-        MRPResult.Ipp.A = MRPResult.Ipp.A.toString(16);
-        MRPResult.Ipp.B = MRPResult.Ipp.B.toString(16);
-        MRPResult.Ipp.Challenges = _.map(MRPResult.Ipp.Challenges, bi => bi.toString(16));
+        // MRPResult.Ipp.A = MRPResult.Ipp.A.toString(16);
+        // MRPResult.Ipp.B = MRPResult.Ipp.B.toString(16);
+        // MRPResult.Ipp.Challenges = _.map(MRPResult.Ipp.Challenges, bi => bi.toString(16));
 
-        console.log(JSON.stringify(MRPResult));
+        // console.log(JSON.stringify(MRPResult));
         return MRPResult;
+    }
+
+    static verify(mrp) : Boolean {
+        M = mrp.Comms.length;
+        let VinBuffer = _.flatten(_.map(mrp.Comms, vi => vi.encode('array', false).slice(1)));
+        VinBuffer = VinBuffer.concat(
+            mrp.A.encode('array', false).slice(1),
+            mrp.S.encode('array', false).slice(1),
+        );
+
+        const cy = hashToScalar(
+            VinBuffer,
+        );
+
+        if (cy.cmp(mrp.cy) !== 0) {
+            console.log('MRPVerify - Challenge Cy failing!');
+            return false;
+        }
+
+        VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        const cz = hashToScalar(
+            VinBuffer,
+        );
+
+        if (cz.cmp(mrp.cz) !== 0) {
+            console.log('MRPVerify - Challenge Cz failing!');
+            return false;
+        }
+
+        VinBuffer = VinBuffer.concat(cz.toArray('be', 32), mrp.T1.encode('array', false).slice(1), mrp.T2.encode('array', false).slice(1));
+        const cx = hashToScalar(
+            VinBuffer,
+        );
+
+        if (cx.cmp(mrp.cx) !== 0) {
+            console.log('RPVerify - Challenge Cx failing!');
+            return false;
+        }
+
+        const yMN = vectorPowers(cy, M * N);
+        const lhs = pedersenCommitment(mrp.Tau, mrp.Th);
+
+        let commPowers; //= secp256k1.curve.zero;
+        const zMN = vectorPowers(cz, M + 2);
+        const z2 = cz.mul(cz).mod(secp256k1.n);
+
+        for (let j = 0; j < M; j++) {
+            if (commPowers) {
+                commPowers = commPowers.add(
+                    mrp.Comms[j].mul(
+                        z2.mul(zMN[j]),
+                    ),
+                );
+            } else {
+                commPowers = mrp.Comms[j].mul(
+                    z2.mul(zMN[j]),
+                );
+            }
+        }
+
+        // TODO implement my own way
+        const rhs = secp256k1.g.mul(DeltaMRP(yMN, cz, M)).add(
+            mrp.T1.mul(cx),
+        ).add(
+            mrp.T2.mul(cx.mul(cx)),
+        ).add(commPowers);
+
+        if (!lhs.encode('hex', true) === rhs.encode('hex', true)) {
+            console.log('MRPVerify - Uh oh! Check line (63) of verification');
+            console.log(rhs);
+            console.log(lhs);
+            return false;
+        }
+
+        let tmp1;
+        const zneg = cz.neg().mod(secp256k1.n);
+
+        const { Hi, Gi, U } = genECPrimeGroupKey(M * N);
+
+        for (let i = 0; i < M * N; i++) {
+            if (tmp1) {
+                tmp1 = tmp1.add(Gi[i].mul(zneg));
+            } else { tmp1 = Gi[i].mul(zneg); }
+        }
+
+        const powerOfTwos = vectorPowers(TWO, M * N);
+        let tmp2;
+
+        // generate h'
+        const HPrime = [];
+
+        for (let i = 0; i < M * N; i++) {
+            const mi = yMN[i].invm(secp256k1.n);
+            HPrime[i] = Hi[i].mul(mi);
+        }
+
+        for (let j = 0; j < M; j++) {
+            for (let i = 0; i < N; i++) {
+                const val1 = cz.mul(yMN[j * N + i]);
+                const zp = cz.pow(
+                    toBN(2 + j),
+                ).mod(secp256k1.n);
+                const val2 = zp.mul(powerOfTwos[i]).mod(secp256k1.n);
+                if (tmp2) {
+                    tmp2 = tmp2.add(HPrime[j * N + i].mul(val1.add(val2)));
+                } else {
+                    tmp2 = HPrime[j * N + i].mul(val1.add(val2));
+                }
+            }
+        }
+
+        // without subtracting this value should equal muCH + l[i]G[i] + r[i]H'[i]
+        // we want to make sure that the innerproduct checks out, so we subtract it
+        const P = mrp.A.add(mrp.S.mul(cx)).add(tmp1).add(tmp2).add(baseH.mul(mrp.Mu).neg());
+
+        if (!InnerProduct.verify(mrp.Th, P, U, Gi, HPrime, mrp.Ipp)) {
+            console.log('MRPVerify - Uh oh! Check line (65) of verification!');
+            return false;
+        }
+
+        return true;
     }
 }

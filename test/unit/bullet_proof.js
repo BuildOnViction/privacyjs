@@ -22,6 +22,7 @@ describe('#unittest #bulletproof', () => {
                 ),
             ]);
             expect(result.V).not.to.equal(null);
+            expect(BulletProof.verify(result)).to.equal(true);
             done();
         });
 

@@ -15,10 +15,10 @@ Additional requests/features please contact anhnt@tomochain.com
 
 [![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
 ### ROADMAP
-- 15/11/2019 Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
-- 30/11/2019 Integrated to tomowallet web and integrated bullet proof, demo on testnet
-- 15/12/2019 Total hide the transaction signer on private send and withdraw
-- 15/01/2020 Integrate to Maxbet, standardlize the transaction flow for Dapp.
+- Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
+- Integrated to tomowallet web and integrated bullet proof, demo on testnet
+- Total hide the transaction signer on private send and withdraw
+- Integrate to Maxbet, standardlize the transaction flow for Dapp.
 
 ### TODO
 - [ ] replace aes-js by other lib for using in encrypting amount and mask

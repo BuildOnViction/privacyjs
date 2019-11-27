@@ -68,6 +68,10 @@ export function decode(encrypted, key) {
 export function randomHex(n) {
     let result = ec.genKeyPair().getPrivate().toString('hex');
 
+    if (n && result.length * 4 > n) { // each hex = 4 bit
+        return result.slice(0, n / 4);
+    }
+
     if (result.length % 2 === 1) {
         result = '0' + result;
     }
@@ -75,6 +79,9 @@ export function randomHex(n) {
     return BigInteger.fromHex(result).mod(ecparams.n).toHex(n);
 }
 
+/**
+ * Random a 32 bits BigInteger
+ */
 export function randomBI() {
     return ec.genKeyPair().getPrivate().mod(ec.n);
 }

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 /**
  * Inner product
  */
@@ -6,12 +5,12 @@
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
-import BigInteger from 'bn.js';
+import { BigInteger } from './constants';
 import {
     bconcat,
 } from './common';
 
-const ZERO = new BigInteger('0', 16);
+const ZERO = BigInteger.ZERO();
 const EC = require('elliptic').ec;
 const Curve = require('elliptic').curve;
 
@@ -29,8 +28,6 @@ type InnerProdArg = {
 
     Challenges: Array<BigInteger>,
 }
-
-BigInteger.fromHex = hexstring => new BigInteger(hexstring, 16);
 
 export const hashToPoint = (shortFormPoint) => {
     assert(shortFormPoint && shortFormPoint.length, 'Invalid input public key to hash');
@@ -58,7 +55,7 @@ const hashToScalar = data => BigInteger.fromHex(
  * @param {*} a
  * @param {*} b
  */
-function TwoVectorPCommitWithGens(Gi : Array<BigInteger>, Hi: Array<BigInteger>, a, b) {
+function twoVectorPCommitWithGens(Gi : Array<BigInteger>, Hi: Array<BigInteger>, a, b) {
     let commitment;
 
     for (let i = 0; i < Gi.length; i++) {
@@ -145,7 +142,7 @@ function GenerateNewParams(bG: Array<Point>, bH: Array<Point>, x: BigInteger, L:
 
 const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).mod(secp256k1.n));
 
-const scalar_mul_vector = (scalar, vector) => _.map(vector, element => element.mul(scalar).mod(secp256k1.n));
+const scalaMulVector = (scalar, vector) => _.map(vector, element => element.mul(scalar).mod(secp256k1.n));
 
 export default class InnerProductProof {
     static prove(a: Array<BigInteger>, b: Array<BigInteger>, c: BigInteger, P: Point, U: Point, bG : Array<Point>, bH: Array<Point>): InnerProdArg {
@@ -200,11 +197,14 @@ export default class InnerProductProof {
 
         const nprime = parseInt(a.length / 2);
 
+        console.log('A ', a.length);
+        console.log('B ', b.length);
+
         const cl = innerProduct(a.slice(0, nprime), b.slice(nprime, b.length));
         const cr = innerProduct(a.slice(nprime, a.length), b.slice(0, nprime));
 
-        const L = TwoVectorPCommitWithGens(bG.slice(nprime, bG.length), bH.slice(0, nprime), a.slice(0, nprime), b.slice(nprime, b.length)).add(u.mul(cl));
-        const R = TwoVectorPCommitWithGens(bG.slice(0, nprime), bH.slice(nprime, bH.length), a.slice(nprime, a.length), b.slice(0, nprime)).add(u.mul(cr));
+        const L = twoVectorPCommitWithGens(bG.slice(nprime, bG.length), bH.slice(0, nprime), a.slice(0, nprime), b.slice(nprime, b.length)).add(u.mul(cl));
+        const R = twoVectorPCommitWithGens(bG.slice(0, nprime), bH.slice(nprime, bH.length), a.slice(nprime, a.length), b.slice(0, nprime)).add(u.mul(cr));
 
         proof.L[curIt] = L;
         proof.R[curIt] = R;
@@ -225,13 +225,13 @@ export default class InnerProductProof {
         const xinv = x.invm(secp256k1.n);
 
         const aprime = vectorAddVector(
-            scalar_mul_vector(x, a.slice(0, nprime)),
-            scalar_mul_vector(xinv, a.slice(nprime, a.length)),
+            scalaMulVector(x, a.slice(0, nprime)),
+            scalaMulVector(xinv, a.slice(nprime, a.length)),
         );
 
         const bprime = vectorAddVector(
-            scalar_mul_vector(xinv, b.slice(0, nprime)),
-            scalar_mul_vector(x, b.slice(nprime, b.length)),
+            scalaMulVector(xinv, b.slice(0, nprime)),
+            scalaMulVector(x, b.slice(nprime, b.length)),
         );
 
         return this.proveSub(proof, Gprime, Hprime, aprime, bprime, u, Pprime);

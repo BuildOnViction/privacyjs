@@ -12,7 +12,6 @@ import utf8 from 'utf8';
 import BN from 'bn.js';
 import { BigInteger } from './crypto';
 
-// const atob = require('atob') || window.atob;
 /**
  * hextobin converts string to Buffer
  * @param {string} hex Hex string wants to conver to buffer
@@ -803,19 +802,3 @@ export const d2b = (val) => {
     }
     return amountb;
 };
-
-/**
- * BN to binary string array ([1, 0, 1, 0])
- * size is optional for padded more zero if needed
- * @param {BigInteger} bn
- * @param {number} size if length output < size we need to pad zero before
- * @returns {array} array include 0, 1
- */
-// export const bn2b = (bn, size) => {
-//     let result = bn.toString('2');
-//     if (size) {
-//         while (result.length < (size || 2)) { result = '0' + result; }
-//         return result.split('');
-//     }
-//     return result.split('');
-// };

@@ -11,22 +11,14 @@
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
-
-import BigInteger from 'bn.js';
 import toBN from 'number-to-bn';
-// import { randomHex } from './crypto';
+import { BigInteger } from './constants';
 import InnerProduct from './inner_product';
-// import {
-//     bconcat,
-// } from './common';
 import { randomBI } from './crypto';
 
-// TODO move to one place
-BigInteger.fromHex = hexstring => new BigInteger(hexstring, 16);
-
-const TWO = new BigInteger('10', 2);
-const ZERO = new BigInteger('0', 16);
-const ONE = new BigInteger('01', 2);
+// const BigInteger.TWO() = new BigInteger('10', 2);
+// const BigInteger.ZERO() = new BigInteger('0', 16);
+// const ONE = new BigInteger('01', 2);
 
 const EC = require('elliptic').ec;
 // type Point = Curve.short.ShortPoint;
@@ -40,9 +32,15 @@ const baseH = secp256k1.curve.point(
 );
 
 const N = 64; // bitsize of the elements whose range one wants to prove
-const MAX_2_EXPN = BigInteger.fromHex('0100000000000000000000000000000000');
+const MAX_2_EXPN = BigInteger.fromHex('FFFFFFFFFFFFFFFF');
 
-const bn2b = (bn, size) => {
+/**
+ * Convert a BigNumber to little-endian style with buffer
+ * @param {BigInteger} bn
+ * @param {number} [size]
+ * @returns {String}
+ */
+const bn2b = (bn : BigInteger, size: ?number) : String => {
     let result = bn.toString(2);
 
     if (size) {
@@ -52,9 +50,15 @@ const bn2b = (bn, size) => {
     return result.split('').reverse();
 };
 
-const genECPrimeGroupKey = (n) => {
+/**
+ * Generate generator parameters base on maximum bit support
+ * @param {number} n Maximum bits support
+ * @returns {Gi, Hi, U}
+ */
+const genECPrimeGroupKey = (n: number) : Object => {
     const Gi = [];
     const Hi = [];
+
     for (let i = 0; i < n; ++i) {
         Hi[i] = baseH.mul(
             toBN(i * 2 + 1),
@@ -69,7 +73,6 @@ const genECPrimeGroupKey = (n) => {
     );
 
     return {
-        ...secp256k1,
         Gi,
         Hi,
         U,
@@ -77,7 +80,7 @@ const genECPrimeGroupKey = (n) => {
 };
 
 const vectorSum = (y) => {
-    const result = ZERO;
+    const result = BigInteger.ZERO();
 
     for (let j = 0; j < y.length; j++) {
         result.iadd(
@@ -90,7 +93,7 @@ const vectorSum = (y) => {
 
 
 const DeltaMRP = (y, z, m) => {
-    let result = ZERO;
+    let result = BigInteger.ZERO();
 
     // (z-z^2)<1^n, y^n>
     const z2 = z.mul(z).mod(secp256k1.n);
@@ -99,8 +102,8 @@ const DeltaMRP = (y, z, m) => {
 
     // \sum_j z^3+j<1^n, 2^n>
     // <1^n, 2^n> = 2^n - 1
-    const po2sum = TWO.pow(toBN(N)).mod(secp256k1.n).sub(ONE);
-    let t3 = ZERO;
+    const po2sum = BigInteger.TWO().pow(toBN(N)).mod(secp256k1.n).sub(BigInteger.ONE());
+    let t3 = BigInteger.ZERO();
 
     for (let j = 0; j < m; j++) {
         const zp = z.pow(
@@ -115,34 +118,6 @@ const DeltaMRP = (y, z, m) => {
     return result;
 };
 
-/**
- * Bulletproof is composed of:
- * V: a vector o curve points, = Pedersen commitments to v[i] with hiding values masks[i],
- *    V[i] = G*masks[i] + H*v[i]
- * A: a curve point, vector commitment to aL and aR with hiding value alpha
- * S: a curve point, vector commitment to sL and sR with hiding value rho
- * T1: a curve point, Pedersen commitment to t1 with hiding value tau1
- * T2: a curve point, Pedersen commitment to t2 with hiding value tau2
- * taux: a scalar, hiding value related to T1,T2,V and t
- * mu: a scalar, hiding value related to A and S
- * L: a vector of curve points of size log2(M*N) computed in the inner product protocol
- * R: a vector of curve points of size log2(M*N) computed in the inner product protocol
- * a: a scalar computed in the inner product protocol
- * b: a scalar computed in the inner product protocol
- * t: a scalar, inner product value to be verifie
- */
-
-export const hashToPoint = (shortFormPoint) => {
-    assert(shortFormPoint && shortFormPoint.length, 'Invalid input public key to hash');
-    let hex = shortFormPoint.substring(2); // ignore first two bit
-    while (hex) {
-        const newPoint = baseG.mul(BigInteger.fromHex(keccak256(hex)));
-        if (secp256k1.isOnCurve(newPoint)) {
-            return newPoint;
-        }
-        hex = keccak256(hex);
-    }
-};
 
 /**
  * pedersen commitment for scalar amount with scalar mask
@@ -205,7 +180,7 @@ function twoVectorPCommitWithGens(Gi, Hi, a, b) {
  */
 const innerProduct = (v1, v2) => {
     assert(v1.length === v2.length, 'Incompatible sizes of vector input');
-    let sum = ZERO;
+    let sum = BigInteger.ZERO();
     for (let i = 0; i < v1.length; i++) {
         sum = sum.add(
             v1[i]
@@ -233,7 +208,6 @@ export const hadamard = (v1, v2) => {
     return result;
 };
 
-
 const vectorSub = (vector, scalar) => _.map(vector, element => element.sub(scalar).mod(secp256k1.n));
 const vectorSubVector = (vector, vector1) => _.map(vector, (element, index) => element.sub(vector1[index]).mod(secp256k1.n));
 
@@ -246,7 +220,7 @@ const vectorPowers = (x, n) => {
     const res = [];
     if (n === 0) return res;
 
-    res[0] = ONE;
+    res[0] = BigInteger.ONE();
 
     if (n === 1) return res;
 
@@ -273,7 +247,7 @@ const rangeProofInnerProductPolyCoeff = (aL, sL, aR, sR, y, z) => {
     const zpow = vectorPowers(z, M + 2);
 
     for (let i = 0; i < M * N; ++i) {
-        zeroTwos[i] = ZERO;
+        zeroTwos[i] = BigInteger.ZERO();
         for (let j = 1; j <= M; ++j) {
             if (i >= (j - 1) * N && i < j * N) {
                 assert(1 + j < zpow.length, 'invalid zpow index');
@@ -293,7 +267,7 @@ const rangeProofInnerProductPolyCoeff = (aL, sL, aR, sR, y, z) => {
     const t1P1 = innerProduct(l0, r1);
     const t1P2 = innerProduct(l1, r0);
 
-    let t1 = ZERO;
+    let t1 = BigInteger.ZERO();
     t1 = t1P1.add(t1P2).mod(secp256k1.n);
     const t2 = innerProduct(l1, r1).mod(secp256k1.n);
 
@@ -332,6 +306,22 @@ const rangeProofInnerProductPolyHidingValue = (tau1, tau2, masks, x, z) => {
 let M;
 const twoN = vectorPowers(BigInteger.fromHex('02'),
     toBN(N));
+/**
+ * Bulletproof is composed of:
+ * V: a vector o curve points, = Pedersen commitments to v[i] with hiding values masks[i],
+ *    V[i] = G*masks[i] + H*v[i]
+ * A: a curve point, vector commitment to aL and aR with hiding value alpha
+ * S: a curve point, vector commitment to sL and sR with hiding value rho
+ * T1: a curve point, Pedersen commitment to t1 with hiding value tau1
+ * T2: a curve point, Pedersen commitment to t2 with hiding value tau2
+ * taux: a scalar, hiding value related to T1,T2,V and t
+ * mu: a scalar, hiding value related to A and S
+ * L: a vector of curve points of size log2(M*N) computed in the inner product protocol
+ * R: a vector of curve points of size log2(M*N) computed in the inner product protocol
+ * a: a scalar computed in the inner product protocol
+ * b: a scalar computed in the inner product protocol
+ * t: a scalar, inner product value to be verifie
+ */
 
 export default class BulletProof {
     /**
@@ -361,7 +351,7 @@ export default class BulletProof {
         const { Hi, Gi, U } = genECPrimeGroupKey(M * N);
 
         for (let j = 0; j < M; j++) {
-            if (values[j].cmp(ZERO) < 0) {
+            if (values[j].cmp(BigInteger.ZERO()) < 0) {
                 throw new Error('Value is below range! Not proving');
             }
 
@@ -375,7 +365,7 @@ export default class BulletProof {
             aL[j] = bn2b(values[j], N); // convert v to n bit binary with padding if needed
             aR[j] = vectorSubVector(
                 _.map(aL[j], element => toBN(element)),
-                _.map(Array(N), () => ONE),
+                _.map(Array(N), () => BigInteger.ONE()),
             );
         }
 
@@ -595,7 +585,7 @@ export default class BulletProof {
             } else { tmp1 = Gi[i].mul(zneg); }
         }
 
-        const powerOfTwos = vectorPowers(TWO, M * N);
+        const powerOfTwos = vectorPowers(BigInteger.TWO(), M * N);
         let tmp2;
 
         // generate h'

@@ -1,11 +1,28 @@
 import { hmacSha256, BigInteger } from './crypto';
 import * as common from './common';
-import { basePointH } from './constants';
 
 const ecurve = require('ecurve');
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
+
+/**
+ * Pedersen commitment constant
+ * G is a universally agreed-upon base point.
+ * H is an agreed-upon base point within Tomochain's implementation of the Pedersen commitment scheme.
+ * It is chosen arbitrarily such that it is impossible to know the discrete log with respect to G
+ * (i.e. there is some x such that xG == H, but x will never be known).
+ * The security of Pedersen commitments relies on x being unknowable.
+ * G = ecparams.G
+ */
+const PEDERSON_COMMITMENT_H = [
+    '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+    '31d3c6863973926e049e637cb1b5f40a36dac28af1766968c30c2313f3a38904',
+];
+// must create the H ourself because it's not in the ecurve lib
+export const basePointH = Point.fromAffine(ecparams,
+    new BigInteger(PEDERSON_COMMITMENT_H[0], 16),
+    new BigInteger(PEDERSON_COMMITMENT_H[1], 16));
 
 class Commitment {
     /**

@@ -186,9 +186,7 @@ export default class InnerProductProof {
         P: Point) {
         if (a.length === 1) {
             // Prover sends a & b
-            // eslint-disable-next-line prefer-destructuring
             proof.A = a[0];
-            // eslint-disable-next-line prefer-destructuring
             proof.B = b[0];
             return proof;
         }
@@ -196,9 +194,6 @@ export default class InnerProductProof {
         const curIt = parseInt(Math.log2(a.length)) - 1;
 
         const nprime = parseInt(a.length / 2);
-
-        console.log('A ', a.length);
-        console.log('B ', b.length);
 
         const cl = innerProduct(a.slice(0, nprime), b.slice(nprime, b.length));
         const cr = innerProduct(a.slice(nprime, a.length), b.slice(0, nprime));

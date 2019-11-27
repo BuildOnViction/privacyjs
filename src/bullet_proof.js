@@ -369,7 +369,7 @@ export default class BulletProof {
             );
         }
 
-        // MRPResult.Comms = _.map(V, v => v.encode('hex', false).slice(2));
+        // MRPResult.
         MRPResult.Comms = V;
         // flatten aL, aR and convert to BI for easier calculation
         aL = _.map(_.flatten(aL), element => toBN(element));
@@ -382,7 +382,6 @@ export default class BulletProof {
         const alpha = randomBI();
         const A = twoVectorPCommitWithGens(Gi, Hi, aL, aR).add(baseH.mul(alpha));
 
-        // MRPResult.A = A.encode('hex', false).slice(2);
         MRPResult.A = A;
 
         // Compute S: a curve point, vector commitment to sL and sR with hiding value rho
@@ -392,7 +391,6 @@ export default class BulletProof {
 
         const S = twoVectorPCommitWithGens(Gi, Hi, sL, sR).add(baseH.mul(rho));
 
-        // MRPResult.S = S.encode('hex', false).slice(2);
         MRPResult.S = S;
 
         // V is array of Point, convert to array of buffer for ready hashing
@@ -403,22 +401,21 @@ export default class BulletProof {
         // non-interactive
         VinBuffer = VinBuffer.concat(
             A.encode('array', false).slice(1),
-            S.encode('array', false).slice(1),
+            // S.encode('array', false).slice(1),
         );
 
         const cy = hashToScalar(
             VinBuffer,
         );
 
-        // MRPResult.cy = cy.toString(16);
         MRPResult.cy = cy;
 
-        VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        // VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        VinBuffer = VinBuffer.concat(S.encode('array', false).slice(1));
         const cz = hashToScalar(
             VinBuffer,
         );
 
-        // MRPResult.cz = cz.toString(16);
         MRPResult.cz = cz;
 
         // reconstruct the coefficients of degree 1 and of degree 2 of the
@@ -431,24 +428,22 @@ export default class BulletProof {
         const tau1 = randomBI();
         const T1 = pedersenCommitment(tau1, t1);
 
-        // MRPResult.T1 = T1.encode('hex', false).slice(2);
         MRPResult.T1 = T1;
 
         // Compute T2: a curve point, Pedersen commitment to t2 with hiding value tau2
         const tau2 = randomBI();
         const T2 = pedersenCommitment(tau2, t2);
 
-        // MRPResult.T2 = T2.encode('hex', false).slice(2);
         MRPResult.T2 = T2;
 
         // Random challenge to prove the commitment to t1 and t2
         //  plus non-interactive
-        VinBuffer = VinBuffer.concat(cz.toArray('be', 32), T1.encode('array', false).slice(1), T2.encode('array', false).slice(1));
+        // VinBuffer = VinBuffer.concat(cz.toArray('be', 32), T1.encode('array', false).slice(1), T2.encode('array', false).slice(1));
+        VinBuffer = VinBuffer.concat(T1.encode('array', false).slice(1), T2.encode('array', false).slice(1));
         const cx = hashToScalar(
             VinBuffer,
         );
 
-        // MRPResult.cx = cx.toString(16);
         MRPResult.cx = cx;
 
         // Compute t: a scalar, inner product value to be verified
@@ -456,17 +451,16 @@ export default class BulletProof {
         const r = rangeProofInnerProductRhs(r0, r1, cx);
         const t = innerProduct(l, r);
 
-        // MRPResult.Th = t.toString(16);
         MRPResult.Th = t;
 
         // Compute taux: a scalar, hiding value related to x.T1, x^2.T2, z^2.V and t
         const taux = rangeProofInnerProductPolyHidingValue(tau1, tau2, masks, cx, cz);
-        // MRPResult.Tau = taux.toString(16);
+
         MRPResult.Tau = taux;
 
         // Compute mu: a scalar, hiding value related to A and x.S
         const mu = cx.mul(rho).add(alpha).mod(secp256k1.n);
-        // MRPResult.Mu = mu.toString(16);
+
         MRPResult.Mu = mu;
 
         // Adapt Hi, the vector of generators
@@ -479,26 +473,48 @@ export default class BulletProof {
 
         MRPResult.Ipp = InnerProduct.prove(l, r, t, P, U, Gi, Hiprime);
 
-        // MRPResult.Ipp.L = _.map(MRPResult.Ipp.L, (point) => {
-        //     const pointInHex = point.encode('hex', false).slice(2);
-        //     return {
-        //         x: pointInHex.slice(0, 64),
-        //         y: pointInHex.slice(-64),
-        //     };
-        // });
-        // MRPResult.Ipp.R = _.map(MRPResult.Ipp.R, (point) => {
-        //     const pointInHex = point.encode('hex', false).slice(2);
-        //     return {
-        //         x: pointInHex.slice(0, 64),
-        //         y: pointInHex.slice(-64),
-        //     };
-        // });
+        return MRPResult;
+    }
 
-        // MRPResult.Ipp.A = MRPResult.Ipp.A.toString(16);
-        // MRPResult.Ipp.B = MRPResult.Ipp.B.toString(16);
-        // MRPResult.Ipp.Challenges = _.map(MRPResult.Ipp.Challenges, bi => bi.toString(16));
+    /**
+     * Convert to smart-contract readable format
+     * @param {Object} proof
+     * @returns {Object}
+     */
+    static proofToHex(proof) {
+        const MRPResult = {
+            Ipp: {},
+        };
+        MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', false).slice(2));
+        MRPResult.A = proof.A.encode('hex', false).slice(2);
+        MRPResult.S = proof.S.encode('hex', false).slice(2);
+        MRPResult.cy = proof.cy.toString(16);
+        MRPResult.cz = proof.cz.toString(16);
+        MRPResult.T1 = proof.T1.encode('hex', false).slice(2);
+        MRPResult.T2 = proof.T2.encode('hex', false).slice(2);
+        MRPResult.cx = proof.cx.toString(16);
+        MRPResult.Th = proof.Th.toString(16);
+        MRPResult.Tau = proof.Tau.toString(16);
+        MRPResult.Mu = proof.Mu.toString(16);
+        MRPResult.Ipp.L = _.map(proof.Ipp.L, (point) => {
+            const pointInHex = point.encode('hex', false).slice(2);
+            return {
+                x: pointInHex.slice(0, 64),
+                y: pointInHex.slice(-64),
+            };
+        });
+        MRPResult.Ipp.R = _.map(proof.Ipp.R, (point) => {
+            const pointInHex = point.encode('hex', false).slice(2);
+            return {
+                x: pointInHex.slice(0, 64),
+                y: pointInHex.slice(-64),
+            };
+        });
 
-        // console.log(JSON.stringify(MRPResult));
+        MRPResult.Ipp.A = proof.Ipp.A.toString(16);
+        MRPResult.Ipp.B = proof.Ipp.B.toString(16);
+        MRPResult.Ipp.Challenges = _.map(proof.Ipp.Challenges, bi => bi.toString(16));
+
         return MRPResult;
     }
 
@@ -507,7 +523,7 @@ export default class BulletProof {
         let VinBuffer = _.flatten(_.map(mrp.Comms, vi => vi.encode('array', false).slice(1)));
         VinBuffer = VinBuffer.concat(
             mrp.A.encode('array', false).slice(1),
-            mrp.S.encode('array', false).slice(1),
+            // mrp.S.encode('array', false).slice(1),
         );
 
         const cy = hashToScalar(
@@ -519,7 +535,8 @@ export default class BulletProof {
             return false;
         }
 
-        VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        // VinBuffer = VinBuffer.concat(cy.toArray('be', 32));
+        VinBuffer = VinBuffer.concat(mrp.S.encode('array', false).slice(1));
         const cz = hashToScalar(
             VinBuffer,
         );
@@ -529,7 +546,8 @@ export default class BulletProof {
             return false;
         }
 
-        VinBuffer = VinBuffer.concat(cz.toArray('be', 32), mrp.T1.encode('array', false).slice(1), mrp.T2.encode('array', false).slice(1));
+        // VinBuffer = VinBuffer.concat(cz.toArray('be', 32), mrp.T1.encode('array', false).slice(1), mrp.T2.encode('array', false).slice(1));
+        VinBuffer = VinBuffer.concat(mrp.T1.encode('array', false).slice(1), mrp.T2.encode('array', false).slice(1));
         const cx = hashToScalar(
             VinBuffer,
         );

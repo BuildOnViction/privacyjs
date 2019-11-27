@@ -23,7 +23,8 @@
       "radix": 0,
       "new-cap": 0,
       "prefer-template": 0,
-      "max-len": 0
+      "max-len": 0,
+      "prefer-destructuring": 0
     },
     "settings": {
       "flowtype": {

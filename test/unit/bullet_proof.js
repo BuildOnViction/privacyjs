@@ -9,9 +9,6 @@ const { expect } = chai;
 chai.should();
 // import { basePointH as baseH } from './constants';
 
-// TODO move to one place
-// BigInteger.fromHex = hexstring => new BigInteger(hexstring, 16);
-
 describe('#unittest #bulletproof', () => {
     describe('#mrprove', () => {
         it('should able to prove and verify for zero', (done) => {
@@ -31,7 +28,8 @@ describe('#unittest #bulletproof', () => {
             ], [
                 randomBI(),
             ]);
-
+            const proof = BulletProof.proofToHex(result);
+            console.log(JSON.stringify(proof));
             expect(BulletProof.verify(result)).to.equal(true);
             done();
         });

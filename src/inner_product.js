@@ -7,7 +7,9 @@ import assert from 'assert';
 import * as _ from 'lodash';
 import { BigInteger } from './constants';
 import {
+    innerProduct,
     bconcat,
+    twoVectorPCommitWithGens,
 } from './common';
 
 const ZERO = BigInteger.ZERO();
@@ -46,75 +48,6 @@ const hashToScalar = data => BigInteger.fromHex(
 ).mod(
     secp256k1.n,
 );
-
-/**
- * TODO move to other libs for add point and calculating BigNumber
- * this func is too messy - need replace by other lib or refactoring
- * @param {*} Gi
- * @param {*} Hi
- * @param {*} a
- * @param {*} b
- */
-function twoVectorPCommitWithGens(Gi : Array<BigInteger>, Hi: Array<BigInteger>, a, b) {
-    let commitment;
-
-    for (let i = 0; i < Gi.length; i++) {
-        const modA = a[i].mod(secp256k1.n);
-        const modB = b[i].mod(secp256k1.n);
-
-        if (modA.toString(16).length) {
-            commitment = commitment ? commitment.add(
-                Gi[i].mul(modA),
-            ) : Gi[i].mul(modA);
-        }
-
-        if (modB.toString(16).length) {
-            commitment = commitment ? commitment.add(
-                Hi[i].mul(modB),
-            ) : Hi[i].mul(modB);
-        }
-    }
-
-    return commitment;
-}
-
-
-/**
- * Calculate inner product of two vector =
- *
- * @param {*} v1
- * @param {*} v2
- */
-const innerProduct = (v1, v2) => {
-    assert(v1.length === v2.length, 'Incompatible sizes of vector input');
-    let sum = ZERO;
-    for (let i = 0; i < v1.length; i++) {
-        sum = sum.add(
-            v1[i]
-                .mul(
-                    v2[i],
-                ).mod(secp256k1.n),
-        );
-    }
-
-    return sum.mod(secp256k1.n);
-};
-
-export const hadamard = (v1, v2) => {
-    assert(v1.length === v2.length, 'Incompatible sizes of vector input');
-    const result = [];
-    for (let i = 0; i < v1.length; i++) {
-        result.push(
-            v1[i]
-                .mul(
-                    v2[i],
-                ).mod(secp256k1.n),
-        );
-    }
-
-    return result;
-};
-
 
 // return Array<Point>, Array<Point>, ECPoint)
 function GenerateNewParams(bG: Array<Point>, bH: Array<Point>, x: BigInteger, L: Point, R: Point, P: Point) {

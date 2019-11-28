@@ -15,13 +15,9 @@ import toBN from 'number-to-bn';
 import { BigInteger } from './constants';
 import InnerProduct from './inner_product';
 import { randomBI } from './crypto';
-
-// const BigInteger.TWO() = new BigInteger('10', 2);
-// const BigInteger.ZERO() = new BigInteger('0', 16);
-// const ONE = new BigInteger('01', 2);
+import { innerProduct, twoVectorPCommitWithGens } from './common';
 
 const EC = require('elliptic').ec;
-// type Point = Curve.short.ShortPoint;
 
 const secp256k1 = new EC('secp256k1');
 
@@ -120,15 +116,19 @@ const DeltaMRP = (y, z, m) => {
 
 
 /**
- * pedersen commitment for scalar amount with scalar mask
- * @param {*} mask
- * @param {*} amount
+ * Pedersen commitment for scalar amount with scalar mask
+ * notice this is not the way the ./commitment generate
+ * return H*Mask + G*Value
+ * @param {BigInteger} mask
+ * @param {BigInteger} amount
+ * @returns {secp256k1.curve.point}
  */
 const pedersenCommitment = (mask, amount) => {
     let temp = baseH.mul(
         mask,
     );
     const am = typeof amount === 'object' ? amount : toBN(amount);
+
     if (am.toString(16) !== '0') {
         temp = temp.add(
             baseG.mul(
@@ -141,59 +141,14 @@ const pedersenCommitment = (mask, amount) => {
 };
 
 /**
- * TODO move to other libs for add point and calculating BigNumber
- * this func is too messy - need replace by other lib or refactoring
- * @param {*} Gi
- * @param {*} Hi
- * @param {*} a
- * @param {*} b
+ * Calculate hadamard of two vector
+ * return hadamard[i] = v1[i]*v2[i]
+ * @param {Array<BigInteger>} v1
+ * @param {Array<BigInteger>} v2
+ * @returns {Array<BigInteger>}
  */
-function twoVectorPCommitWithGens(Gi, Hi, a, b) {
-    let commitment;
 
-    for (let i = 0; i < Gi.length; i++) {
-        const modA = a[i].mod(secp256k1.n);
-        const modB = b[i].mod(secp256k1.n);
-
-        if (modA.toString(16).length) {
-            commitment = commitment ? commitment.add(
-                Gi[i].mul(modA),
-            ) : Gi[i].mul(modA);
-        }
-
-        if (modB.toString(16).length) {
-            commitment = commitment ? commitment.add(
-                Hi[i].mul(modB),
-            ) : Hi[i].mul(modB);
-        }
-    }
-
-    return commitment;
-}
-
-
-/**
- * Calculate inner product of two vector =
- *
- * @param {*} v1
- * @param {*} v2
- */
-const innerProduct = (v1, v2) => {
-    assert(v1.length === v2.length, 'Incompatible sizes of vector input');
-    let sum = BigInteger.ZERO();
-    for (let i = 0; i < v1.length; i++) {
-        sum = sum.add(
-            v1[i]
-                .mul(
-                    v2[i],
-                ).mod(secp256k1.n),
-        );
-    }
-
-    return sum.mod(secp256k1.n);
-};
-
-export const hadamard = (v1, v2) => {
+const hadamard = (v1, v2) => {
     assert(v1.length === v2.length, 'Incompatible sizes of vector input');
     const result = [];
     for (let i = 0; i < v1.length; i++) {
@@ -212,9 +167,10 @@ const vectorSub = (vector, scalar) => _.map(vector, element => element.sub(scala
 const vectorSubVector = (vector, vector1) => _.map(vector, (element, index) => element.sub(vector1[index]).mod(secp256k1.n));
 
 /**
- * construct a vector from scalar x and n order
- * @param {*} x
- * @param {*} n
+ * Construct a vector from scalar x and n order
+ * @param {BigInteger} x
+ * @param {number} n vector length
+ * @returns{Array<BigInteger>} [1, x, x^2, ..., x^n]
  */
 const vectorPowers = (x, n) => {
     const res = [];
@@ -234,7 +190,6 @@ const vectorPowers = (x, n) => {
 
 
 const muladd = (a, b, c) => a.mul(b).add(c).mod(secp256k1.n);
-
 const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).mod(secp256k1.n));
 const vectorAdd = (vector, scalar) => _.map(vector, element => element.add(scalar).mod(secp256k1.n));
 
@@ -306,6 +261,7 @@ const rangeProofInnerProductPolyHidingValue = (tau1, tau2, masks, x, z) => {
 let M;
 const twoN = vectorPowers(BigInteger.fromHex('02'),
     toBN(N));
+
 /**
  * Bulletproof is composed of:
  * V: a vector o curve points, = Pedersen commitments to v[i] with hiding values masks[i],
@@ -337,6 +293,8 @@ export default class BulletProof {
         let aR = [];
         const V = [];
         M = values.length; // number of proofs to aggregate
+
+        assert([1, 2, 4, 8].indexOf(M) >= 0, 'Not support inputs length (just 1, 2, 4, 8)');
 
         /**
          * Besides generators H and G, two vectors of generators,Gi and Hi,

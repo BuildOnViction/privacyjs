@@ -772,7 +772,7 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
-     * Generate utxos for withdrawing transaction, one for sender (even balance = 0), one for receiver (balance = 0)
+     * Generate utxos for withdrawing transaction, one for sender (even balance = 0), one for receiver (mask = 0)
      * @param {Array<UTXO>} spendingUTXOs spending utxos
      * @param {BigInteger} amount sending amount
      * @param {boolean} [isSpentAll]
@@ -799,6 +799,7 @@ export default class Wallet extends EventEmitter {
 
         assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
 
+        // When withdraw, we set mask = 0, so commitment  = value*H
         const proofOfReceiver = this.stealth.genTransactionProof(
             Web3.utils.hexToNumberString('0x' + amount.toHex()), null, null, '0',
         );

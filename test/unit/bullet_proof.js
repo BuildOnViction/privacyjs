@@ -1,6 +1,5 @@
 
 import chai from 'chai';
-import * as _ from 'lodash';
 import { BigInteger } from '../../src/constants';
 import BulletProof from '../../src/bullet_proof';
 import { randomHex, randomBI } from '../../src/crypto';
@@ -71,21 +70,22 @@ describe('#unittest #bulletproof', () => {
             done();
         });
 
-        // it('should able to prove and verify for multiple random', (done) => {
-        //     const result = BulletProof.prove([
-        //         BigInteger.fromHex(randomHex(64)),
-        //         BigInteger.fromHex(randomHex(64)),
-        //         BigInteger.fromHex(randomHex(64)),
-        //     ], [
-        //         randomBI(),
-        //         randomBI(),
-        //         randomBI(),
-        //     ]);
+        it('should able to prove and verify for multiple random', (done) => {
+            const result = BulletProof.prove([
+                BigInteger.fromHex(randomHex(64)),
+                BigInteger.fromHex(randomHex(64)),
+                BigInteger.fromHex(randomHex(64)),
+                BigInteger.fromHex(randomHex(64)),
+            ], [
+                randomBI(),
+                randomBI(),
+                randomBI(),
+                randomBI(),
+            ]);
 
-        //     expect(BulletProof.verify(result)).to.equal(true);
-        //     done();
-        // });
-
+            expect(BulletProof.verify(result)).to.equal(true);
+            done();
+        });
 
         it('should not able to prove for random > 64 bits', (done) => {
             try {
@@ -111,6 +111,75 @@ describe('#unittest #bulletproof', () => {
                 ]);
                 done(new Error('Wrong prover'));
             } catch (ex) {
+                done();
+            }
+        });
+
+        it('should not accepted input number except [1, 2, 4, 8] ', (done) => {
+            try {
+                BulletProof.prove([
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                ], [
+                    randomBI(),
+                    randomBI(),
+                ]);
+                done(new Error('Wrong prover'));
+            } catch (ex) {
+                console.log('....Testing 3 inputs ');
+            }
+            try {
+                BulletProof.prove([
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                ], [
+                    randomBI(),
+                    randomBI(),
+                ]);
+                done(new Error('Wrong prover'));
+            } catch (ex) {
+                console.log('....Testing 5 inputs ');
+            }
+            try {
+                BulletProof.prove([
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                ], [
+                    randomBI(),
+                    randomBI(),
+                ]);
+                done(new Error('Wrong prover'));
+            } catch (ex) {
+                console.log('....Testing 7 inputs ');
+            }
+
+            try {
+                BulletProof.prove([
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                    BigInteger.fromHex(randomHex(128)),
+                ], [
+                    randomBI(),
+                    randomBI(),
+                ]);
+                done(new Error('Wrong prover'));
+            } catch (ex) {
+                console.log('....Testing 9 inputs ');
                 done();
             }
         });

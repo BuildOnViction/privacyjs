@@ -10,7 +10,13 @@ import isNull from 'lodash/isNull';
 import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
+import assert from 'assert';
 import { BigInteger } from './crypto';
+
+const EC = require('elliptic').ec;
+
+const secp256k1 = new EC('secp256k1');
+
 
 /**
  * hextobin converts string to Buffer
@@ -408,8 +414,6 @@ export const numberToHex = (value) => {
 /**
  * Convert a byte array to a hex string
  *
- * Note: Implementation from crypto-js
- *
  * @method bytesToHex
  *
  * @param {Array} bytes
@@ -429,8 +433,6 @@ export const bytesToHex = (bytes) => {
 
 /**
  * Convert a hex string to a byte array
- *
- * Note: Implementation from crypto-js
  *
  * @method hexToBytes
  *
@@ -785,7 +787,7 @@ export const soliditySha3 = function (...args) {
 
 /**
  * Decimal to binary
- * @param {*} val
+ * @param {number} val
  * @returns {array} array include 0, 1
  */
 export const d2b = (val) => {
@@ -802,3 +804,59 @@ export const d2b = (val) => {
     }
     return amountb;
 };
+
+
+/**
+ * Calculate inner product of two vector
+ * return sum = v1[i]*v2[i]
+ * @param {Array<BigInteger>} v1
+ * @param {Array<BigInteger>} v2
+ * @returns {BigInteger}
+ */
+export const innerProduct = (v1, v2) => {
+    assert(v1.length === v2.length, 'Incompatible sizes of vector input');
+    let sum = numberToBN(0);
+    for (let i = 0; i < v1.length; i++) {
+        sum = sum.add(
+            v1[i]
+                .mul(
+                    v2[i],
+                ).mod(secp256k1.n),
+        );
+    }
+
+    return sum.mod(secp256k1.n);
+};
+
+
+/**
+ * Calculate vector commitment
+ * return Gi*a[i] + Hi*b[i]
+ * @param {secp256k1.curve.point} Gi
+ * @param {secp256k1.curve.point} Hi
+ * @param {Array<BigInteger>} a
+ * @param {Array<BigInteger>} b
+ * @returns {secp256k1.curve.point}
+ */
+export function twoVectorPCommitWithGens(Gi, Hi, a, b) {
+    let commitment;
+
+    for (let i = 0; i < Gi.length; i++) {
+        const modA = a[i].mod(secp256k1.n);
+        const modB = b[i].mod(secp256k1.n);
+
+        if (modA.toString(16).length) {
+            commitment = commitment ? commitment.add(
+                Gi[i].mul(modA),
+            ) : Gi[i].mul(modA);
+        }
+
+        if (modB.toString(16).length) {
+            commitment = commitment ? commitment.add(
+                Hi[i].mul(modB),
+            ) : Hi[i].mul(modB);
+        }
+    }
+
+    return commitment;
+}

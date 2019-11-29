@@ -922,7 +922,7 @@ export default class Wallet extends EventEmitter {
                 // `0x${outputProofs[0].txPublicKey.toString('hex').substr(2, 64)}`,
                 // `0x${outputProofs[0].txPublicKey.toString('hex').substr(-64)}`,
             ],
-            '0x' + amount.toHex(),
+            '0x' + amount.multiply(PRIVACY_TOKEN_UNIT).toHex(), // withdaw need multiple with 10^9, convert gwei to wei
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],

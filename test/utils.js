@@ -5,11 +5,8 @@ import HDWalletProvider from '@truffle/hdwallet-provider';
 import TestConfig from './config.json';
 import * as Address from '../src/address';
 import Stealth from '../src/stealth';
-import { hextobin } from '../src/common';
-import UTXO from '../src/utxo';
-import { keyImage } from '../src/mlsag';
-import { BigInteger } from '../src/crypto';
 import Wallet from '../src/wallet';
+import { toBN, hextobin, hexToNumberString } from '../src/common';
 
 chai.should();
 
@@ -28,6 +25,10 @@ const privacyContract = new web3.eth.Contract(
         gas: '2000000',
     },
 );
+
+const PRIVACY_TOKEN_UNIT = toBN(
+    '1000000000',
+); // use gwei as base unit for reducing size of rangeproof
 
 // we deposit a lot, actually all cases need deposit first
 // to make sure we all have data in case mocha doesnt run deposit first
@@ -52,7 +53,12 @@ export const deposit = (amount, privateKey, from) => new Promise((resolve, rejec
     });
 
     // create proof for a transaction
-    const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
+    const proof = sender.genTransactionProof(
+        hexToNumberString(
+            toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex(),
+        ), sender.pubSpendKey, sender.pubViewKey,
+    );
+    // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
     contract.methods.deposit(
         `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve

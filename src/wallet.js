@@ -25,7 +25,7 @@ import * as Address from './address';
 import Stealth from './stealth';
 import UTXO from './utxo';
 import { BigInteger, randomHex } from './crypto';
-import { toBN } from './common';
+import { toBN, hexToNumberString } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
 const ecparams = ecurve.getCurveByName('secp256k1');
@@ -56,8 +56,13 @@ type DecodedProof = {
 const UTXO_RING_SIZE = 12;
 const MAXIMUM_ALLOWED_RING_NUMBER = 5;
 const PRIVACY_FLAT_FEE = toBN(
-    '10000000000000000',
+    '10000000',
 ); // 0.01 TOMO
+
+const PRIVACY_TOKEN_UNIT = toBN(
+    '1000000000',
+); // use gwei as base unit for reducing size of rangeproof
+
 
 const STORAGE_PREFIX = '@TOMOPRIVACY/';
 
@@ -167,8 +172,11 @@ export default class Wallet extends EventEmitter {
      */
     deposit(amount: number): Promise<any> {
         this.emit('START_DEPOSIT');
+
         return new Promise((resolve, reject) => {
-            const proof = this._genUTXOProof(amount);
+            const proof = this._genUTXOProof(
+                hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex()),
+            );
             this.privacyContract.methods.deposit(...proof)
                 .send({
                     from: this.scOpts.from,
@@ -322,7 +330,6 @@ export default class Wallet extends EventEmitter {
         const spendingUTXOS = [];
         let i = 0;
 
-        // console.log('this.utxos ', this.utxos);
         let justEnoughBalance = BigInteger.ZERO;
 
         while (amount.compareTo(justEnoughBalance) > 0 && this.utxos[i]) {
@@ -373,7 +380,7 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        let biAmount = toBN(amount);
+        let biAmount = toBN(amount).divide(PRIVACY_TOKEN_UNIT);
 
         assert(biAmount.compareTo(PRIVACY_FLAT_FEE) > 0, 'Sending amount must be larger than tx fee !!');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
@@ -503,7 +510,7 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount);
+        const biAmount = toBN(amount).divide(PRIVACY_TOKEN_UNIT);
 
         assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
         assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
@@ -539,7 +546,6 @@ export default class Wallet extends EventEmitter {
                     if (!spendingUTXOs.length) this.emit('FINISH_WITHDRAW');
                 }
             } catch (ex) {
-                console.log('ex ', ex);
                 this.emit('STOP_WITHDRAW', ex);
                 throw ex;
             }
@@ -727,6 +733,7 @@ export default class Wallet extends EventEmitter {
         privkeys.push(privKey);
 
         const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
+
         const ringSignature = MLSAG.mulSign(
             privkeys,
             ringctDecoys,
@@ -752,7 +759,7 @@ export default class Wallet extends EventEmitter {
                 }${ringSignature.message.toString('hex')
                 }${ringSignature.c1.toHex(32)
                 }${_.map(_.flatten(ringSignature.s), element => element.toHex(32)).join('')
-                }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
+                // }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
                 }${_.map(_.flatten(ringSignature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
                 'hex',
             ),

@@ -18,13 +18,11 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-const amount = 10000000000000000000;
-const sender = new Stealth({
-    ...Address.generateKeys(SENDER_WALLET.privateKey),
-});
+const amount = 1000000000000000000; // 1tomo
+const TX_VALUE = '1000000000'; // privacy protocol use gwei as unit
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 10; count++) {
+    for (let count = 0; count < 15; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount).then((result) => {
@@ -38,7 +36,7 @@ describe('#ete #deposit', () => {
                 // make sure SC doesn't change anything
                 expect(proof.encryptedAmount).to.equal(utxoIns.amount);
                 expect(isMineUTXO).to.not.equal(null);
-                expect(isMineUTXO.amount).to.equal(amount.toString());
+                expect(isMineUTXO.amount).to.equal(TX_VALUE);
 
                 // make sure decoded mask = generated mask
                 expect(utxoIns.mask).to.equal(proof.encryptedMask);
@@ -47,7 +45,7 @@ describe('#ete #deposit', () => {
                 // validate return commitment from amount,mask -
                 expect(
                     Commitment.verifyCommitment(
-                        amount,
+                        TX_VALUE,
                         proof.mask,
                         {
                             X: utxoIns.commitmentX,
@@ -56,16 +54,15 @@ describe('#ete #deposit', () => {
                     ),
                 ).to.equal(true);
 
-                const expectedCommitment = Commitment.genCommitment(amount, proof.mask).toString('hex');
+                const expectedCommitment = Commitment.genCommitment(TX_VALUE.toString(), proof.mask).toString('hex');
 
                 expect(
                     utxoIns.lfCommitment.getEncoded(true).toString('hex') === expectedCommitment,
                 ).to.equal(true);
                 done();
-            })
-                .catch((err) => {
-                    done(err);
-                });
+            }).catch((err) => {
+                done(err);
+            });
 
         });
     }
@@ -73,7 +70,7 @@ describe('#ete #deposit', () => {
     for (let count = 0; count < 5; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
-            TestUtils.deposit(1000000000, privateKey, address).then(() => {
+            TestUtils.deposit(10000000000000, privateKey, address).then(() => {
                 done();
             })
                 .catch((err) => {

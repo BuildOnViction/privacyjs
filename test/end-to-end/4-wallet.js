@@ -309,7 +309,7 @@ describe('#ete #wallet', () => {
              */
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                sendWallet.send(receiver.pubAddr, '60000000000000000000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '6000000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO;
                     expect(txs).to.be.an('array');
                     expect(txs.length).to.be.above(0);

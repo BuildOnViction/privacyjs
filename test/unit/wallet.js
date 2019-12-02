@@ -7,6 +7,8 @@ import Configs from '../config.json';
 import * as CONSTANT from '../../src/constants';
 // import UTXO from '../../src/utxo';
 import { BigInteger } from '../../src/crypto';
+import { randomUTXOS } from '../utils';
+import { toBN, hexToNumberString } from '../../src/common';
 
 const ecparams = ecurve.getCurveByName('secp256k1');
 const { Point } = ecurve;
@@ -16,6 +18,8 @@ chai.use(chaiAsPromised);
 
 const { WALLETS } = Configs;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
+const TOMO = 1000000000000000000;
+const GWEI = 1000000000;
 
 describe('#unittest #wallet', () => {
     describe('#init()', () => {
@@ -111,7 +115,8 @@ describe('#unittest #wallet', () => {
             done();
         });
 
-        // in this case sc just just your input is on curve and you have enough money to spend, nothing else
+        // in this case sc just just your input is on curve and
+        // you have enough money to spend, nothing else
         it('should able to deposit with correct data', (done) => {
             try {
                 // TODO stupid fake returns, find other way
@@ -153,7 +158,11 @@ describe('#unittest #wallet', () => {
                         on: () => ({
                             then: (callback) => {
                                 callback({
-                                    events: { NewTX: { returnValues: { UTXO: {}, timestamp: new Date() } } },
+                                    events: {
+                                        NewTX: {
+                                            returnValues: { UTXO: {}, timestamp: new Date() },
+                                        },
+                                    },
                                 });
                             },
                         }),
@@ -173,86 +182,332 @@ describe('#unittest #wallet', () => {
         });
     });
 
-    // describe('#withdraw()', () => {
-    //     it('should able to withdraw', (done) => {
-    //         done(new Error('Not implemented yet'));
-    //     });
-    // });
+    describe('#_getSpendingUTXO', () => {
+        const wallet = new Wallet(SENDER_WALLET.privateKey, {
+            RPC_END_POINT: Configs.RPC_END_POINT,
+            ABI: Configs.PRIVACY_ABI,
+            ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+            gasPrice: '250000000',
+            gas: '2000000',
+        }, SENDER_WALLET.address);
 
-    describe('#send()', () => {
-        let wallet;
-        let wallet1;
-        let stealthPoint;
-        let txPubkeyPoint;
-        let decodedProof;
-        let proof;
+        wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
+            GWEI,
+            GWEI,
+            3 * GWEI,
+            5 * GWEI,
+            0.1 * GWEI,
+            GWEI,
+            GWEI,
+            3 * GWEI,
+            5 * GWEI,
+            0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
 
-        beforeEach((done) => {
-            wallet = new Wallet(SENDER_WALLET.privateKey, {
-                RPC_END_POINT: Configs.RPC_END_POINT,
-                ABI: Configs.PRIVACY_ABI,
-                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
-                gasPrice: '250000000',
-                gas: '2000000',
-            }, SENDER_WALLET.address);
+        wallet.balance = toBN(10.1 * GWEI);
 
-            wallet1 = new Wallet(WALLETS[1].privateKey, {
-                RPC_END_POINT: Configs.RPC_END_POINT,
-                ABI: Configs.PRIVACY_ABI,
-                ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
-                gasPrice: '250000000',
-                gas: '2000000',
-            }, SENDER_WALLET.address);
+        it('Select utxos with tx amount = first utxo', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(GWEI),
+            );
+            expect(utxos.length === 2).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(2 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 1).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            done();
+        });
 
-            proof = wallet._genUTXOProof(1000000000);
-            stealthPoint = Point.fromAffine(ecparams,
-                new BigInteger(proof[0].slice(2), 16),
-                new BigInteger(proof[1].slice(2), 16));
-            txPubkeyPoint = Point.fromAffine(ecparams,
-                new BigInteger(proof[2].slice(2), 16),
-                new BigInteger(proof[3].slice(2), 16));
+        it('Select utxos with tx amount = 1.5 * first utxo', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(1.5 * GWEI),
+            );
+            expect(utxos.length === 2).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(2 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 1).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            done();
+        });
+        it('Select utxos with tx amount = sum first 2 utxos', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(2 * GWEI),
+            );
+            expect(utxos.length === 3).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(5 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 1).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            done();
+        });
+        it('Select utxos with tx amount = sum first 4 utxos', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(10 * GWEI),
+            );
+            expect(utxos.length === 5).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(10.1 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 2).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.02 * GWEI))).to.be.equal(true);
+            done();
+        });
+        it('Select utxos with tx amount = sum 6 utxos', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(11.1 * GWEI),
+            );
+            expect(utxos.length === 7).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(12.1 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 2).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.02 * GWEI))).to.be.equal(true);
+            done();
+        });
+
+        it('Select utxos with tx amount = sum 9 utxos', (done) => {
+            const {
+                utxos, totalAmount, totalFee, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(20.1 * GWEI),
+            );
+            expect(utxos.length === 10).to.be.equal(true);
+            expect(totalAmount.equals(
+                toBN(20.2 * GWEI),
+            )).to.be.equal(true);
+            expect(txTimes === 3).to.be.equal(true);
+            expect(totalFee.equals(toBN(0.03 * GWEI))).to.be.equal(true);
+            done();
+        });
+
+        it('Select utxos with all balance - should return null utxos', (done) => {
+            const {
+                utxos,
+            } = wallet._getSpendingUTXO(
+                toBN(20.2 * GWEI),
+            );
+            expect(utxos).to.be.equal(null);
+            done();
+        });
+    });
+
+
+    describe('#_splitTransaction', () => {
+        const wallet = new Wallet(SENDER_WALLET.privateKey, {
+            RPC_END_POINT: Configs.RPC_END_POINT,
+            ABI: Configs.PRIVACY_ABI,
+            ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+            gasPrice: '250000000',
+            gas: '2000000',
+        }, SENDER_WALLET.address);
+
+        wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
+            GWEI,
+            GWEI,
+            3 * GWEI,
+            5 * GWEI,
+            0.1 * GWEI,
+            GWEI,
+            GWEI,
+            3 * GWEI,
+            5 * GWEI,
+            0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
+
+        wallet.balance = toBN(10.1 * GWEI);
+
+        it('Select utxos with tx amount = first utxo', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(GWEI),
+            );
+
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(GWEI));
+            expect(txs.length).to.be.equal(1);
+            expect(txs[0].utxos.length).to.be.equal(2);
+            expect(txs[0].receivAmount.equals(toBN(GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(0.99 * GWEI))).to.be.equal(true);
 
             done();
         });
 
-        // it('should able to create correct output utxos', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+        it('Select utxos with tx amount = 1.5 * first utxo', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(1.5 * GWEI),
+            );
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(1.5 * GWEI));
+            expect(txs.length).to.be.equal(1);
+            expect(txs[0].utxos.length).to.be.equal(2);
+            expect(txs[0].receivAmount.equals(toBN(1.5 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(0.49 * GWEI))).to.be.equal(true);
+            done();
+        });
 
-        // it('should able to create correct ringct', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+        it('Select utxos with tx amount = sum first 2 utxos', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(2 * GWEI),
+            );
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(2 * GWEI));
+            expect(txs.length).to.be.equal(1);
+            expect(txs[0].utxos.length).to.be.equal(3);
+            expect(txs[0].receivAmount.equals(toBN(2 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(2.99 * GWEI))).to.be.equal(true);
+            done();
+        });
 
-        // it('should able to create correct bullet proof', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+        it('Select utxos with tx amount = sum first 4 utxos', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(10 * GWEI),
+            );
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(10 * GWEI));
+            expect(txs.length).to.be.equal(2);
 
-        // it('should call to sc correctly to send and receive exactly same output utxos', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+            expect(txs[0].utxos.length).to.be.equal(4);
+            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[1].utxos.length).to.be.equal(1);
+            expect(txs[1].receivAmount.equals(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.equals(toBN(0.08 * GWEI))).to.be.equal(true);
+            done();
+        });
 
-        // it('should not create single ring', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+        it('Select utxos with tx amount = sum 6 utxos', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(11.1 * GWEI),
+            );
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(11.1 * GWEI));
+            expect(txs.length).to.be.equal(2);
 
-        // it('should not able to create an tx with sum output commitment > sum input commitment', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+            expect(txs[0].utxos.length).to.be.equal(4);
+            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
 
-        // it('should not able to create an tx with privatekey not in the ring', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+            expect(txs[1].utxos.length).to.be.equal(3);
+            expect(txs[1].receivAmount.equals(toBN(1.11 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.equals(toBN(0.98 * GWEI))).to.be.equal(true);
+            done();
+        });
 
-        // it('should not create proof with ringsize > 5', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+        it('Select utxos with tx amount = sum 8 utxos', (done) => {
+            const {
+                utxos, txTimes,
+            } = wallet._getSpendingUTXO(
+                toBN(15.1 * GWEI),
+            );
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(15.1 * GWEI));
+            expect(txs.length).to.be.equal(3);
 
-        // it('should not execute-time > 10s ', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+            expect(txs[0].utxos.length).to.be.equal(4);
+            expect(txs[0].receivAmount.equals(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
 
-        // it('should emit event correctly in sending progress', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
+            expect(txs[1].utxos.length).to.be.equal(4);
+            expect(txs[1].receivAmount.equals(toBN(5.09 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.equals(toBN(0 * GWEI))).to.be.equal(true);
+
+            expect(txs[2].utxos.length).to.be.equal(1);
+            expect(txs[2].receivAmount.equals(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(txs[2].remainAmount.equals(toBN(4.97 * GWEI))).to.be.equal(true);
+            done();
+        });
+
     });
+
+    // describe('#send()', () => {
+    //     let wallet;
+    //     let wallet1;
+    //     let stealthPoint;
+    //     let txPubkeyPoint;
+    //     let decodedProof;
+    //     let proof;
+
+    //     beforeEach((done) => {
+    //         wallet = new Wallet(SENDER_WALLET.privateKey, {
+    //             RPC_END_POINT: Configs.RPC_END_POINT,
+    //             ABI: Configs.PRIVACY_ABI,
+    //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+    //             gasPrice: '250000000',
+    //             gas: '2000000',
+    //         }, SENDER_WALLET.address);
+
+    //         wallet1 = new Wallet(WALLETS[1].privateKey, {
+    //             RPC_END_POINT: Configs.RPC_END_POINT,
+    //             ABI: Configs.PRIVACY_ABI,
+    //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
+    //             gasPrice: '250000000',
+    //             gas: '2000000',
+    //         }, SENDER_WALLET.address);
+
+    //         proof = wallet._genUTXOProof(1000000000);
+    //         stealthPoint = Point.fromAffine(ecparams,
+    //             new BigInteger(proof[0].slice(2), 16),
+    //             new BigInteger(proof[1].slice(2), 16));
+    //         txPubkeyPoint = Point.fromAffine(ecparams,
+    //             new BigInteger(proof[2].slice(2), 16),
+    //             new BigInteger(proof[3].slice(2), 16));
+
+    //         done();
+    //     });
+
+    // it('should able to create correct output utxos', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should able to create correct ringct', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should able to create correct bullet proof', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should call to sc correctly to send and receive exactly same output utxos', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should not create single ring', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should not able to create an tx with sum output \n
+    // commitment > sum input commitment', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should not able to create an tx with privatekey not in the ring', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should not create proof with ringsize > 5', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should not execute-time > 10s ', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+
+    // it('should emit event correctly in sending progress', (done) => {
+    //     done(new Error('Not implemented yet'));
+    // });
+    // });
 });

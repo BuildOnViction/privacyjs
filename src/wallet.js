@@ -362,6 +362,9 @@ export default class Wallet extends EventEmitter {
             i++;
         }
 
+        console.log('... Doing TX with ', spendingUTXOS.length, ' UTXOs');
+        console.log('... Split into ', txTimes, ' sub-tx');
+
         // not enough balance to pay fee + amount
         if (amount.compareTo(
             justEnoughBalance.subtract(
@@ -451,84 +454,56 @@ export default class Wallet extends EventEmitter {
 
         const biAmount = toBN(amount).divide(PRIVACY_TOKEN_UNIT);
 
-        assert(biAmount.add(PRIVACY_FLAT_FEE).compareTo(this.balance) <= 0, 'Balance is not enough');
+        assert(biAmount.compareTo(this.balance) <= 0, 'Balance is not enough');
         assert(biAmount.compareTo(BigInteger.ZERO) > 0, 'Amount should be larger than zero');
 
         this.emit('START_SENDING');
 
-        const spendingUTXOs = this._getSpendingUTXO(biAmount).utxos;
-        const totalResponse = [];
-        const totalSpent = spendingUTXOs.length;
-
-        if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
-            try {
-                while (spendingUTXOs.length > 0) {
-                    const spentThisRound = _.map(
-                        spendingUTXOs.splice(0, MAXIMUM_ALLOWED_RING_NUMBER), (raw) => {
-                            const utxo = new UTXO(raw);
-                            utxo.checkOwnership(this.addresses.privSpendKey);
-                            return utxo;
-                        },
-                    );
-
-                    // let proof;
-
-                    // last transaction need to pay extra for receiver = remaining amount + flat_fee*(txTimes - 1)
-                    // if (spendingUTXOs.length === 0) {
-
-                    // } else {
-                    // eslint-disable-next-line no-await-in-loop
-                    const proof = await this._makePrivateSendProof(
-                        privacyAddress,
-                        this._calTotal(spentThisRound),
-                        spentThisRound,
-                        true, // flag for indicating spent all
-                    );
-                    // }
-
-                    // eslint-disable-next-line no-await-in-loop
-                    const res = await this._send(proof);
-                    totalResponse.push(res.NewUTXO);
-                    if (!spendingUTXOs.length) this.emit('FINISH_SENDING');
-                }
-            } catch (ex) {
-                this.emit('STOP_SENDING', ex);
-                throw ex;
-            }
-
-            this.utxos.splice(0, totalSpent);
-            this.balance = this._calTotal(this.utxos);
-            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
-
-            return totalResponse;
-        }
-
-        const proof = await this._makePrivateSendProof(
-            privacyAddress,
+        const {
+            utxos, txTimes,
+        } = this._getSpendingUTXO(
             biAmount,
-            _.map(spendingUTXOs, (raw) => {
-                const utxo = new UTXO(raw);
-                utxo.checkOwnership(this.addresses.privSpendKey);
-                return utxo;
-            }),
         );
 
+        assert(utxos !== null, 'Balance is not enough');
+
+        const utxoInstances = _.map(utxos, (raw) => {
+            const utxo = new UTXO(raw);
+            utxo.checkOwnership(this.addresses.privSpendKey);
+            return utxo;
+        });
+
+        const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
+
+        const totalResponse = [];
+        const totalSpent = utxoInstances.length;
+
+        let currentTx = 0;
         try {
-            // eslint-disable-next-line no-await-in-loop
-            const res = await this._send(proof);
-            this.utxos.splice(0, totalSpent);
+            while (txs[currentTx]) {
+                // eslint-disable-next-line no-await-in-loop
+                const proof = await this._makePrivateSendProof(
+                    privacyAddress,
+                    txs[currentTx].receivAmount,
+                    txs[currentTx].utxos,
+                    txs[currentTx].remainAmount,
+                );
 
-            this.balance = this._calTotal(this.utxos);
-
-            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
-
-            totalResponse.push(res.NewUTXO);
-
+                // eslint-disable-next-line no-await-in-loop
+                const res = await this._send(proof);
+                totalResponse.push(res.NewUTXO);
+                currentTx++;
+            }
             this.emit('FINISH_SENDING');
         } catch (ex) {
             this.emit('STOP_SENDING', ex);
             throw ex;
         }
+
+        // we don't add the response here because of listening to SC-event already
+        this.utxos.splice(0, totalSpent);
+        this.balance = this._calTotal(this.utxos);
+        this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
         return totalResponse;
     }
@@ -586,73 +561,49 @@ export default class Wallet extends EventEmitter {
 
         this.emit('START_WITHDRAW');
 
-        const spendingUTXOs = this._getSpendingUTXO(biAmount).utxos;
-        const totalResponse = [];
-        const totalSpent = spendingUTXOs.length;
-
-        if (spendingUTXOs.length > MAXIMUM_ALLOWED_RING_NUMBER) {
-            try {
-                while (spendingUTXOs.length > 0) {
-                    const spentThisRound = _.map(
-                        spendingUTXOs.splice(0, MAXIMUM_ALLOWED_RING_NUMBER), (raw) => {
-                            const utxo = new UTXO(raw);
-                            utxo.checkOwnership(this.addresses.privSpendKey);
-                            return utxo;
-                        },
-                    );
-
-                    // eslint-disable-next-line no-await-in-loop
-                    const proof = await this._makeWithdrawProof(
-                        address,
-                        this._calTotal(spentThisRound),
-                        spentThisRound,
-                        true, // flag for indicating spent all
-                    );
-
-                    // eslint-disable-next-line no-await-in-loop
-                    const res = await this._withdraw(proof);
-                    totalResponse.push(res.NewUTXO);
-
-                    if (!spendingUTXOs.length) this.emit('FINISH_WITHDRAW');
-                }
-            } catch (ex) {
-                this.emit('STOP_WITHDRAW', ex);
-                throw ex;
-            }
-
-            // TODO duplicated code
-            this.utxos.splice(0, totalSpent);
-
-            this.balance = this._calTotal(this.utxos);
-
-            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
-            return totalResponse;
-        }
-
-        const proof = await this._makeWithdrawProof(
-            address,
+        const {
+            utxos, txTimes,
+        } = this._getSpendingUTXO(
             biAmount,
-            _.map(spendingUTXOs, (raw) => {
-                const utxo = new UTXO(raw);
-                utxo.checkOwnership(this.addresses.privSpendKey);
-                return utxo;
-            }),
         );
 
+        assert(utxos !== null, 'Balance is not enough');
+
+        const utxoInstances = _.map(utxos, (raw) => {
+            const utxo = new UTXO(raw);
+            utxo.checkOwnership(this.addresses.privSpendKey);
+            return utxo;
+        });
+
+        const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
+        const totalResponse = [];
+        const totalSpent = utxoInstances.length;
+
         try {
-            // eslint-disable-next-line no-await-in-loop
-            const res = await this._withdraw(proof);
-            this.utxos.splice(0, totalSpent);
+            let txIndex = 0;
+            while (txs[txIndex]) {
+                // eslint-disable-next-line no-await-in-loop
+                const proof = await this._makeWithdrawProof(
+                    address,
+                    txs[txIndex].receivAmount,
+                    txs[txIndex].utxos,
+                    txs[txIndex].remainAmount,
+                );
 
-            this.balance = this._calTotal(this.utxos);
-
-            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
-            totalResponse.push(res.NewUTXO);
+                // eslint-disable-next-line no-await-in-loop
+                const res = await this._withdraw(proof);
+                totalResponse.push(res.NewUTXO);
+                txIndex++;
+            }
             this.emit('FINISH_WITHDRAW');
         } catch (ex) {
             this.emit('STOP_WITHDRAW', ex);
             throw ex;
         }
+
+        this.utxos.splice(0, totalSpent);
+        this.balance = this._calTotal(this.utxos);
+        this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
         return totalResponse;
     }
@@ -856,45 +807,14 @@ export default class Wallet extends EventEmitter {
      * @param {boolean} [isSpentAll]
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
-    _genWithdrawProofs(spendingUTXOs: Array<UTXO>, amount: BigInteger, isSpentAll: ?boolean): Array<Object> {
-        const UTXOs = spendingUTXOs;
-
-        let balance = this._calTotal(UTXOs);
-
-        assert(balance.compareTo(PRIVACY_FLAT_FEE) <= 0, 'Balance is not enough');
-
-        if (isSpentAll) {
-            const proofOfReceiver = this.stealth.genTransactionProof(
-                Web3.utils.hexToNumberString('0x' + amount.subtract(PRIVACY_FLAT_FEE).toHex()),
-                null,
-                null,
-                '0',
-            );
-
-            const proofOfMe = this.stealth.genTransactionProof(
-                '0',
-            );
-
-            const proofOfFee = this.stealth.genTransactionProof(
-                Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toHex()), null, null, '0',
-            );
-
-            return [proofOfReceiver, proofOfMe, proofOfFee];
-        }
-
-        balance = balance.subtract(
-            PRIVACY_FLAT_FEE,
-        );
-
-        assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
-
+    _genWithdrawProofs(amount: BigInteger, remain: BigInteger): Array<Object> {
         // When withdraw, we set mask = 0, so commitment  = value*H
         const proofOfReceiver = this.stealth.genTransactionProof(
             Web3.utils.hexToNumberString('0x' + amount.toHex()), null, null, '0',
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + balance.subtract(amount).toHex()),
+            Web3.utils.hexToNumberString('0x' + remain.toHex()),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
@@ -905,46 +825,20 @@ export default class Wallet extends EventEmitter {
 
     /**
      * Generate utxos for sending transaction, one for sender (even balance = 0), one for receiver
-     * @param {Array<UTXO>} spendingUTXOs spending utxos
      * @param {string} receiver privacy address of receiver
      * @param {BigInteger} amount sending amount
-     * @param {boolean} [isSpentAll]
+     * @param {BigInteger} remain remaining
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
-    _genOutputProofs(spendingUTXOs: Array<UTXO>, receiver: string, amount: BigInteger, isSpentAll: ?boolean): Array<Object> {
-        const UTXOs = spendingUTXOs;
+    _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger): Array<Object> {
         const receiverStealth = Stealth.fromString(receiver);
-
-        if (isSpentAll) {
-            const proofOfReceiver = receiverStealth.genTransactionProof(
-                Web3.utils.hexToNumberString('0x' + amount.subtract(PRIVACY_FLAT_FEE).toHex()),
-            );
-
-            const proofOfMe = this.stealth.genTransactionProof(
-                '0',
-            );
-
-            const proofOfFee = this.stealth.genTransactionProof(
-                Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toHex()), null, null, '0',
-            );
-
-            return [proofOfReceiver, proofOfMe, proofOfFee];
-        }
-
-        let balance = this._calTotal(UTXOs);
-
-        balance = balance.subtract(
-            PRIVACY_FLAT_FEE,
-        );
-
-        assert(amount.compareTo(balance) <= 0, 'Balance is not enough');
 
         const proofOfReceiver = receiverStealth.genTransactionProof(
             Web3.utils.hexToNumberString('0x' + amount.toHex()),
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + balance.subtract(amount).toHex()),
+            Web3.utils.hexToNumberString('0x' + remain.toHex()),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
@@ -958,13 +852,12 @@ export default class Wallet extends EventEmitter {
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
-     * @param {boolean} [isSpentAll]
+     * @param {BigInteger} remain
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, isSpentAll: ?boolean): Array {
-        const outputProofs = this._genOutputProofs(spendingUTXOs, receiver, amount, isSpentAll);
+    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
+        const outputProofs = this._genOutputProofs(receiver, amount, remain);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
-        // const rangeProof = this._genRangeProof(amount);
 
         return [
             // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]
@@ -998,10 +891,11 @@ export default class Wallet extends EventEmitter {
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
      * @param {boolean} [isSpentAll]
+     * * @param {BigInteger} remain
      * @returns {Object} proof output
      */
-    async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, isSpentAll: ?boolean): Array {
-        const outputProofs = this._genWithdrawProofs(spendingUTXOs, amount, isSpentAll);
+    async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
+        const outputProofs = this._genWithdrawProofs(amount, remain);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
         return [

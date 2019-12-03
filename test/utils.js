@@ -159,54 +159,6 @@ function isSpent(ki) {
  * @param {*} limit
  */
 export const scanUTXOs = async (privateKey, limit) => {
-    // let index = 0;
-    // let utxo = {};
-    // let balance = 0;
-    // const utxos = [];
-
-    // console.log('#Scanning my ', limit, ' utxo');
-
-    // do {
-    //     try {
-    //         utxo = await getUTXO(index);
-
-    //         const utxoInstance = new UTXO({
-    //             ...utxo,
-    //             3: index,
-    //         });
-
-    //         const isMine = utxoInstance.checkOwnership(privateKey);
-
-    //         if (isMine && parseFloat(isMine.amount).toString() === isMine.amount) {
-    //             const ringctKeys = utxoInstance.getRingCTKeys(privateKey);
-    //             // check if utxo is spent already
-    //             const res = await isSpent(
-    //                 `0x${keyImage(
-    //                     BigInteger.fromHex(ringctKeys.privKey),
-    //                     utxoInstance.lfStealth.getEncoded(false).toString('hex').slice(2),
-    //                 ).getEncoded(true).toString('hex')}`,
-    //             );
-
-    //             if (!res) {
-    //                 console.log('isMine.amount ', isMine.amount);
-    //                 balance += parseFloat(isMine.amount);
-    //                 utxos.push(utxoInstance);
-    //             }
-    //         }
-    //         index++;
-    //     } catch (exception) {
-    //         console.log(exception);
-    //         utxo = null;
-    //         break;
-    //     }
-
-    //     // we can't scan all utxo, it would take minutes on testnet and days on mainet
-    //     // in testnet the encryption algorithm can be changed :(
-    //     if (limit) {
-    //         if (utxos.length > limit) break;
-    //     }
-    // } while (utxo);
-
     const wallet = new Wallet(privateKey, {
         RPC_END_POINT: TestConfig.RPC_END_POINT,
         ABI: TestConfig.PRIVACY_ABI,
@@ -219,4 +171,27 @@ export const scanUTXOs = async (privateKey, limit) => {
         balance,
         utxos,
     };
+};
+
+/**
+ * Generate random utxos
+ * @param {string} privateKey
+ * @param {BigInteger} totalBalance
+ * @returns {Array<UTXO>}
+ */
+export const randomUTXOS = (privateKey, specifiedAmount) => {
+    const utxos = [];
+    const sender = new Stealth({
+        ...Address.generateKeys(privateKey),
+    });
+    for (let index = 0; index < specifiedAmount.length; index++) {
+        utxos.push(
+            {
+                ...sender.genTransactionProof(specifiedAmount[index]),
+                decodedAmount: specifiedAmount[index],
+            },
+        );
+    }
+
+    return utxos;
 };

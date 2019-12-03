@@ -55,8 +55,6 @@ type UTXOType = {
     '3': number
 }
 
-// <Buffer 04 6d e2 f5 b6 19 8c e3 b4 fd 00 1a 99 7e d0 ba a5 e7 98 91 75 c1 19 56 7b be 59 05 f3 67 0b d7 24 8a df 1c c5 29 76 f8 de b6 19 f5 8f ac f5 ae c4 dc ... >,
-
 class UTXO {
     commitmentX: string;
 
@@ -189,6 +187,26 @@ class UTXO {
             pubKey: decodedUTXO.pubKey,
         };
     }
+
+    // static toRawFormat(proof: Proof): UTXOType {
+    //     return {
+    //         '0': {
+    //             '0': proof.commitment.slice(1, 33).join(''),
+    //             '1': proof.onetimeAddress.slice(1, 33).join(''),
+    //             '2': proof.txPublicKey.slice(1, 33).join(''),
+    //         },
+    //         '1': {
+    //             '0': BigInteger.fromBuffer(proof.commitment.slice(-33)).isEven() ? '0' : '1',
+    //             '1': BigInteger.fromBuffer(proof.onetimeAddress.slice(-33)).isEven() ? '0' : '1',
+    //             '2': BigInteger.fromBuffer(proof.txPublicKey.slice(-33)).isEven() ? '0' : '1',
+    //         },
+    //         '2': {
+    //             '0': proof.encryptedAmount,
+    //             '1': proof.encryptedMask,
+    //         },
+    //         '3': proof.index,
+    //     };
+    // }
 }
 
 export default UTXO;

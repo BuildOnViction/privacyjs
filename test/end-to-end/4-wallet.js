@@ -289,19 +289,6 @@ describe('#ete #wallet', () => {
             }
         });
 
-        it('Should not able to send 0.01 TOMO <= PRIVACY_FLAT_FEE', (done) => {
-            const receiver = generateKeys(WALLETS[1].privateKey);
-            try {
-                sendWallet.send(receiver.pubAddr, '10000000000000000').then(() => {
-                    done(new Error(''));
-                }).catch(() => {
-                    done();
-                });
-            } catch (ex) {
-                done();
-            }
-        });
-
         it('Should able to send with needed utxos > ring_number', (done) => {
             /**
              * the scenario here is trying to spend 6 TOMO (maximum ring number is 5)

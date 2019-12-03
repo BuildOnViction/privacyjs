@@ -59,9 +59,9 @@ const PRIVACY_FLAT_FEE = toBN(
     '10000000',
 ); // 0.01 TOMO
 
-const PRIVACY_DEPOSIT_FEE = toBN(
-    '1000000',
-); // 0.001 TOMO
+// const PRIVACY_DEPOSIT_FEE = toBN(
+//     '1000000',
+// ); // 0.001 TOMO
 
 const PRIVACY_TOKEN_UNIT = toBN(
     '1000000000',
@@ -176,10 +176,11 @@ export default class Wallet extends EventEmitter {
      */
     deposit(amount: number): Promise<any> {
         this.emit('START_DEPOSIT');
-
+        console.log('Making deposit proof ',
+            hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex()));
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(
-                hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).subtract(PRIVACY_DEPOSIT_FEE).toHex()),
+                hexToNumberString(toBN(amount).divide(PRIVACY_TOKEN_UNIT).toHex()),
             );
             this.privacyContract.methods.deposit(...proof)
                 .send({
@@ -201,7 +202,7 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
-     * Request UTXO data from smart-contract
+     * Request single UTXO data from smart-contract
      * @param {number} index
      * @returns {Object} utxo data
      */
@@ -213,6 +214,29 @@ export default class Wallet extends EventEmitter {
                 })
                 // eslint-disable-next-line quote-props
                 .then(utxo => resolve({ ...utxo, '3': index })).catch((exception) => {
+                    reject(exception);
+                });
+        });
+    }
+
+    /**
+     * Request UTXOs data from smart-contract
+     * @param {number} index
+     * @returns {Object} utxo data
+     */
+    getUTXOs(utxosIndexs: Array<number>): Promise<Object> {
+        return new Promise((resolve, reject) => {
+            this.privacyContract.methods.getUTXOs(
+                utxosIndexs,
+            )
+                .call()
+                .then((utxos) => {
+                    utxos = _.map(utxos, (raw, index) => {
+                        raw['3'] = utxosIndexs[parseInt(index)];
+                        return raw;
+                    });
+                    resolve(utxos);
+                }).catch((exception) => {
                     reject(exception);
                 });
         });
@@ -650,33 +674,23 @@ export default class Wallet extends EventEmitter {
      */
     async _getDecoys(numberOfRing: number, spendingIndexes: Array<number>): Promise<Array<Array<UTXO>>> {
         // the total decoys we need to get from smart-contract = UTXO_RING_SIZE * ring_size
-        let utxos = [];
         const decoysIndex = [];
 
-        // TODO cache decoys when scan
-        // we can't use Promise All in web3.methods.call because of memory leak
-        // so let resolve one by one
-        let counter = 0;
         const MAXIMUM_RANDOMIZATION_TIMES = 50;
         let randomizationTimes = 0;
 
         // should stop if after 50 randomization times can't get all decoys
-        while (counter < UTXO_RING_SIZE + 4) {
+        for (let counter = 0; counter < UTXO_RING_SIZE + 1; counter++) {
             let rd;
             do {
                 rd = Math.round(Math.random() * this.scannedTo);
                 randomizationTimes++;
-            } while ((rd in spendingIndexes || rd in decoysIndex) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
-
+            } while ((spendingIndexes.indexOf(rd) >= 0 || decoysIndex.indexOf(rd) >= 0) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
             decoysIndex.push(rd);
-
-            // eslint-disable-next-line no-await-in-loop
-            const utxo = await this.getUTXO(rd);
-            utxos.push(
-                new UTXO(utxo),
-            );
-            counter++;
         }
+
+        // eslint-disable-next-line no-await-in-loop
+        let utxos = await this.getUTXOs(decoysIndex);
 
         return _.map(Array(numberOfRing), () => {
             utxos = _.shuffle(utxos);
@@ -890,7 +904,7 @@ export default class Wallet extends EventEmitter {
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
-     * @param {boolean} [isSpentAll]
+     * @param {Array<UTXO>} spendingUTXOs
      * * @param {BigInteger} remain
      * @returns {Object} proof output
      */
@@ -966,11 +980,17 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        return this.balance ? Web3.utils.fromWei(Web3.utils.hexToNumberString('0x' + this.balance.toHex())) : '0';
+        console.log('this.balance ', this.balance.toHex());
+
+        return this.balance ? Web3.utils.fromWei(
+            Web3.utils.hexToNumberString(
+                '0x' + this.balance.multiply(PRIVACY_TOKEN_UNIT).toHex(),
+            ),
+        ) : '0';
     }
 
     hexBalance() {
-        return this.balance ? '0x' + this.balance.toHex() : '0x0';
+        return this.balance ? '0x' + this.balance.multiply(PRIVACY_TOKEN_UNIT).toHex() : '0x0';
     }
 
     // TODO find way to do automation test on browser

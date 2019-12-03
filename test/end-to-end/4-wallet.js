@@ -1,40 +1,17 @@
 /* eslint-disable no-loop-func */
 import chai from 'chai';
-import Web3 from 'web3';
-import HDWalletProvider from '@truffle/hdwallet-provider';
 import * as _ from 'lodash';
-import numberToBN from 'number-to-bn';
 import TestConfig from '../config.json';
 import Wallet from '../../src/wallet';
 import { generateKeys } from '../../src/address';
-import Stealth from '../../src/stealth';
 import { toBN } from '../../src/common';
-import MLSAG from '../../src/mlsag';
 import UTXO from '../../src/utxo';
-import MLSAG_DATA from '../unit/mlsag.json';
 import { BigInteger } from '../../src/crypto';
 
-const ecurve = require('ecurve');
-
-const ecparams = ecurve.getCurveByName('secp256k1');
 const { expect } = chai;
 chai.should();
 
-const { RINGCT_PRECOMPILED_CONTRACT, WALLETS } = TestConfig;
-const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
-
-// load single private key as string
-const provider = new HDWalletProvider(SENDER_WALLET.privateKey, TestConfig.RPC_END_POINT);
-
-const web3 = new Web3(provider);
-
-const mlsagPrecompiledContract = new web3.eth.Contract(
-    RINGCT_PRECOMPILED_CONTRACT.ABI, RINGCT_PRECOMPILED_CONTRACT.ADDRESS, {
-        from: SENDER_WALLET.address, // default from address
-        gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-        gas: '2000000',
-    },
-);
+const { WALLETS } = TestConfig;
 
 /* eslint-disable max-len */
 // eslint-disable-next-line max-len
@@ -66,14 +43,14 @@ describe('#ete #wallet', () => {
                     expect(res[1].length).to.equal(11);
                     // expect(typeof res[0][0]).to.equal('UTXO');
 
-                    const randomElement = res[
-                        Math.round(Math.random() * 1)
-                    ][
-                        Math.round(Math.random() * 10)
-                    ];
-                    expect(randomElement).has.property('lfCommitment');
-                    expect(randomElement).has.property('index');
-                    expect(randomElement).has.property('lfStealth');
+                    // const randomElement = res[
+                    //     Math.round(Math.random() * 1)
+                    // ][
+                    //     Math.round(Math.random() * 10)
+                    // ];
+                    // expect(randomElement).has.property('lfCommitment');
+                    // expect(randomElement).has.property('index');
+                    // expect(randomElement).has.property('lfStealth');
                     done();
                 }).catch((err) => {
                     done(err);

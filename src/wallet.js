@@ -691,6 +691,7 @@ export default class Wallet extends EventEmitter {
 
         // eslint-disable-next-line no-await-in-loop
         let utxos = await this.getUTXOs(decoysIndex);
+        utxos = _.map(utxos, raw => new UTXO(raw));
 
         return _.map(Array(numberOfRing), () => {
             utxos = _.shuffle(utxos);

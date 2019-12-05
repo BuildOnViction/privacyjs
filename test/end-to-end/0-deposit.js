@@ -9,6 +9,7 @@ import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
+import {toBN} from "../../src/common";
 
 const { expect } = chai;
 chai.should();
@@ -17,7 +18,7 @@ const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[1]; // hold around 1 mil tomo
 
 const amount = 1000000000000000000; // 1tomo
-const TX_VALUE = '1000000000'; // privacy protocol use gwei as unit
+const TX_VALUE = '999000000'; // privacy protocol use gwei as unit
 
 const trimPrefix = (str, char) => {
     char = char || '0';
@@ -25,7 +26,7 @@ const trimPrefix = (str, char) => {
 };
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 15; count++) {
+    for (let count = 0; count < 30; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {
@@ -89,7 +90,7 @@ describe('#ete #deposit', () => {
     for (let count = 0; count < 10; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
-            TestUtils.deposit(10000000000000, privateKey, address).then(() => {
+            TestUtils.deposit(1000000000000000000, privateKey, address).then(() => {
                 done();
             })
                 .catch((err) => {

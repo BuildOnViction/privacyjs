@@ -6,7 +6,7 @@ import TestConfig from './config.json';
 import * as Address from '../src/address';
 import Stealth from '../src/stealth';
 import Wallet from '../src/wallet';
-import { toBN, hextobin, hexToNumberString } from '../src/common';
+import { toBN, hextobin, hexToNumberString, DEPOSIT_FEE_WEI, FEE_WEI } from '../src/common';
 
 chai.should();
 
@@ -32,9 +32,11 @@ const PRIVACY_TOKEN_UNIT = toBN(
 
 // we deposit a lot, actually all cases need deposit first
 // to make sure we all have data in case mocha doesnt run deposit first
-export const deposit = (amount, privateKey, from) => new Promise((resolve, reject) => {
+// amunt is in wei unit
+export const deposit = (_amount, privateKey, from) => new Promise((resolve, reject) => {
     let web3ls;
     let contract = privacyContract;
+    let amount = _amount - DEPOSIT_FEE_WEI;
 
     if (privateKey) {
         web3ls = new Web3(new HDWalletProvider(privateKey, TestConfig.RPC_END_POINT));
@@ -59,7 +61,7 @@ export const deposit = (amount, privateKey, from) => new Promise((resolve, rejec
         ), sender.pubSpendKey, sender.pubViewKey,
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
-
+    console.log('Amount deposit = ', amount, ', deposit fee = ', DEPOSIT_FEE_WEI);
     contract.methods.deposit(
         `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve
         `0x${proof.onetimeAddress.toString('hex').substr(-64)}`, // the Y part of curve
@@ -71,7 +73,7 @@ export const deposit = (amount, privateKey, from) => new Promise((resolve, rejec
     )
         .send({
             from: from || SENDER_WALLET.address,
-            value: amount,
+            value: _amount,
         })
         .on('error', (error) => {
             reject(error);

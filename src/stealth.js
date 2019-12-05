@@ -187,7 +187,7 @@ class Stealth {
         const d = hs(Buffer.from(ECDHSharedSerect.encode('array', true)));
         const e = BigInteger.fromBuffer(this.privSpendKey)
             .add(BigInteger.fromBuffer(d))
-            .mod(secp256k1.n);
+            .umod(secp256k1.n);
 
         const E = secp256k1.g.mul(e);
 
@@ -244,7 +244,7 @@ class Stealth {
         const d = hs(Buffer.from(ECDHSharedSerect.encode('array', true)));
         const e = BigInteger.fromBuffer(this.privSpendKey)
             .add(BigInteger.fromBuffer(d))
-            .mod(secp256k1.n);
+            .umod(secp256k1.n);
 
         const E = secp256k1.g.mul(e);
 

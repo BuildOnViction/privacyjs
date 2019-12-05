@@ -820,11 +820,11 @@ export const innerProduct = (v1, v2) => {
             v1[i]
                 .mul(
                     v2[i],
-                ).mod(secp256k1.n),
+                ).umod(secp256k1.n),
         );
     }
 
-    return sum.mod(secp256k1.n);
+    return sum.umod(secp256k1.n);
 };
 
 
@@ -841,8 +841,8 @@ export function twoVectorPCommitWithGens(Gi, Hi, a, b) {
     let commitment;
 
     for (let i = 0; i < Gi.length; i++) {
-        const modA = a[i].mod(secp256k1.n);
-        const modB = b[i].mod(secp256k1.n);
+        const modA = a[i].umod(secp256k1.n);
+        const modB = b[i].umod(secp256k1.n);
 
         if (modA.toString(16).length) {
             commitment = commitment ? commitment.add(

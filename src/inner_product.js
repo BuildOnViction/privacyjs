@@ -63,7 +63,7 @@ function GenerateNewParams(bG: Array<Point>, bH: Array<Point>, x: BigInteger, L:
         Hprime[i] = bH[i].mul(x).add(bH[i + nprime].mul(xinv));
     }
 
-    const x2 = x.mul(x).mod(secp256k1.n);
+    const x2 = x.mul(x).umod(secp256k1.n);
     const xinv2 = x2.invm(secp256k1.n);
 
     const Pprime = L.mul(x2).add(P).add(R.mul(xinv2)); // x^2 * L + P + xinv^2 * R
@@ -73,9 +73,9 @@ function GenerateNewParams(bG: Array<Point>, bH: Array<Point>, x: BigInteger, L:
     };
 }
 
-const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).mod(secp256k1.n));
+const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).umod(secp256k1.n));
 
-const scalaMulVector = (scalar, vector) => _.map(vector, element => element.mul(scalar).mod(secp256k1.n));
+const scalaMulVector = (scalar, vector) => _.map(vector, element => element.mul(scalar).umod(secp256k1.n));
 
 export default class InnerProductProof {
     static prove(a: Array<BigInteger>, b: Array<BigInteger>, c: BigInteger, P: Point, U: Point, bG : Array<Point>, bH: Array<Point>): InnerProdArg {
@@ -211,7 +211,7 @@ export default class InnerProductProof {
         }
 
         // why this
-        const ccalc = ipp.A.mul(ipp.B).mod(secp256k1.n);
+        const ccalc = ipp.A.mul(ipp.B).umod(secp256k1.n);
 
         const Pcalc1 = Gprime[0].mul(ipp.A);
         const Pcalc2 = Hprime[0].mul(ipp.B);

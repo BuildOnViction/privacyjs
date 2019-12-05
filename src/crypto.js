@@ -30,9 +30,9 @@ export function encode(plaintext, key) {
     const _key = sha256sum.update(key).digest().toString('hex');
 
     const res = BN.fromHex(_key)
-        .mod(secp256k1.n).add(
-            BN.fromHex(plaintext).mod(secp256k1.n),
-        ).mod(secp256k1.n);
+        .umod(secp256k1.n).add(
+            BN.fromHex(plaintext).umod(secp256k1.n),
+        ).umod(secp256k1.n);
 
     return res.toString(16);
 }
@@ -42,7 +42,7 @@ export function decode(encrypted, key) {
     const _key = sha256sum.update(key).digest().toString('hex');
     const res = BN.fromHex(encrypted).sub(
         BN.fromHex(_key),
-    ).mod(secp256k1.n).toString(16);
+    ).umod(secp256k1.n).toString(16);
 
     return res;
 }
@@ -63,12 +63,12 @@ export function randomHex(n) {
         result = '0' + result;
     }
 
-    return BN.fromHex(result).mod(secp256k1.n).toString(16, n);
+    return BN.fromHex(result).umod(secp256k1.n).toString(16, n);
 }
 
 /**
  * Random a 32 bits BN
  */
 export function randomBI() {
-    return secp256k1.genKeyPair().getPrivate().mod(secp256k1.n);
+    return secp256k1.genKeyPair().getPrivate().umod(secp256k1.n);
 }

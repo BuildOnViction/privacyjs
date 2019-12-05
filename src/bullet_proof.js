@@ -81,7 +81,7 @@ const vectorSum = (y) => {
     for (let j = 0; j < y.length; j++) {
         result.iadd(
             toBN(y[j]),
-        ).mod(secp256k1.n);
+        ).umod(secp256k1.n);
     }
 
     return result;
@@ -92,24 +92,24 @@ const DeltaMRP = (y, z, m) => {
     let result = BigInteger.ZERO();
 
     // (z-z^2)<1^n, y^n>
-    const z2 = z.mul(z).mod(secp256k1.n);
-    const t1 = z.sub(z2).mod(secp256k1.n);
-    const t2 = t1.mul(vectorSum(y)).mod(secp256k1.n);
+    const z2 = z.mul(z).umod(secp256k1.n);
+    const t1 = z.sub(z2).umod(secp256k1.n);
+    const t2 = t1.mul(vectorSum(y)).umod(secp256k1.n);
 
     // \sum_j z^3+j<1^n, 2^n>
     // <1^n, 2^n> = 2^n - 1
-    const po2sum = BigInteger.TWO().pow(toBN(N)).mod(secp256k1.n).sub(BigInteger.ONE());
+    const po2sum = BigInteger.TWO().pow(toBN(N)).umod(secp256k1.n).sub(BigInteger.ONE());
     let t3 = BigInteger.ZERO();
 
     for (let j = 0; j < m; j++) {
         const zp = z.pow(
             toBN(3 + j),
-        ).mod(secp256k1.n);
-        const tmp1 = zp.mul(po2sum).mod(secp256k1.n);
-        t3 = t3.add(tmp1).mod(secp256k1.n);
+        ).umod(secp256k1.n);
+        const tmp1 = zp.mul(po2sum).umod(secp256k1.n);
+        t3 = t3.add(tmp1).umod(secp256k1.n);
     }
 
-    result = t2.sub(t3).mod(secp256k1.n);
+    result = t2.sub(t3).umod(secp256k1.n);
 
     return result;
 };
@@ -156,15 +156,15 @@ const hadamard = (v1, v2) => {
             v1[i]
                 .mul(
                     v2[i],
-                ).mod(secp256k1.n),
+                ).umod(secp256k1.n),
         );
     }
 
     return result;
 };
 
-const vectorSub = (vector, scalar) => _.map(vector, element => element.sub(scalar).mod(secp256k1.n));
-const vectorSubVector = (vector, vector1) => _.map(vector, (element, index) => element.sub(vector1[index]).mod(secp256k1.n));
+const vectorSub = (vector, scalar) => _.map(vector, element => element.sub(scalar).umod(secp256k1.n));
+const vectorSubVector = (vector, vector1) => _.map(vector, (element, index) => element.sub(vector1[index]).umod(secp256k1.n));
 
 /**
  * Construct a vector from scalar x and n order
@@ -182,16 +182,16 @@ const vectorPowers = (x, n) => {
 
     res[1] = x;
     for (let i = 2; i < n; ++i) {
-        res[i] = res[i - 1].mul(x).mod(secp256k1.n);
+        res[i] = res[i - 1].mul(x).umod(secp256k1.n);
     }
 
     return res;
 };
 
 
-const muladd = (a, b, c) => a.mul(b).add(c).mod(secp256k1.n);
-const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).mod(secp256k1.n));
-const vectorAdd = (vector, scalar) => _.map(vector, element => element.add(scalar).mod(secp256k1.n));
+const muladd = (a, b, c) => a.mul(b).add(c).umod(secp256k1.n);
+const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => element.add(vector2[index]).umod(secp256k1.n));
+const vectorAdd = (vector, scalar) => _.map(vector, element => element.add(scalar).umod(secp256k1.n));
 
 const rangeProofInnerProductPolyCoeff = (aL, sL, aR, sR, y, z) => {
     const l0 = vectorSub(aL, z);
@@ -223,8 +223,8 @@ const rangeProofInnerProductPolyCoeff = (aL, sL, aR, sR, y, z) => {
     const t1P2 = innerProduct(l1, r0);
 
     let t1 = BigInteger.ZERO();
-    t1 = t1P1.add(t1P2).mod(secp256k1.n);
-    const t2 = innerProduct(l1, r1).mod(secp256k1.n);
+    t1 = t1P1.add(t1P2).umod(secp256k1.n);
+    const t2 = innerProduct(l1, r1).umod(secp256k1.n);
 
     return {
         t1, t2, r0, r1, l0, l1, yMN,
@@ -236,7 +236,7 @@ const hashToScalar = (array: Array<Number>) : BigInteger => BigInteger.fromHex(k
 const vectorScalar = (a, x) => {
     const res = [];
     for (let i = 0; i < a.length; ++i) {
-        res[i] = a[i].mul(x).mod(secp256k1.n);
+        res[i] = a[i].mul(x).umod(secp256k1.n);
     }
     return res;
 };
@@ -247,12 +247,12 @@ const rangeProofInnerProductRhs = (r0, r1, x) => vectorAddVector(r0, vectorScala
 const rangeProofInnerProductPolyHidingValue = (tau1, tau2, masks, x, z) => {
     let taux = tau1.mul(x);
     const xsq = x.mul(x);
-    taux = tau2.mul(xsq).add(taux).mod(secp256k1.n);
+    taux = tau2.mul(xsq).add(taux).umod(secp256k1.n);
 
     const zpow = vectorPowers(z, M + 2);
     for (let j = 1; j <= masks.length; ++j) {
         assert(j + 1 < zpow.length, 'invalid zpow index');
-        taux = zpow[j + 1].mul(masks[j - 1]).add(taux).mod(secp256k1.n);
+        taux = zpow[j + 1].mul(masks[j - 1]).add(taux).umod(secp256k1.n);
     }
 
     return taux;
@@ -417,7 +417,7 @@ export default class BulletProof {
         MRPResult.Tau = taux;
 
         // Compute mu: a scalar, hiding value related to A and x.S
-        const mu = cx.mul(rho).add(alpha).mod(secp256k1.n);
+        const mu = cx.mul(rho).add(alpha).umod(secp256k1.n);
 
         MRPResult.Mu = mu;
 
@@ -520,7 +520,7 @@ export default class BulletProof {
 
         let commPowers; //= secp256k1.curve.zero;
         const zMN = vectorPowers(cz, M + 2);
-        const z2 = cz.mul(cz).mod(secp256k1.n);
+        const z2 = cz.mul(cz).umod(secp256k1.n);
 
         for (let j = 0; j < M; j++) {
             if (commPowers) {
@@ -551,7 +551,7 @@ export default class BulletProof {
         }
 
         let tmp1;
-        const zneg = cz.neg().mod(secp256k1.n);
+        const zneg = cz.neg().umod(secp256k1.n);
 
         const { Hi, Gi, U } = genECPrimeGroupKey(M * N);
 
@@ -577,8 +577,8 @@ export default class BulletProof {
                 const val1 = cz.mul(yMN[j * N + i]);
                 const zp = cz.pow(
                     toBN(2 + j),
-                ).mod(secp256k1.n);
-                const val2 = zp.mul(powerOfTwos[i]).mod(secp256k1.n);
+                ).umod(secp256k1.n);
+                const val2 = zp.mul(powerOfTwos[i]).umod(secp256k1.n);
                 if (tmp2) {
                     tmp2 = tmp2.add(HPrime[j * N + i].mul(val1.add(val2)));
                 } else {

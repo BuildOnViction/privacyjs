@@ -1,1014 +1,778 @@
 {
-    "RPC_END_POINT": "http://206.189.39.242:8545",
-    "PRIVACY_SMART_CONTRACT_ADDRESS": "0x40303AB382F0c57A3634cD73B68662E0d11Ab0aa",
-    "RINGCT_PRECOMPILED_CONTRACT": {
-        "PRIVATE_KEY": "0x77291ba86Dfdd3E7DB1f2A70dCe7A32157bB1adF",
-        "ADDRESS": "0x4639C8079db95123cfA6395A273f569e18B9F846",
-        "ABI": [
+  "RPC_END_POINT": "http://206.189.39.242:8545",
+  "PRIVACY_SMART_CONTRACT_ADDRESS": "0xC5eaB73F9a2dee60c3371748cDB58Da31Fb2C734",
+  "RINGCT_PRECOMPILED_CONTRACT": {
+      "PRIVATE_KEY": "0x77291ba86Dfdd3E7DB1f2A70dCe7A32157bB1adF",
+      "ADDRESS": "0x4639C8079db95123cfA6395A273f569e18B9F846",
+      "ABI": [
+          {
+              "constant": false,
+              "inputs": [
+                  {
+                      "name": "data",
+                      "type": "bytes"
+                  }
+              ],
+              "name": "VerifyRingCT",
+              "outputs": [
+                  {
+                      "name": "",
+                      "type": "bool"
+                  }
+              ],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+          },
+          {
+              "constant": false,
+              "inputs": [
+                  {
+                      "name": "numRing",
+                      "type": "uint256"
+                  },
+                  {
+                      "name": "ringSize",
+                      "type": "uint256"
+                  }
+              ],
+              "name": "ComputeSignatureSize",
+              "outputs": [
+                  {
+                      "name": "",
+                      "type": "uint256"
+                  }
+              ],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+          }
+      ]
+  },
+  "WALLETS": [
+      {
+          "privateKey": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
+          "address": "0x1901deed3e1AfA53109DbA327B45B6F8Fa1809E1"
+      },
+      {
+          "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
+          "address": "0x3d8dE6eee3b8890FB7E1f9BA7d50D1866D6c3668"
+      },
+      {
+          "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
+          "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
+      }
+  ],
+  "PRIVACYADD_MAPPING_SMART_CONTRACT": "0xbb32d285e4cF30d439F8106bbA926941730fbf1E",
+  "PRIVACYADD_MAPPING_ABI": [
+      {
+          "constant": true,
+          "inputs": [
+              {
+                  "name": "_normal",
+                  "type": "address"
+              }
+          ],
+          "name": "getPrivacyAddress",
+          "outputs": [
+              {
+                  "name": "",
+                  "type": "bytes"
+              }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+      },
+      {
+          "constant": false,
+          "inputs": [
+              {
+                  "name": "_privacyAddress",
+                  "type": "bytes"
+              }
+          ],
+          "name": "register",
+          "outputs": [],
+          "payable": false,
+          "stateMutability": "nonpayable",
+          "type": "function"
+      },
+      {
+          "constant": true,
+          "inputs": [
+              {
+                  "name": "_privacy",
+                  "type": "bytes"
+              }
+          ],
+          "name": "getNormalAddress",
+          "outputs": [
+              {
+                  "name": "",
+                  "type": "address"
+              }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+      }
+  ],
+  "PRIVACY_ABI": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "estimateFee",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "issuer",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "minFee",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMinFee",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "numRing",
+          "type": "uint256"
+        },
+        {
+          "name": "ringSize",
+          "type": "uint256"
+        }
+      ],
+      "name": "ComputeSignatureSize",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "VerifyRingCT",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "utxos",
+      "outputs": [
+        {
+          "components": [
             {
-                "constant": false,
-                "inputs": [
-                    {
-                        "name": "data",
-                        "type": "bytes"
-                    }
-                ],
-                "name": "VerifyRingCT",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
+              "name": "yBit",
+              "type": "uint8"
             },
             {
-                "constant": false,
-                "inputs": [
-                    {
-                        "name": "numRing",
-                        "type": "uint256"
-                    },
-                    {
-                        "name": "ringSize",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "ComputeSignatureSize",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
+              "name": "x",
+              "type": "uint256"
             }
-        ]
+          ],
+          "name": "commitment",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "name": "yBit",
+              "type": "uint8"
+            },
+            {
+              "name": "x",
+              "type": "uint256"
+            }
+          ],
+          "name": "pubkey",
+          "type": "tuple"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "name": "yBit",
+              "type": "uint8"
+            },
+            {
+              "name": "x",
+              "type": "uint256"
+            }
+          ],
+          "name": "txPub",
+          "type": "tuple"
+        },
+        {
+          "name": "mask",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
     },
-    "WALLETS": [
+    {
+      "constant": false,
+      "inputs": [
         {
-            "privateKey": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
-            "address": "0x1901deed3e1AfA53109DbA327B45B6F8Fa1809E1"
-        },
-        {
-            "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
-            "address": "0x3d8dE6eee3b8890FB7E1f9BA7d50D1866D6c3668"
-        },
-        {
-            "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
-            "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
+          "name": "data",
+          "type": "bytes"
         }
-    ],
-    "PRIVACYADD_MAPPING_SMART_CONTRACT": "0xbb32d285e4cF30d439F8106bbA926941730fbf1E",
-    "PRIVACYADD_MAPPING_ABI": [
+      ],
+      "name": "VerifyRingCTWithMessage",
+      "outputs": [
         {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "_normal",
-                    "type": "address"
-                }
-            ],
-            "name": "getPrivacyAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "bytes"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_privacyAddress",
-                    "type": "bytes"
-                }
-            ],
-            "name": "register",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "_privacy",
-                    "type": "bytes"
-                }
-            ],
-            "name": "getNormalAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
+          "name": "",
+          "type": "bool"
         }
-    ],
-    "PRIVACY_ABI": [
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "name",
-        "outputs": [
-          {
-            "name": "",
-            "type": "string"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "spender",
-            "type": "address"
-          },
-          {
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "approve",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "estimateFee",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "totalSupply",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "issuer",
-        "outputs": [
-          {
-            "name": "",
-            "type": "address"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "from",
-            "type": "address"
-          },
-          {
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "transferFrom",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "minFee",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint8"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "setMinFee",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "numRing",
-            "type": "uint256"
-          },
-          {
-            "name": "ringSize",
-            "type": "uint256"
-          }
-        ],
-        "name": "ComputeSignatureSize",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "owner",
-            "type": "address"
-          }
-        ],
-        "name": "balanceOf",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "data",
-            "type": "bytes"
-          }
-        ],
-        "name": "VerifyRingCT",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "name": "utxos",
-        "outputs": [
-          {
-            "components": [
-              {
-                "name": "yBit",
-                "type": "uint8"
-              },
-              {
-                "name": "x",
-                "type": "uint256"
-              }
-            ],
-            "name": "commitment",
-            "type": "tuple"
-          },
-          {
-            "components": [
-              {
-                "name": "yBit",
-                "type": "uint8"
-              },
-              {
-                "name": "x",
-                "type": "uint256"
-              }
-            ],
-            "name": "pubkey",
-            "type": "tuple"
-          },
-          {
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "components": [
-              {
-                "name": "yBit",
-                "type": "uint8"
-              },
-              {
-                "name": "x",
-                "type": "uint256"
-              }
-            ],
-            "name": "txPub",
-            "type": "tuple"
-          },
-          {
-            "name": "mask",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "data",
-            "type": "bytes"
-          }
-        ],
-        "name": "VerifyRingCTWithMessage",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "symbol",
-        "outputs": [
-          {
-            "name": "",
-            "type": "string"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "transfer",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "owner",
-            "type": "address"
-          },
-          {
-            "name": "spender",
-            "type": "address"
-          }
-        ],
-        "name": "allowance",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "fallback"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_Xs",
-            "type": "uint256[3]"
-          },
-          {
-            "indexed": false,
-            "name": "_YBits",
-            "type": "uint8[3]"
-          },
-          {
-            "indexed": false,
-            "name": "_amount",
-            "type": "uint256[2]"
-          },
-          {
-            "indexed": false,
-            "name": "_index",
-            "type": "uint256"
-          }
-        ],
-        "name": "NewUTXO",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_time",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_utxoIndexs",
-            "type": "uint256[]"
-          }
-        ],
-        "name": "NewTransaction",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_in1",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_in2",
-            "type": "uint256"
-          }
-        ],
-        "name": "InputSum",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_out1",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_out2",
-            "type": "uint256"
-          }
-        ],
-        "name": "OutputSum",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_in1",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_in2",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "yBit",
-            "type": "uint8"
-          }
-        ],
-        "name": "CompressXYInput",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_yBit",
-            "type": "uint8"
-          },
-          {
-            "indexed": false,
-            "name": "_X",
-            "type": "uint256"
-          }
-        ],
-        "name": "CommitmentInput",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_hash",
-            "type": "bytes32"
-          }
-        ],
-        "name": "HashSign",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_numRing",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_ringSize",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_inputLength",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_actualRingProofSize",
-            "type": "uint256"
-          }
-        ],
-        "name": "RingParams",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_raw",
-            "type": "bytes"
-          },
-          {
-            "indexed": false,
-            "name": "_length",
-            "type": "uint256"
-          }
-        ],
-        "name": "Message",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_inputIDs",
-            "type": "uint256[]"
-          }
-        ],
-        "name": "Inputs",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "name": "_input",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "_checked",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "name": "raw",
-            "type": "bytes1[33]"
-          }
-        ],
-        "name": "ParseBytes",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "name": "from",
-            "type": "address"
-          },
-          {
-            "indexed": true,
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "Transfer",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "name": "owner",
-            "type": "address"
-          },
-          {
-            "indexed": true,
-            "name": "spender",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "Approval",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "name": "from",
-            "type": "address"
-          },
-          {
-            "indexed": true,
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "indexed": true,
-            "name": "issuer",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "name": "Fee",
-        "type": "event"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "_pubkeyX",
-            "type": "uint256"
-          },
-          {
-            "name": "_pubkeyY",
-            "type": "uint256"
-          },
-          {
-            "name": "_txPubKeyX",
-            "type": "uint256"
-          },
-          {
-            "name": "_txPubKeyY",
-            "type": "uint256"
-          },
-          {
-            "name": "_mask",
-            "type": "uint256"
-          },
-          {
-            "name": "_amount",
-            "type": "uint256"
-          },
-          {
-            "name": "_encodedMask",
-            "type": "uint256"
-          }
-        ],
-        "name": "deposit",
-        "outputs": [],
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "_inputIDs",
-            "type": "uint256[]"
-          },
-          {
-            "name": "_outputs",
-            "type": "uint256[]"
-          },
-          {
-            "name": "_amounts",
-            "type": "uint256[]"
-          },
-          {
-            "name": "_ringSignature",
-            "type": "bytes"
-          }
-        ],
-        "name": "privateSend",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "_inputIDs",
-            "type": "uint256[]"
-          },
-          {
-            "name": "_outputs",
-            "type": "uint256[]"
-          },
-          {
-            "name": "_withdrawalAmount",
-            "type": "uint256"
-          },
-          {
-            "name": "_amounts",
-            "type": "uint256[2]"
-          },
-          {
-            "name": "_recipient",
-            "type": "address"
-          },
-          {
-            "name": "_ringSignature",
-            "type": "bytes"
-          }
-        ],
-        "name": "withdrawFunds",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "index",
-            "type": "uint256"
-          }
-        ],
-        "name": "getUTXO",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256[3]"
-          },
-          {
-            "name": "",
-            "type": "uint8[3]"
-          },
-          {
-            "name": "",
-            "type": "uint256[2]"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "indexs",
-            "type": "uint256[]"
-          }
-        ],
-        "name": "getUTXOs",
-        "outputs": [
-          {
-            "components": [
-              {
-                "name": "XBits",
-                "type": "uint256[3]"
-              },
-              {
-                "name": "YBits",
-                "type": "uint8[3]"
-              },
-              {
-                "name": "encodeds",
-                "type": "uint256[2]"
-              }
-            ],
-            "name": "",
-            "type": "tuple[]"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "keyImage",
-            "type": "bytes1[]"
-          }
-        ],
-        "name": "isSpent",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "b",
-            "type": "bytes32"
-          }
-        ],
-        "name": "bytesToUint",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "b",
-            "type": "bytes"
-          },
-          {
-            "name": "_start",
-            "type": "uint256"
-          },
-          {
-            "name": "_size",
-            "type": "uint256"
-          }
-        ],
-        "name": "convertBytesToUint",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "b",
-            "type": "bytes1[33]"
-          },
-          {
-            "name": "_start",
-            "type": "uint256"
-          },
-          {
-            "name": "_size",
-            "type": "uint256"
-          }
-        ],
-        "name": "convertBytes33ToUint",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      }
-    ]
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "name": "spender",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_Xs",
+          "type": "uint256[3]"
+        },
+        {
+          "indexed": false,
+          "name": "_YBits",
+          "type": "uint8[3]"
+        },
+        {
+          "indexed": false,
+          "name": "_amount",
+          "type": "uint256[2]"
+        },
+        {
+          "indexed": false,
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewUTXO",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_issuer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "TransactionFee",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "issuer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Fee",
+      "type": "event"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_pubkeyX",
+          "type": "uint256"
+        },
+        {
+          "name": "_pubkeyY",
+          "type": "uint256"
+        },
+        {
+          "name": "_txPubKeyX",
+          "type": "uint256"
+        },
+        {
+          "name": "_txPubKeyY",
+          "type": "uint256"
+        },
+        {
+          "name": "_mask",
+          "type": "uint256"
+        },
+        {
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "name": "_encodedMask",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_inputIDs",
+          "type": "uint256[]"
+        },
+        {
+          "name": "_outputs",
+          "type": "uint256[]"
+        },
+        {
+          "name": "_amounts",
+          "type": "uint256[]"
+        },
+        {
+          "name": "_ringSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "privateSend",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_inputIDs",
+          "type": "uint256[]"
+        },
+        {
+          "name": "_outputs",
+          "type": "uint256[]"
+        },
+        {
+          "name": "_withdrawalAmount",
+          "type": "uint256"
+        },
+        {
+          "name": "_amounts",
+          "type": "uint256[2]"
+        },
+        {
+          "name": "_recipient",
+          "type": "address"
+        },
+        {
+          "name": "_ringSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "withdrawFunds",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getUTXO",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[3]"
+        },
+        {
+          "name": "",
+          "type": "uint8[3]"
+        },
+        {
+          "name": "",
+          "type": "uint256[2]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "indexs",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "getUTXOs",
+      "outputs": [
+        {
+          "components": [
+            {
+              "name": "XBits",
+              "type": "uint256[3]"
+            },
+            {
+              "name": "YBits",
+              "type": "uint8[3]"
+            },
+            {
+              "name": "encodeds",
+              "type": "uint256[2]"
+            }
+          ],
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "keyImage",
+          "type": "bytes1[]"
+        }
+      ],
+      "name": "isSpent",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
 }

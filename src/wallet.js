@@ -24,7 +24,6 @@ import * as Address from './address';
 import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
 import { randomHex } from './crypto';
-import { hexToNumberString } from './common';
 import MLSAG, { keyImage } from './mlsag';
 
 const BigInteger = CONSTANT.BigInteger;
@@ -180,10 +179,11 @@ export default class Wallet extends EventEmitter {
     deposit(amount: number): Promise<any> {
         this.emit('START_DEPOSIT');
         console.log('Making deposit proof ',
-            hexToNumberString(toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(16)));
+            toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10));
+
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(
-                hexToNumberString(toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(16)),
+                toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10),
             );
             this.privacyContract.methods.deposit(...proof)
                 .send({
@@ -322,9 +322,7 @@ export default class Wallet extends EventEmitter {
                  */
                 this.updateWalletState(rawUTXOs, _self.balance, _self.scannedTo);
 
-                console.log('Total Balance : ', Web3.utils.hexToNumberString(
-                    '0x' + _self.balance.toString(16),
-                ));
+                console.log('Total Balance : ', _self.balance.toString(10));
                 resolve({
                     utxos: rawUTXOs,
                     balance: this.decimalBalance(),
@@ -514,6 +512,7 @@ export default class Wallet extends EventEmitter {
                     txs[currentTx].remainAmount,
                 );
 
+                console.log('privatesend proof ', proof);
                 // eslint-disable-next-line no-await-in-loop
                 const res = await this._send(proof);
                 totalResponse.push(res.NewUTXO);
@@ -800,7 +799,6 @@ export default class Wallet extends EventEmitter {
                 message,
             ) === true, 'Wrong signature !!',
         );
-
         return {
             decoys,
             signature: Buffer.from(
@@ -809,7 +807,6 @@ export default class Wallet extends EventEmitter {
                 }${ringSignature.message.toString('hex')
                 }${ringSignature.c1.toString(16, 32)
                 }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 32)).join('')
-                // }${_.map(_.flatten(ringctDecoys), pubkey => pubkey.encode('hex', true)).join('')
                 }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
                 'hex',
             ),
@@ -839,15 +836,15 @@ export default class Wallet extends EventEmitter {
     _genWithdrawProofs(amount: BigInteger, remain: BigInteger): Array<Object> {
         // When withdraw, we set mask = 0, so commitment  = value*H
         const proofOfReceiver = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + amount.toString(16)), null, null, '0',
+            amount.toString(10), null, null, '0',
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + remain.toString(16)),
+            remain.toString(10),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toString(16)), null, null, '0',
+            PRIVACY_FLAT_FEE.toString(10), null, null, '0',
         );
         return [proofOfReceiver, proofOfMe, proofOfFee];
     }
@@ -863,15 +860,15 @@ export default class Wallet extends EventEmitter {
         const receiverStealth = Stealth.fromString(receiver);
 
         const proofOfReceiver = receiverStealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + amount.toString(16)),
+            amount.toString(10),
         );
 
         const proofOfMe = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + remain.toString(16)),
+            remain.toString(10),
         );
 
         const proofOfFee = this.stealth.genTransactionProof(
-            Web3.utils.hexToNumberString('0x' + PRIVACY_FLAT_FEE.toString(16)), null, null, '0',
+            PRIVACY_FLAT_FEE.toString(10), null, null, '0',
         );
 
         return [proofOfReceiver, proofOfMe, proofOfFee];
@@ -903,18 +900,18 @@ export default class Wallet extends EventEmitter {
             // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]
             _.map(_.flatten(decoys), decoy => decoy.index),
             [
-                `0x${outputProofs[1].commitment.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].commitment.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].commitment.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].commitment.toString('hex').substr(-64)}`,
-                `0x${outputProofs[1].onetimeAddress.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].onetimeAddress.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].onetimeAddress.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].onetimeAddress.toString('hex').substr(-64)}`,
-                `0x${outputProofs[1].txPublicKey.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].txPublicKey.toString('hex').substr(-64)}`,
-                `0x${outputProofs[0].txPublicKey.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[0].txPublicKey.toString('hex').substr(-64)}`,
+                `0x${outputProofs[1].commitment.substr(2, 64)}`,
+                `0x${outputProofs[1].commitment.substr(-64)}`,
+                `0x${outputProofs[0].commitment.substr(2, 64)}`,
+                `0x${outputProofs[0].commitment.substr(-64)}`,
+                `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
+                `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
+                `0x${outputProofs[0].onetimeAddress.substr(2, 64)}`,
+                `0x${outputProofs[0].onetimeAddress.substr(-64)}`,
+                `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
+                `0x${outputProofs[1].txPublicKey.substr(-64)}`,
+                `0x${outputProofs[0].txPublicKey.substr(2, 64)}`,
+                `0x${outputProofs[0].txPublicKey.substr(-64)}`,
             ],
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
@@ -941,12 +938,12 @@ export default class Wallet extends EventEmitter {
         return [
             _.map(_.flatten(decoys), decoy => decoy.index),
             [
-                `0x${outputProofs[1].commitment.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].commitment.toString('hex').substr(-64)}`,
-                `0x${outputProofs[1].onetimeAddress.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].onetimeAddress.toString('hex').substr(-64)}`,
-                `0x${outputProofs[1].txPublicKey.toString('hex').substr(2, 64)}`,
-                `0x${outputProofs[1].txPublicKey.toString('hex').substr(-64)}`,
+                `0x${outputProofs[1].commitment.substr(2, 64)}`,
+                `0x${outputProofs[1].commitment.substr(-64)}`,
+                `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
+                `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
+                `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
+                `0x${outputProofs[1].txPublicKey.substr(-64)}`,
             ],
             '0x' + amount.mul(PRIVACY_TOKEN_UNIT).toString(16), // withdaw need multiple with 10^9, convert gwei to wei
             [
@@ -1006,12 +1003,10 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        console.log('this.balance ', this.balance.toString(16));
+        console.log('this.balance ', this.balance.toString(10));
 
         return this.balance ? Web3.utils.fromWei(
-            Web3.utils.hexToNumberString(
-                '0x' + this.balance.mul(PRIVACY_TOKEN_UNIT).toString(16),
-            ),
+            this.balance.mul(PRIVACY_TOKEN_UNIT).toString(10),
         ) : '0';
     }
 

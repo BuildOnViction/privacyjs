@@ -6,6 +6,7 @@ import * as _ from 'lodash';
 import { randomBI } from './crypto';
 
 import { BigInteger } from './constants';
+import UTXO from './utxo';
 
 const EC = require('elliptic').ec;
 
@@ -22,6 +23,9 @@ const baseG = secp256k1.g;
 export const hashToPoint = (longFormPoint: string) => {
     assert(longFormPoint && longFormPoint.length, 'Invalid input public key to hash');
 
+    if (longFormPoint.length % 2 === 1) {
+        longFormPoint = '0' + longFormPoint;
+    }
     let hashed = keccak256(Buffer.from(longFormPoint, 'hex'));
 
     if (hashed.length % 2 === 1) {
@@ -42,7 +46,7 @@ function hashRingCT(message: Buffer) {
         keccak256(
             message,
         ),
-    );
+    ).umod(secp256k1.n);
 }
 
 /**
@@ -102,7 +106,6 @@ export default class MLSAG {
                 pj = Buffer.concat([pj, Buffer.from(utxo.encode('array', true))]);
                 return hashToPoint(utxo.encode('hex', false).slice(2));
             });
-            // TODO compute probability of randomBI > secp256k1
             s.push(_.map(new Array(decoys[i].length), () => randomBI().umod(secp256k1.n)));
         }
 
@@ -126,7 +129,6 @@ export default class MLSAG {
 
         // calculate c[index+1] first, used for calculating R,L next round
         c[j] = hashRingCT(tohash);
-        console.log(`c[${j}] `, c[j].toString(16));
         while (j !== index) {
             tohash = _.cloneDeep(pj);
             for (i = 0; i < numberOfRing; i++) {
@@ -136,8 +138,6 @@ export default class MLSAG {
                 R[i][j] = HP[i][j].mul(s[i][j]).add(
                     I[i].mul(c[j]),
                 ); // Rj = sH + cxH
-                console.log(`L[${i}][${j}] `, L[i][j].encode('hex', true));
-                console.log(`R[${i}][${j}] `, R[i][j].encode('hex', true));
                 tohash = Buffer.concat([tohash,
                     Buffer.from(L[i][j].encode('array', false).slice(1)),
                     Buffer.from(R[i][j].encode('array', false).slice(1)),
@@ -145,7 +145,6 @@ export default class MLSAG {
             }
             j = (j + 1) % ringSize;
             c[j] = hashRingCT(tohash);
-            console.log(`c[${j}] `, c[j].toString(16));
         }
 
         // si = a - c x so a = s + c x
@@ -161,7 +160,6 @@ export default class MLSAG {
             ).umod(
                 secp256k1.n,
             );
-            console.log(s[i][index].toString(16));
         }
 
         return {
@@ -222,14 +220,10 @@ export default class MLSAG {
                     Buffer.from(L[i][j].encode('array', false).slice(1)),
                     Buffer.from(R[i][j].encode('array', false).slice(1)),
                 ]);
-                console.log(`L[${i}][${j}] `, L[i][j].encode('hex', true));
-                console.log(`R[${i}][${j}] `, R[i][j].encode('hex', true));
             }
             j++;
             c[j] = hashRingCT(tohash);
-            console.log('c[j] ', c[j].toString(16));
         }
-        console.log('\n\n');
         return (c[0].toString(16) === c[ringSize].toString(16));
     }
 
@@ -248,7 +242,7 @@ export default class MLSAG {
      * @param {number} index where you put the real spending utxo in each ring
      * @returns {Object} include keyImage list, c[0], s
      */
-    static genCTRing(userPrivateKey: string, decoys: Array<Array<secp256k1.curve.point>>, outputPoints: Array<secp256k1.curve.point>, index: number) {
+    static genCTRing(userPrivateKey: string, decoys: Array<Array<UTXO>>, outputPoints: Array<UTXO>, index: number) {
         // number of spending utxos
         const numberOfRing = decoys.length;
 
@@ -261,13 +255,11 @@ export default class MLSAG {
 
         // prepare sum of output mask
         outputPoints.forEach((utxo) => {
-            if (utxo.decodedMask.length % 2 === 1) {
-                utxo.decodedMask = '0' + utxo.decodedMask;
-            }
             sumOutputMask = sumOutputMask.add(
                 BigInteger.fromHex(utxo.decodedMask),
-            );
+            ).umod(secp256k1.n);
         });
+
         // prepare sum of output commitment
         outputPoints.forEach((utxo) => {
             if (!outputCommitment) {
@@ -299,10 +291,10 @@ export default class MLSAG {
             }
         }
 
-        outputCommitment = outputCommitment ? outputCommitment.neg() : outputCommitment;
+        // outputCommitment = outputCommitment ? outputCommitment.neg() : outputCommitment;
         for (let j = 0; j < ringSize; j++) {
             publicKeys[j] = publicKeys[j].add(
-                outputCommitment,
+                outputCommitment.neg(),
             );
         }
 

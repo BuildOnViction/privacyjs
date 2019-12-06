@@ -61,9 +61,9 @@ const PRIVACY_FLAT_FEE = toBN(
     '10000000',
 ); // 0.01 TOMO
 
-// const PRIVACY_DEPOSIT_FEE = toBN(
-//     '1000000',
-// ); // 0.001 TOMO
+const DEPOSIT_FEE_WEI = toBN(
+    '1000000',
+); // 0.001 TOMO
 
 const PRIVACY_TOKEN_UNIT = toBN(
     '1000000000',
@@ -178,12 +178,13 @@ export default class Wallet extends EventEmitter {
      */
     deposit(amount: number): Promise<any> {
         this.emit('START_DEPOSIT');
-        console.log('Making deposit proof ',
-            toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10));
 
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(
-                toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10),
+                toBN(amount)
+                    .div(PRIVACY_TOKEN_UNIT)
+                    .sub(DEPOSIT_FEE_WEI)
+                    .toString(10),
             );
             this.privacyContract.methods.deposit(...proof)
                 .send({
@@ -249,9 +250,10 @@ export default class Wallet extends EventEmitter {
         let utxoInstance = new UTXO(rawUTXO);
         const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 
-        if (isMine && Web3.utils.toBN(isMine.amount).toString(10) === isMine.amount) {
+        if (isMine
+            && toBN(isMine.amount).toString(10) === isMine.amount
+            && toBN(isMine.amount).cmp(BigInteger.ZERO()) > 0) {
             let res;
-
             try {
                 res = await this.isSpent(utxoInstance);
             } catch (ex) {
@@ -420,14 +422,18 @@ export default class Wallet extends EventEmitter {
         let sentAmount = BigInteger.ZERO();
 
         for (let index = 0; index < txTimes - 1; index++) {
+            // TODO pick MAXIMUM_ALLOWED_RING_NUMBER utxos each round while total > PRIVACY_FLAT_FEE
             const spendingUTXO = utxos.splice(0, MAXIMUM_ALLOWED_RING_NUMBER);
-            const sentAmountThisTx = this._calTotal(spendingUTXO).sub(PRIVACY_FLAT_FEE);
-            txs.push({
-                utxos: spendingUTXO,
-                receivAmount: sentAmountThisTx,
-                remainAmount: BigInteger.ZERO(),
-            });
-            sentAmount = sentAmount.add(sentAmountThisTx);
+            const totalThisRound = this._calTotal(spendingUTXO);
+            if (totalThisRound.cmp(PRIVACY_FLAT_FEE) > 0) {
+                const sentAmountThisTx = this._calTotal(spendingUTXO).sub(PRIVACY_FLAT_FEE);
+                txs.push({
+                    utxos: spendingUTXO,
+                    receivAmount: sentAmountThisTx,
+                    remainAmount: BigInteger.ZERO(),
+                });
+                sentAmount = sentAmount.add(sentAmountThisTx);
+            }
         }
 
         const remain = this._calTotal(utxos);
@@ -512,7 +518,6 @@ export default class Wallet extends EventEmitter {
                     txs[currentTx].remainAmount,
                 );
 
-                console.log('privatesend proof ', proof);
                 // eslint-disable-next-line no-await-in-loop
                 const res = await this._send(proof);
                 totalResponse.push(res.NewUTXO);
@@ -708,23 +713,13 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} RingCT
      */
     async _genRingCT(spendingUTXOs: Array<UTXO>, proofs: Array<Object>) {
-        console.log('Start _genRingct ', new Date());
         const numberOfRing = spendingUTXOs.length;
         const ringSize = UTXO_RING_SIZE; // 11 decoys + one spending
 
-        let t1 = new Date();
-        let t2;
-        console.log('Start _getDecoys ', t1);
-
         let decoys = await this._getDecoys(numberOfRing, _.map(spendingUTXOs, utxo => utxo.index));
-        t2 = new Date();
-
-        console.log('Finish _getDecoys - cost  ', (t2.valueOf() - t1.valueOf()) / 1000);
 
         // random index each time generating ringct
         const index = Math.round(Math.random() * (ringSize - 1));
-
-        console.log('Start ringct ', t1 = new Date());
 
         // TODO need rewrite - not optimized
         const pubkeys = []; // public keys of utxo
@@ -762,10 +757,14 @@ export default class Wallet extends EventEmitter {
             this.addresses.privSpendKey,
             decoys,
             _.map(proofs, (proof) => {
+                // console.log(
+                //     proof,
+                // );
                 const lfCommitment = toPoint(proof.commitment);
+                // console.log('lf Commitment ', lfCommitment);
                 message = Buffer.concat([
                     message,
-                    Buffer.from(proof.onetimeAddress.slice(-64), 'hex'),
+                    Buffer.from(proof.onetimeAddress.slice(-128), 'hex'),
                 ]);
                 return {
                     lfCommitment,
@@ -786,9 +785,6 @@ export default class Wallet extends EventEmitter {
             index,
             message,
         );
-
-        t2 = new Date();
-        console.log('Finish ringct - cost  ', (t2.valueOf() - t1.valueOf()) / 1000);
 
         assert(
             MLSAG.verifyMul(

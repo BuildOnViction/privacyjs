@@ -1,3 +1,4 @@
+import toBN from 'number-to-bn';
 import {
     encode, decode, hmacSha256, randomBI,
 } from './crypto';
@@ -97,8 +98,7 @@ class Stealth {
         const receiverPubViewKey = toPoint(pubViewKey);
         const receiverPubSpendKey = toPoint(pubSpendKey);
 
-        const hexAmount = common.numberToHex(amount.toString());
-        // console.log('hexAmount ', hexAmount);
+        const hexAmount = toBN(amount.toString()).toString(16);
         // const randomHex = 'f042298df7ea67d6bd8cf8e32537f23656ae36d3d9e04955f86997addb2dc4ee';
 
         const blindingFactor = randomBI();
@@ -198,7 +198,7 @@ class Stealth {
         }
 
         const returnValue = {
-            privKey: common.bintohex(e.toBuffer(32)),
+            privKey: e.toString(16),
             pubKey: E.encode('hex', true),
         };
         const aesKey = hmacSha256(Buffer.from(ECDHSharedSerect.encode('array', false)));

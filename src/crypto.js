@@ -63,6 +63,7 @@ export function randomHex(n) {
         result = '0' + result;
     }
 
+    if (n % 2 === 1) n++;
     return BN.fromHex(result).umod(secp256k1.n).toString(16, n);
 }
 

@@ -10,7 +10,8 @@ export const LONG_FORM_CURVE_POINT = 134;
 export const DEFAULT_GAS_PRICE = '250000000';
 export const DEFAULT_GAS = '20000000';
 
-BN.fromHex = hexstring => new BN(hexstring, 16);
+BN.fromHex = hexstring => new BN(hexstring.toString(), 16);
+
 BN.fromBuffer = buffer => new BN(buffer.toString('hex'), 16);
 BN.TWO = () => new BN('10', 2);
 BN.ZERO = () => new BN('0', 2);

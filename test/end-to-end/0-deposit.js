@@ -4,12 +4,10 @@
  */
 
 import chai from 'chai';
-import * as _ from 'lodash';
 import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
-import {toBN} from "../../src/common";
 
 const { expect } = chai;
 chai.should();
@@ -26,7 +24,7 @@ const trimPrefix = (str, char) => {
 };
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 30; count++) {
+    for (let count = 0; count < 15; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {

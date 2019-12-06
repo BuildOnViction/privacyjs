@@ -67,28 +67,28 @@ describe('#unittest #ringct #mlsag', () => {
                 hexToNumberString(totalSpending.toString(16)),
             );
 
-            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => (new UTXO(ut)).lfStealth);
+            const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
             // console.log('inputUTXOS ', inputUTXOS);
             // console.log('proof.commitment ', proof.commitment);
             // ct ring
-            // const {
-            //     privKey,
-            //     publicKeys,
-            // } = MLSAG.genCTRing(
-            //     SENDER_WALLET.privateKey,
-            //     [inputUTXOS],
-            //     [{
-            //         lfCommitment: toPoint(proof.commitment),
-            //         decodedMask: proof.mask,
-            //     }],
-            //     index,
-            // );
+            const {
+                privKey,
+                publicKeys,
+            } = MLSAG.genCTRing(
+                SENDER_WALLET.privateKey,
+                [inputUTXOS],
+                [{
+                    lfCommitment: toPoint(proof.commitment),
+                    decodedMask: proof.mask,
+                }],
+                index,
+            );
 
             // ring-signature of utxos
             const signature = MLSAG.mulSign(
                 [
-                    BigInteger.fromHex(ins.privKey)],
-                [inputUTXOS],
+                    BigInteger.fromHex(ins.privKey), privKey],
+                [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
                 index,
             );
             expect(signature.I).not.to.equal(null);
@@ -98,7 +98,7 @@ describe('#unittest #ringct #mlsag', () => {
 
             expect(
                 MLSAG.verifyMul(
-                    [inputUTXOS],
+                    [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
                     signature.I,
                     signature.c1,
                     signature.s,

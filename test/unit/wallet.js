@@ -108,6 +108,7 @@ describe('#unittest #wallet', () => {
             decodedProof = wallet1.isMine(
                 txPubkeyPoint.encode('hex', false), stealthPoint.encode('hex', false), proof[5].slice(2),
             );
+
             expect(decodedProof).to.equal(null);
 
             done();

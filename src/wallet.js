@@ -24,6 +24,8 @@ import * as Address from './address';
 import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
 import MLSAG, { keyImage } from './mlsag';
+import BulletProof from './bullet_proof';
+import randomBI from './crypto';
 
 const BigInteger = CONSTANT.BigInteger;
 
@@ -746,7 +748,6 @@ export default class Wallet extends EventEmitter {
         // random index each time generating ringct
         const index = Math.round(Math.random() * (ringSize - 1));
 
-        // TODO need rewrite - not optimized
         const pubkeys = []; // public keys of utxo
 
         decoys = _.map(decoys, (decoyRing, counter) => {
@@ -840,34 +841,38 @@ export default class Wallet extends EventEmitter {
      * we can choose what kind of range proof to use here
      * two supported are bulletproof and aggregate schnorr
      * @param {BigInteger} amount
-     * @returns {Buffer} Proof
+     * @returns {Object} Proof
      */
     _genRangeProof(amount: BigInteger): Buffer {
-        return amount.toBuffer();
-    }
+        let result = BulletProof.prove([
+            amount,
+        ], [
+            randomBI(),
+        ]);
 
-    /**
-     * Generate utxos for withdrawing transaction, one for sender (even balance = 0), one for receiver (mask = 0)
-     * TODO refactoring
-     * @param {Array<UTXO>} spendingUTXOs spending utxos
-     * @param {BigInteger} amount sending amount
-     * @param {boolean} [isSpentAll]
-     * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
-     */
-    _genWithdrawProofs(amount: BigInteger, remain: BigInteger): Array<Object> {
-        // When withdraw, we set mask = 0, so commitment  = value*H
-        const proofOfReceiver = this.stealth.genTransactionProof(
-            amount.toString(10), null, null, '0',
-        );
+        result = BulletProof.proofToHex(result);
 
-        const proofOfMe = this.stealth.genTransactionProof(
-            remain.toString(10),
-        );
-
-        const proofOfFee = this.stealth.genTransactionProof(
-            PRIVACY_FLAT_FEE.toString(10), null, null, '0',
-        );
-        return [proofOfReceiver, proofOfMe, proofOfFee];
+        return [
+            result.Comms,
+            result.A,
+            result.S,
+            result.T1,
+            result.T2,
+            result.Tau,
+            result.Th,
+            result.Mu,
+            [
+                result.IPP.L,
+                result.IPP.R,
+                result.IPP.A,
+                result.IPP.B,
+                result.IPP.Challenges,
+            ],
+            // result,
+            result.Cy,
+            result.Cz,
+            result.Cx,
+        ];
     }
 
     /**
@@ -875,14 +880,23 @@ export default class Wallet extends EventEmitter {
      * @param {string} receiver privacy address of receiver
      * @param {BigInteger} amount sending amount
      * @param {BigInteger} remain remaining
+     * @param {boolean} isWithdraw
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
-    _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger): Array<Object> {
+    _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger, isWithdraw: boolean): Array<Object> {
         const receiverStealth = Stealth.fromString(receiver);
+        let proofOfReceiver;
 
-        const proofOfReceiver = receiverStealth.genTransactionProof(
-            amount.toString(10),
-        );
+        if (isWithdraw) {
+            // When withdraw, we set mask = 0, so commitment  = value*H
+            proofOfReceiver = this.stealth.genTransactionProof(
+                amount.toString(10), null, null, '0',
+            );
+        } else {
+            proofOfReceiver = receiverStealth.genTransactionProof(
+                amount.toString(10),
+            );
+        }
 
         const proofOfMe = this.stealth.genTransactionProof(
             remain.toString(10),
@@ -930,6 +944,10 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
             ],
             signature,
+            [
+                this._genRangeProof(remain),
+                this._genRangeProof(amount),
+            ],
         ];
     }
 
@@ -942,7 +960,7 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} proof output
      */
     async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
-        const outputProofs = this._genWithdrawProofs(amount, remain);
+        const outputProofs = this._genOutputProofs(receiver, amount, remain, true);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
         return [
@@ -962,6 +980,10 @@ export default class Wallet extends EventEmitter {
             ],
             receiver,
             signature,
+            [
+                this._genRangeProof(remain),
+                this._genRangeProof(amount),
+            ],
         ];
     }
 

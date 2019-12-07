@@ -443,26 +443,26 @@ export default class BulletProof {
         const MRPResult = {
             Ipp: {},
         };
-        MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', false).slice(2));
-        MRPResult.A = proof.A.encode('hex', false).slice(2);
-        MRPResult.S = proof.S.encode('hex', false).slice(2);
+        MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', true).slice(2));
+        MRPResult.A = proof.A.encode('hex', true).slice(2);
+        MRPResult.S = proof.S.encode('hex', true).slice(2);
         MRPResult.cy = proof.cy.toString(16);
         MRPResult.cz = proof.cz.toString(16);
-        MRPResult.T1 = proof.T1.encode('hex', false).slice(2);
-        MRPResult.T2 = proof.T2.encode('hex', false).slice(2);
+        MRPResult.T1 = proof.T1.encode('hex', true).slice(2);
+        MRPResult.T2 = proof.T2.encode('hex', true).slice(2);
         MRPResult.cx = proof.cx.toString(16);
         MRPResult.Th = proof.Th.toString(16);
         MRPResult.Tau = proof.Tau.toString(16);
         MRPResult.Mu = proof.Mu.toString(16);
         MRPResult.Ipp.L = _.map(proof.Ipp.L, (point) => {
-            const pointInHex = point.encode('hex', false).slice(2);
+            const pointInHex = point.encode('hex', true).slice(2);
             return {
                 x: pointInHex.slice(0, 64),
                 y: pointInHex.slice(-64),
             };
         });
         MRPResult.Ipp.R = _.map(proof.Ipp.R, (point) => {
-            const pointInHex = point.encode('hex', false).slice(2);
+            const pointInHex = point.encode('hex', true).slice(2);
             return {
                 x: pointInHex.slice(0, 64),
                 y: pointInHex.slice(-64),

@@ -74,92 +74,6 @@ describe('#ete #wallet', () => {
         });
     });
 
-    // Testing the verifier separately, should happend on devnet only
-    // because inside wallet generation proof, we integrated this
-    // describe('#mlsag', () => {
-    //     it('Should genCT return correct ring (check on precompiled contract) from mlsag', (done) => {
-    //         const sender = new Stealth({
-    //             ...generateKeys(WALLETS[2].privateKey),
-    //         });
-    //         const index = 3;
-
-    //         MLSAG_DATA.NOISING_UTXOS[0].splice(index, 0, MLSAG_DATA.SPENDING_UTXOS[0]);
-
-    //         let totalSpending = BigInteger.ZERO;
-    //         const ins = new UTXO(MLSAG_DATA.SPENDING_UTXOS[0]);
-    //         ins.checkOwnership(WALLETS[2].privateKey);
-
-    //         totalSpending = totalSpending.add(
-    //             toBN(ins.decodedAmount),
-    //         );
-    //         const proof = sender.genTransactionProof(
-    //             Web3.utils.hexToNumberString(`0x${totalSpending.toString(16)}`),
-    //         );
-
-    //         const inputUTXOS = _.map(MLSAG_DATA.NOISING_UTXOS[0], ut => new UTXO(ut));
-
-    //         // ct ring
-    //         const {
-    //             privKey,
-    //             publicKeys,
-    //         } = MLSAG.genCTRing(
-    //             WALLETS[2].privateKey,
-    //             [inputUTXOS],
-    //             [{
-    //                 lfCommitment: ecurve.Point.decodeFrom(ecparams, proof.commitment),
-    //                 decodedMask: proof.mask,
-    //             }],
-    //             index,
-    //         );
-
-    //         // ring-signature of utxos
-    //         const signature = MLSAG.mulSign(
-    //             [
-    //                 BigInteger.fromHex(ins.privKey), privKey],
-    //             [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-    //             index,
-    //         );
-    //         expect(signature.I).not.to.equal(null);
-    //         expect(signature.c1).not.to.equal(null);
-    //         expect(signature.s).not.to.equal(null);
-
-
-    //         expect(
-    //             MLSAG.verifyMul(
-    //                 [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],
-    //                 signature.I,
-    //                 signature.c1,
-    //                 signature.s,
-    //             ),
-    //         ).to.be.equal(true);
-
-    //         mlsagPrecompiledContract.methods.VerifyRingCT(
-    //             Buffer.from(
-    //                 `${numberToBN(1 + 1).toString(16, 16)
-    //                 }${numberToBN(MLSAG_DATA.NOISING_UTXOS[0].length).toString(16, 16)
-    //                 }${signature.message.toString('hex')
-    //                 }${signature.c1.toString(16, 32)
-    //                 }${_.map(_.flatten(signature.s), element => element.toString(16, 32)).join('')
-    //                 }${_.map(_.flatten([_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys]), pubkey => pubkey.getEncoded(true).toString('hex')).join('')
-    //                 }${_.map(_.flatten(signature.I), element => element.getEncoded(true).toString('hex')).join('')}`,
-    //                 'hex',
-    //             ),
-    //         )
-    //             .send({
-    //                 from: SENDER_WALLET.address,
-    //             })
-    //             .then((receipt) => {
-    //                 console.log(receipt);
-    //                 done();
-    //             })
-    //             .catch((error) => {
-    //                 console.log(error);
-    //                 done(error);
-    //             });
-
-    //     });
-    // });
-
     describe('#send', () => {
         // beforeEach(() => {
         sendWallet = new Wallet(WALLETS[1].privateKey, {
@@ -223,7 +137,7 @@ describe('#ete #wallet', () => {
             }
         });
 
-        for (let index = 0; index < 20; index++) {
+        for (let index = 0; index < 5; index++) {
             it('Should able to send 1.5 TOMO', (done) => {
                 const receiver = generateKeys(WALLETS[1].privateKey);
                 try {
@@ -344,24 +258,7 @@ describe('#ete #wallet', () => {
                 done(ex);
             }
         });
-
-        /**
-         * Those two case can't use wallet because of validating progress
-         * Should create proof use libs and send to sc by web3js
-         */
-        // it('Should not able to double spent', (done) => {
-        //     done(new Error('Not implemented yet'));
-        // });
-
-        // it('Should not able to send with negative money commitment', (done) => {
-        //     /**
-        //      * we can't use wallet apis for checking this case because checking balance
-        //      * instead we construct everything outside with negative commitment
-        //      */
-        //     done(new Error('Not implemented yet'));
-        // });
     });
-
 
     describe('#withdraw', () => {
         const withdrawWallet = new Wallet(WALLETS[1].privateKey, {
@@ -370,26 +267,28 @@ describe('#ete #wallet', () => {
             ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
         }, WALLETS[1].address);
 
-        it('Should able to send for withdraw', (done) => {
-            const receiver = WALLETS[1].address;
-            try {
-                withdrawWallet.withdraw(receiver, '10000000000').then((txs) => {
-                    _.each(txs, (NewUTXO) => {
-                        expect(NewUTXO).to.not.equal(undefined);
-                        const returnUTXO = NewUTXO.returnValues;
-                        const remainUTXOIns = new UTXO(returnUTXO);
+        for (let index = 0; index < 5; index++) {
+            it('Should able to withdraw', (done) => {
+                const receiver = WALLETS[1].address;
+                try {
+                    withdrawWallet.withdraw(receiver, '1000000000000000000').then((txs) => {
+                        _.each(txs, (NewUTXO) => {
+                            expect(NewUTXO).to.not.equal(undefined);
+                            const returnUTXO = NewUTXO.returnValues;
+                            const remainUTXOIns = new UTXO(returnUTXO);
 
-                        expect(remainUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
+                            expect(remainUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
+                        });
+
+                        done();
+                    }).catch((err) => {
+                        done(err);
                     });
-
-                    done();
-                }).catch((err) => {
-                    done(err);
-                });
-            } catch (ex) {
-                done(ex);
-            }
-        });
+                } catch (ex) {
+                    done(ex);
+                }
+            });
+        }
 
         it('Should able to withdraw with needed utxos > ring_number', (done) => {
             /**

@@ -23,14 +23,13 @@ import * as CONSTANT from './constants';
 import * as Address from './address';
 import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
-import { randomHex } from './crypto';
 import MLSAG, { keyImage } from './mlsag';
 
 const BigInteger = CONSTANT.BigInteger;
 
-// const EC = require('elliptic').ec;
+const EC = require('elliptic').ec;
 
-// const secp256k1 = new EC('secp256k1');
+const secp256k1 = new EC('secp256k1');
 
 type SmartContractOpts = {
     RPC_END_POINT: string,
@@ -282,34 +281,51 @@ export default class Wallet extends EventEmitter {
             _self.emit('START_SCANNING');
             const index = fromIndex || _self.scannedTo;
             let scannedTo = 0;
-            let utxo = {};
             let balance = BigInteger.ZERO();
             // const utxos = [];
             const rawUTXOs = [];
 
             async function getUTXO(i) {
+                let utxos = [];
                 try {
-                    utxo = await _self.getUTXO(i);
+                    utxos = await _self.getUTXOs(_.range(i, i + 49));
                 } catch (ex) {
                     scannedTo = i - 1;
+                    // return false;
+                }
+
+                if (!utxos.length) {
                     return false;
                 }
 
-                const usableAmount = await _self._verifyUsableUTXO(utxo);
+                for (let ct = 0; ct < utxos.length; ct++) {
+                    const utxo = utxos[ct];
 
-                if (usableAmount) {
-                    balance = balance.add(
-                        toBN(usableAmount),
-                    );
-                    // utxos.push(utxoInstance);
-                    // for storing in cache
-                    rawUTXOs.push({
-                        ...utxo,
-                        decodedAmount: usableAmount, // we don't need to double check again this value, TODO considering add decoded mask
-                    });
+                    // console.log('...Scanned to ', utxo[3]);
+
+                    // when meet the flag one, return
+                    if (utxo[0][0] === '0') {
+                        scannedTo = utxo[3] - 1;
+                        return;
+                    }
+
+                    // eslint-disable-next-line no-await-in-loop
+                    const usableAmount = await _self._verifyUsableUTXO(utxo);
+
+                    if (usableAmount) {
+                        balance = balance.add(
+                            toBN(usableAmount),
+                        );
+
+                        // for storing in cache
+                        rawUTXOs.push({
+                            ...utxo,
+                            decodedAmount: usableAmount, // we don't need to double check again this value, TODO considering add decoded mask
+                        });
+                    }
                 }
 
-                await getUTXO(i + 1);
+                await getUTXO(i + 50);
             }
 
             getUTXO(index).then(() => {
@@ -526,10 +542,15 @@ export default class Wallet extends EventEmitter {
             this.emit('FINISH_SENDING');
         } catch (ex) {
             this.emit('STOP_SENDING', ex);
+            this.utxos.splice(0, totalSpent - txs.length);
+            this.balance = this._calTotal(this.utxos);
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
+
             throw ex;
         }
 
         // we don't add the response here because of listening to SC-event already
+        console.log('totalSpent ', totalSpent);
         this.utxos.splice(0, totalSpent);
         this.balance = this._calTotal(this.utxos);
         this.updateWalletState(this.utxos, this.balance, this.scannedTo);
@@ -545,7 +566,7 @@ export default class Wallet extends EventEmitter {
      * @returns {object} new utxos and proof
      */
     _send(proof: Array<any>): Promise<any> {
-        const randomPrivatekey = randomHex();
+        const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
         const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
         const web3 = new Web3(provider);
         const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
@@ -627,6 +648,10 @@ export default class Wallet extends EventEmitter {
             this.emit('FINISH_WITHDRAW');
         } catch (ex) {
             this.emit('STOP_WITHDRAW', ex);
+            this.utxos.splice(0, totalSpent - txs.length);
+            this.balance = this._calTotal(this.utxos);
+            this.updateWalletState(this.utxos, this.balance, this.scannedTo);
+
             throw ex;
         }
 
@@ -643,7 +668,7 @@ export default class Wallet extends EventEmitter {
      * @returns {object} new utxos and proof
      */
     _withdraw(proof: Array<any>): Promise<any> {
-        const randomPrivatekey = randomHex();
+        const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
         const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
         const web3 = new Web3(provider);
         const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
@@ -878,19 +903,8 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} proof output
      */
     async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
-        let t1 = new Date();
-        console.log('start genoutput ', t1);
-
         const outputProofs = this._genOutputProofs(receiver, amount, remain);
-
-        const t2 = new Date();
-        console.log('end genoutput - cost ', (t2.valueOf() - t1.valueOf()) / 1000);
-
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
-
-        t1 = new Date();
-
-        console.log('total _genRingCT - cost ', (t1.valueOf() - t2.valueOf()) / 1000);
 
         return [
             // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]
@@ -999,8 +1013,6 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        console.log('this.balance ', this.balance.toString(10));
-
         return this.balance ? Web3.utils.fromWei(
             this.balance.mul(PRIVACY_TOKEN_UNIT).toString(10),
         ) : '0';
@@ -1020,7 +1032,8 @@ export default class Wallet extends EventEmitter {
             const utxoInstance = new UTXO(evt.returnValues);
             const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 
-            if (isMine && isMine.amount) {
+            if (isMine && isMine.amount && isMine.amount.toString() !== '0') {
+                console.log(isMine);
                 const rawutxo = {
                     ...evt.returnValues,
                     decodedAmount: isMine.amount,

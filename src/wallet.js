@@ -826,9 +826,9 @@ export default class Wallet extends EventEmitter {
             signature: Buffer.from(
                 `${toBN(numberOfRing + 1).toString(16, 16)
                 }${toBN(ringSize).toString(16, 16)
-                }${ringSignature.message.toString('hex')
-                }${ringSignature.c1.toString(16, 32)
-                }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 32)).join('')
+                }${ringSignature.message.toString('hex', 64)
+                }${ringSignature.c1.toString(16, 64)
+                }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 64)).join('')
                 }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
                 'hex',
             ),
@@ -840,39 +840,42 @@ export default class Wallet extends EventEmitter {
      * in tomo system, the range from 0 to 2^64
      * we can choose what kind of range proof to use here
      * two supported are bulletproof and aggregate schnorr
+     * @param {BigInteger} remain
      * @param {BigInteger} amount
      * @returns {Object} Proof
      */
-    _genRangeProof(amount: BigInteger): Buffer {
+    _genRangeProof(remain: BigInteger, amount: BigInteger): Buffer {
         let result = BulletProof.prove([
+            remain,
             amount,
         ], [
+            randomBI(),
             randomBI(),
         ]);
 
         result = BulletProof.proofToHex(result);
 
-        return [
-            result.Comms,
-            result.A,
-            result.S,
-            result.T1,
-            result.T2,
-            result.Tau,
-            result.Th,
-            result.Mu,
-            [
+        return Buffer.from(
+            result.Comms
+            + result.A
+            + result.S
+            + result.T1
+            + result.T2
+            + result.Tau
+            + result.Th
+            + result.Mu
+            + [
                 result.IPP.L,
                 result.IPP.R,
                 result.IPP.A,
                 result.IPP.B,
                 result.IPP.Challenges,
-            ],
-            // result,
-            result.Cy,
-            result.Cz,
-            result.Cx,
-        ];
+            ].join('')
+            + result.Cy
+            + result.Cz
+            + result.Cx,
+            'hex',
+        );
     }
 
     /**
@@ -944,10 +947,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
             ],
             signature,
-            [
-                this._genRangeProof(remain),
-                this._genRangeProof(amount),
-            ],
+            this._genRangeProof(remain, amount),
         ];
     }
 
@@ -980,10 +980,7 @@ export default class Wallet extends EventEmitter {
             ],
             receiver,
             signature,
-            [
-                this._genRangeProof(remain),
-                this._genRangeProof(amount),
-            ],
+            this._genRangeProof(remain, amount),
         ];
     }
 

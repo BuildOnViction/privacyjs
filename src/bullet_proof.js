@@ -443,35 +443,23 @@ export default class BulletProof {
         const MRPResult = {
             Ipp: {},
         };
-        MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', true).slice(2));
-        MRPResult.A = proof.A.encode('hex', true).slice(2);
-        MRPResult.S = proof.S.encode('hex', true).slice(2);
-        MRPResult.cy = proof.cy.toString(16);
-        MRPResult.cz = proof.cz.toString(16);
-        MRPResult.T1 = proof.T1.encode('hex', true).slice(2);
-        MRPResult.T2 = proof.T2.encode('hex', true).slice(2);
-        MRPResult.cx = proof.cx.toString(16);
-        MRPResult.Th = proof.Th.toString(16);
-        MRPResult.Tau = proof.Tau.toString(16);
-        MRPResult.Mu = proof.Mu.toString(16);
-        MRPResult.Ipp.L = _.map(proof.Ipp.L, (point) => {
-            const pointInHex = point.encode('hex', true).slice(2);
-            return {
-                x: pointInHex.slice(0, 64),
-                y: pointInHex.slice(-64),
-            };
-        });
-        MRPResult.Ipp.R = _.map(proof.Ipp.R, (point) => {
-            const pointInHex = point.encode('hex', true).slice(2);
-            return {
-                x: pointInHex.slice(0, 64),
-                y: pointInHex.slice(-64),
-            };
-        });
+        MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', true)).join('');
+        MRPResult.A = proof.A.encode('hex', true);
+        MRPResult.S = proof.S.encode('hex', true);
+        MRPResult.cy = proof.cy.toString(16, 64);
+        MRPResult.cz = proof.cz.toString(16, 64);
+        MRPResult.T1 = proof.T1.encode('hex', true);
+        MRPResult.T2 = proof.T2.encode('hex', true);
+        MRPResult.cx = proof.cx.toString(16, 64);
+        MRPResult.Th = proof.Th.toString(16, 64);
+        MRPResult.Tau = proof.Tau.toString(16, 64);
+        MRPResult.Mu = proof.Mu.toString(16, 64);
+        MRPResult.Ipp.L = _.map(proof.Ipp.L, point => point.encode('hex', true)).join('');
+        MRPResult.Ipp.R = _.map(proof.Ipp.R, point => point.encode('hex', true).join(''));
 
-        MRPResult.Ipp.A = proof.Ipp.A.toString(16);
-        MRPResult.Ipp.B = proof.Ipp.B.toString(16);
-        MRPResult.Ipp.Challenges = _.map(proof.Ipp.Challenges, bi => bi.toString(16));
+        MRPResult.Ipp.A = proof.Ipp.A.toString(16, 64);
+        MRPResult.Ipp.B = proof.Ipp.B.toString(16, 64);
+        MRPResult.Ipp.Challenges = _.map(proof.Ipp.Challenges, bi => bi.toString(16, 64)).join('');
 
         return MRPResult;
     }

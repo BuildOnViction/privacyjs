@@ -25,7 +25,7 @@ import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
 import MLSAG, { keyImage } from './mlsag';
 import BulletProof from './bullet_proof';
-import randomBI from './crypto';
+import { randomBI } from './crypto';
 
 const BigInteger = CONSTANT.BigInteger;
 
@@ -865,11 +865,11 @@ export default class Wallet extends EventEmitter {
             + result.Th
             + result.Mu
             + [
-                result.IPP.L,
-                result.IPP.R,
-                result.IPP.A,
-                result.IPP.B,
-                result.IPP.Challenges,
+                result.Ipp.L,
+                result.Ipp.R,
+                result.Ipp.A,
+                result.Ipp.B,
+                result.Ipp.Challenges,
             ].join('')
             + result.Cy
             + result.Cz
@@ -887,7 +887,7 @@ export default class Wallet extends EventEmitter {
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
     _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger, isWithdraw: boolean): Array<Object> {
-        const receiverStealth = Stealth.fromString(receiver);
+        let receiverStealth;
         let proofOfReceiver;
 
         if (isWithdraw) {
@@ -896,6 +896,7 @@ export default class Wallet extends EventEmitter {
                 amount.toString(10), null, null, '0',
             );
         } else {
+            receiverStealth = Stealth.fromString(receiver);
             proofOfReceiver = receiverStealth.genTransactionProof(
                 amount.toString(10),
             );

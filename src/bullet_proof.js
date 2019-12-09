@@ -455,7 +455,7 @@ export default class BulletProof {
         MRPResult.Tau = proof.Tau.toString(16, 64);
         MRPResult.Mu = proof.Mu.toString(16, 64);
         MRPResult.Ipp.L = _.map(proof.Ipp.L, point => point.encode('hex', true)).join('');
-        MRPResult.Ipp.R = _.map(proof.Ipp.R, point => point.encode('hex', true).join(''));
+        MRPResult.Ipp.R = _.map(proof.Ipp.R, point => point.encode('hex', true)).join('');
 
         MRPResult.Ipp.A = proof.Ipp.A.toString(16, 64);
         MRPResult.Ipp.B = proof.Ipp.B.toString(16, 64);

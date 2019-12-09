@@ -826,7 +826,7 @@ export default class Wallet extends EventEmitter {
             signature: Buffer.from(
                 `${toBN(numberOfRing + 1).toString(16, 16)
                 }${toBN(ringSize).toString(16, 16)
-                }${ringSignature.message.toString('hex', 64)
+                }${ringSignature.message.toString('hex')
                 }${ringSignature.c1.toString(16, 64)
                 }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 64)).join('')
                 }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
@@ -948,7 +948,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
             ],
             signature,
-            this._genRangeProof(remain, amount),
+            // this._genRangeProof(remain, amount),
         ];
     }
 
@@ -981,7 +981,7 @@ export default class Wallet extends EventEmitter {
             ],
             receiver,
             signature,
-            this._genRangeProof(remain, amount),
+            // this._genRangeProof(remain, amount),
         ];
     }
 

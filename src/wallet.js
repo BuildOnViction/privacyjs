@@ -856,7 +856,8 @@ export default class Wallet extends EventEmitter {
         result = BulletProof.proofToHex(result);
 
         return Buffer.from(
-            result.Comms
+            toBN(result.Comms.length).toString(16, 8)
+            + result.Comms
             + result.A
             + result.S
             + result.T1
@@ -948,7 +949,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
             ],
             signature,
-            // this._genRangeProof(remain, amount),
+            this._genRangeProof(remain, amount),
         ];
     }
 
@@ -981,7 +982,7 @@ export default class Wallet extends EventEmitter {
             ],
             receiver,
             signature,
-            // this._genRangeProof(remain, amount),
+            this._genRangeProof(remain, amount),
         ];
     }
 

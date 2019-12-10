@@ -276,10 +276,7 @@ export default class Wallet extends EventEmitter {
                 _.map(rawutxos, utxo => new UTXO(utxo)),
             );
 
-            return _.filter(rawutxos, (utxo, index) => {
-                utxo.isSpent = res[parseInt(index)];
-                return res[parseInt(index)] === false;
-            });
+            return _.filter(rawutxos, (utxo, index) => res[parseInt(index)] === false);
         } catch (ex) {
             return [];
         }
@@ -551,7 +548,7 @@ export default class Wallet extends EventEmitter {
         const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
 
         const totalResponse = [];
-        const totalSpent = utxoInstances.length;
+        const totalSpent = utxos.length;
 
         let currentTx = 0;
         try {
@@ -581,7 +578,9 @@ export default class Wallet extends EventEmitter {
 
         // we don't add the response here because of listening to SC-event already
         console.log('totalSpent ', totalSpent);
+
         this.utxos.splice(0, totalSpent);
+
         this.balance = this._calTotal(this.utxos);
         this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
@@ -1127,13 +1126,14 @@ export default class Wallet extends EventEmitter {
                     ...evt.returnValues,
                     decodedAmount: isMine.amount,
                 };
+
                 this.utxos.push(rawutxo);
 
                 this.balance = this._calTotal(this.utxos);
 
                 this.updateWalletState(this.utxos, this.balance, parseInt(rawutxo._index));
 
-                this.emit('NEW_UTXO');
+                this.emit('NEW_UTXO', rawutxo);
             }
         });
     }

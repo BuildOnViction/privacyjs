@@ -442,6 +442,7 @@ export default class BulletProof {
     static proofToHex(proof) {
         const MRPResult = {
             Ipp: {},
+            CommsLength: proof.Comms.length,
         };
         MRPResult.Comms = _.map(proof.Comms, v => v.encode('hex', true)).join('');
         MRPResult.A = proof.A.encode('hex', true);

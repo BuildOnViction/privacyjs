@@ -856,7 +856,7 @@ export default class Wallet extends EventEmitter {
         result = BulletProof.proofToHex(result);
 
         return Buffer.from(
-            toBN(result.Comms.length).toString(16, 8)
+            toBN(result.CommsLength).toString(16, 8)
             + result.Comms
             + result.A
             + result.S
@@ -872,9 +872,9 @@ export default class Wallet extends EventEmitter {
                 result.Ipp.B,
                 result.Ipp.Challenges,
             ].join('')
-            + result.Cy
-            + result.Cz
-            + result.Cx,
+            + result.cy
+            + result.cz
+            + result.cx,
             'hex',
         );
     }

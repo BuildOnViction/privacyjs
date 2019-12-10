@@ -1,6 +1,6 @@
 {
   "RPC_END_POINT": "http://206.189.39.242:8545",
-  "PRIVACY_SMART_CONTRACT_ADDRESS": "0x52D994b7091b70C2535BfB2EA4ef0b0383bB4F3d",
+  "PRIVACY_SMART_CONTRACT_ADDRESS": "0xFc966446cdbd0727e6433e7fB485b216965AbF24",
   "RINGCT_PRECOMPILED_CONTRACT": {
       "PRIVATE_KEY": "0x77291ba86Dfdd3E7DB1f2A70dCe7A32157bB1adF",
       "ADDRESS": "0x4639C8079db95123cfA6395A273f569e18B9F846",
@@ -276,6 +276,25 @@
       "constant": false,
       "inputs": [
         {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "CheckRangeProof",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
           "name": "numRing",
           "type": "uint256"
         },
@@ -429,6 +448,25 @@
       ],
       "payable": false,
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "VerifyRangeProof",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -653,6 +691,10 @@
         {
           "name": "_ringSignature",
           "type": "bytes"
+        },
+        {
+          "name": "_bp",
+          "type": "bytes"
         }
       ],
       "name": "privateSend",
@@ -686,6 +728,10 @@
         },
         {
           "name": "_ringSignature",
+          "type": "bytes"
+        },
+        {
+          "name": "_bp",
           "type": "bytes"
         }
       ],

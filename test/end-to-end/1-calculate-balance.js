@@ -18,7 +18,6 @@ describe('#ete #balance', () => {
     it('#scanUTXOs and sum balance', (done) => {
         // scan all UTXO
         scanUTXOs(SENDER_WALLET.privateKey).then((ret) => {
-            // console.log('balance ', ret);
             expect(ret.balance > 0).to.be.equal(true);
             done();
         }).catch((ex) => {

@@ -1,6 +1,6 @@
 {
   "RPC_END_POINT": "http://206.189.39.242:8545",
-  "PRIVACY_SMART_CONTRACT_ADDRESS": "0xFc966446cdbd0727e6433e7fB485b216965AbF24",
+  "PRIVACY_SMART_CONTRACT_ADDRESS": "0x45C893f296Ac2673c7597494337cBefeAd1196B9",
   "RINGCT_PRECOMPILED_CONTRACT": {
       "PRIVATE_KEY": "0x77291ba86Dfdd3E7DB1f2A70dCe7A32157bB1adF",
       "ADDRESS": "0x4639C8079db95123cfA6395A273f569e18B9F846",
@@ -51,12 +51,12 @@
   },
   "WALLETS": [
       {
-          "privateKey": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
-          "address": "0x1901deed3e1AfA53109DbA327B45B6F8Fa1809E1"
-      },
-      {
         "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
         "address": "0x3d8dE6eee3b8890FB7E1f9BA7d50D1866D6c3668"
+      },
+      {
+        "privateKey": "06E77C26DD44F807A67DCE660B8F8D39209100678DEEEFD032214B7BF0A99F02",
+        "address": "0x1901deed3e1AfA53109DbA327B45B6F8Fa1809E1"
       },
       {
           "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
@@ -814,6 +814,25 @@
         {
           "name": "",
           "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "keyImages",
+          "type": "bytes"
+        }
+      ],
+      "name": "areSpent",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool[]"
         }
       ],
       "payable": false,

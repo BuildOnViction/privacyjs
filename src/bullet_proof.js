@@ -56,15 +56,15 @@ const genECPrimeGroupKey = (n: number) : Object => {
     const Hi = [];
 
     for (let i = 0; i < n; ++i) {
-        Hi[i] = baseH.mul(
+        Hi[i] = baseG.mul(
             toBN(i * 2 + 1),
         );
-        Gi[i] = baseG.mul(
+        Gi[i] = baseH.mul(
             toBN(i * 2 + 2),
         );
     }
 
-    const U = baseG.mul(
+    const U = baseH.mul(
         toBN(n + 3),
     );
 

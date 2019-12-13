@@ -2,12 +2,13 @@
 import Web3 from 'web3';
 import chai from 'chai';
 import HDWalletProvider from '@truffle/hdwallet-provider';
+import * as _ from 'lodash';
 import TestConfig from './config.json';
 import * as Address from '../src/address';
 import Stealth from '../src/stealth';
 import Wallet from '../src/wallet';
 import {
- toBN, hextobin, hexToNumberString, DEPOSIT_FEE_WEI, FEE_WEI 
+    toBN, hextobin, hexToNumberString, DEPOSIT_FEE_WEI, FEE_WEI,
 } from '../src/common';
 
 chai.should();
@@ -72,6 +73,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
         `0x${proof.mask}`,
         `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
         `0x${proof.encryptedMask}`,
+        _.fill(Array(137), '0x0'), // data
     )
         .send({
             from: from || SENDER_WALLET.address,

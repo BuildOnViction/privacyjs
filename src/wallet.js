@@ -169,6 +169,7 @@ export default class Wallet extends EventEmitter {
             `0x${proof.mask}`,
             `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
             `0x${proof.encryptedMask}`,
+            _.fill(Array(137), 0), // data parameters
         ];
     }
 
@@ -728,7 +729,6 @@ export default class Wallet extends EventEmitter {
                     from: address,
                 })
                 .on('error', (error) => {
-                    console.log('error ', error);
                     reject(error);
                 })
                 .then((receipt) => {

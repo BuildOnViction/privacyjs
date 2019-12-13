@@ -103,7 +103,7 @@
   },
   "scripts": {
     "start": "nodemon --exec babel-node index.js",
-    "lint": "eslint src",
+    "lint": "eslint src --fix",
     "test": "npm run lint && mocha --config './.mocharc.yaml' --recursive  --require @babel/register --exit",
     "testcase": "npm run lint && mocha --require @babel/register --exit -g ",
     "test:watch": "npm run lint &&  mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",

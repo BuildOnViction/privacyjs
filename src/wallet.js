@@ -25,7 +25,7 @@ import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
 import MLSAG, { keyImage } from './mlsag';
 import BulletProof from './bullet_proof';
-import { randomBI } from './crypto';
+// import { randomBI } from './crypto';
 
 const BigInteger = CONSTANT.BigInteger;
 
@@ -885,13 +885,13 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} Proof
      */
-    _genRangeProof(remain: BigInteger, amount: BigInteger): Buffer {
+    _genRangeProof(remain: BigInteger, amount: BigInteger, masks: Array<BigInteger>): Buffer {
         let result = BulletProof.prove([
             remain,
             amount,
         ], [
-            randomBI(),
-            randomBI(),
+            masks[0],
+            masks[1],
         ]);
 
         result = BulletProof.proofToHex(result);
@@ -990,7 +990,10 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
             ],
             signature,
-            this._genRangeProof(remain, amount),
+            this._genRangeProof(remain, amount, [
+                BigInteger.fromHex(outputProofs[1].mask),
+                BigInteger.fromHex(outputProofs[0].mask),
+            ]),
         ];
     }
 
@@ -1023,7 +1026,10 @@ export default class Wallet extends EventEmitter {
             ],
             receiver,
             signature,
-            this._genRangeProof(remain, amount),
+            this._genRangeProof(remain, amount, [
+                BigInteger.fromHex(outputProofs[1].mask),
+                BigInteger.fromHex(outputProofs[0].mask),
+            ]),
         ];
     }
 

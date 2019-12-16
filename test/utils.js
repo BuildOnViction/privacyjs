@@ -3,12 +3,13 @@ import Web3 from 'web3';
 import chai from 'chai';
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import * as _ from 'lodash';
+import toBN from 'number-to-bn';
 import TestConfig from './config.json';
 import * as Address from '../src/address';
 import Stealth from '../src/stealth';
 import Wallet from '../src/wallet';
 import {
-    toBN, hextobin, hexToNumberString, DEPOSIT_FEE_WEI, FEE_WEI,
+    hextobin, DEPOSIT_FEE_WEI,
 } from '../src/common';
 
 chai.should();
@@ -48,7 +49,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
             TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
                 from, // default from address
                 gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-                gas: '2000000',
+                gas: '3000000',
             },
         );
 
@@ -59,9 +60,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
 
     // create proof for a transaction
     const proof = sender.genTransactionProof(
-        hexToNumberString(
-            toBN(amount).divide(PRIVACY_TOKEN_UNIT).toString(16),
-        ), sender.pubSpendKey, sender.pubViewKey,
+        toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10), sender.pubSpendKey, sender.pubViewKey,
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 

@@ -1,7 +1,6 @@
 import sinon from 'sinon';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import ecurve from 'ecurve';
 import toBN from 'number-to-bn';
 import Wallet from '../../src/wallet';
 import Configs from '../config.json';
@@ -11,15 +10,12 @@ import * as CONSTANT from '../../src/constants';
 import { randomUTXOS } from '../utils';
 import { toPoint } from '../../src/stealth';
 
-const { BigInteger } = CONSTANT;
-const ecparams = ecurve.getCurveByName('secp256k1');
 const { expect } = chai;
 chai.should();
 chai.use(chaiAsPromised);
 
 const { WALLETS } = Configs;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
-const TOMO = 1000000000000000000;
 const GWEI = 1000000000;
 
 describe('#unittest #wallet', () => {

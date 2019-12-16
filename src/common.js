@@ -11,7 +11,9 @@ import isFinite from 'lodash/isFinite';
 import utf8 from 'utf8';
 import BN from 'bn.js';
 import assert from 'assert';
-import { BigInteger } from './crypto';
+import Web3 from 'web3';
+
+// import { BigInteger } from './constants';
 
 // const atob = require('atob') || window.atob;
 const EC = require('elliptic').ec;
@@ -140,19 +142,19 @@ export const isBigNumber = object => object && object.constructor && object.cons
  *
  * @returns {BigInteger} BigInteger
  */
-export const toBN = (number) => {
-    try {
-        let hexstr = numberToBN(number).toString(16);
-        if (hexstr.length % 2 === 1) {
-            hexstr = '0' + hexstr;
-        }
-        return BigInteger.fromHex(
-            hexstr,
-        );
-    } catch (error) {
-        throw new Error(`${error} Given value: "${number}"`);
-    }
-};
+// export const toBN = (number) => {
+//     try {
+//         let hexstr = numberToBN(number).toString(16);
+//         if (hexstr.length % 2 === 1) {
+//             hexstr = '0' + hexstr;
+//         }
+//         return BigInteger.fromHex(
+//             hexstr,
+//         );
+//     } catch (error) {
+//         throw new Error(`${error} Given value: "${number}"`);
+//     }
+// };
 
 /**
  * Takes and input transforms it into BN and if it is negative value, into two's complement
@@ -863,3 +865,5 @@ export function twoVectorPCommitWithGens(Gi, Hi, a, b) {
 export const DEPOSIT_FEE_WEI = 1000000000000000;
 
 export const FEE_WEI = 10000000000000000;
+
+export const padLeft = Web3.utils.padLeft;

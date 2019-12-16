@@ -8,7 +8,7 @@ export const PRIVACY_ADDRESS_LENGTH = 95; // we used base 58
 export const SHORT_FORM_CURVE_POINT = 66;
 export const LONG_FORM_CURVE_POINT = 134;
 export const DEFAULT_GAS_PRICE = '250000000';
-export const DEFAULT_GAS = '20000000';
+export const DEFAULT_GAS = '3000000';
 
 BN.fromHex = hexstring => new BN(hexstring.toString(), 16);
 

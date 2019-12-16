@@ -1,3 +1,4 @@
+import { keccak256 } from 'js-sha3';
 import { BigInteger as BN } from './constants';
 
 const crypto = require('crypto');
@@ -6,10 +7,10 @@ const EC = require('elliptic').ec;
 const secp256k1 = new EC('secp256k1');
 
 // TODO will be remove after finishing adapting elliptic
-const ecurve = require('ecurve');
+// const ecurve = require('ecurve');
 
-const ecparams = ecurve.getCurveByName('secp256k1');
-export const BigInteger = ecparams.n.constructor;
+// const ecparams = ecurve.getCurveByName('secp256k1');
+// export const BigInteger = ecparams.n.constructor;
 
 export function hash160(buffer) {
     const sha256 = crypto.createHash('sha256').update(buffer).digest();
@@ -25,26 +26,80 @@ export function sha256x2(buffer) {
     return crypto.createHash('sha256').update(sha256).digest();
 }
 
+
 export function encode(plaintext, key) {
     const sha256sum = crypto.createHash('sha256');
     const _key = sha256sum.update(key).digest().toString('hex');
 
-    const res = BN.fromHex(_key)
+    return BN.fromHex(_key)
         .umod(secp256k1.n).add(
             BN.fromHex(plaintext).umod(secp256k1.n),
-        ).umod(secp256k1.n);
-
-    return res.toString(16);
+        ).umod(secp256k1.n)
+        .toString(16);
 }
 
 export function decode(encrypted, key) {
+    // const _key = sha256sum.update(key).digest().toString('hex');
     const sha256sum = crypto.createHash('sha256');
     const _key = sha256sum.update(key).digest().toString('hex');
-    const res = BN.fromHex(encrypted).sub(
+
+    return BN.fromHex(encrypted).sub(
         BN.fromHex(_key),
     ).umod(secp256k1.n).toString(16);
+}
 
-    return res;
+export function encodeTx(plaintext, key) {
+    let _key = key;
+
+    do {
+        const sha256sum = crypto.createHash('sha256');
+        _key = sha256sum.update(_key).digest().toString('hex');
+    } while (_key[0] === '0');
+
+    // create a BI from _key that satisfy
+    // bit number = plaintext's bit by
+    // create realkey = truncate_to_plaintext_length(_key + _key + key)
+    let realKey = _key;
+    while (realKey.length < plaintext.length) {
+        realKey += keccak256(_key);
+    }
+
+    realKey = realKey.slice(0, plaintext.length);
+
+    return BN.fromHex(realKey)
+        .add(
+            BN.fromHex(plaintext),
+        )
+        .toString(16);
+}
+
+export function decodeTx(encrypted, key) {
+    // const _key = sha256sum.update(key).digest().toString('hex');
+    let _key = key;
+
+    do {
+        const sha256sum = crypto.createHash('sha256');
+        _key = sha256sum.update(_key).digest().toString('hex');
+    } while (_key[0] === '0');
+
+    let realKey = _key;
+
+    while (encrypted[0] === '0') encrypted = encrypted.substr(1, encrypted.length - 1);
+
+    while (realKey.length < encrypted.length) {
+        realKey += keccak256(_key);
+    }
+    realKey = realKey.slice(0, encrypted.length);
+
+    if (BN.fromHex(realKey).cmp(
+        BN.fromHex(encrypted),
+    ) > 0) {
+        realKey = realKey.slice(0, realKey.length - 1);
+    }
+
+    return BN.fromHex(encrypted).sub(
+        BN.fromHex(realKey),
+    ).toString(16);
 }
 
 /**

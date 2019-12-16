@@ -28,6 +28,52 @@ describe('#unittest #stealth', () => {
             });
         });
 
+        for (let index = 0; index < 20; index++) {
+            describe('#checkTransactionProof()', () => {
+                it('should claim proof for right account', () => {
+                    const sender = new Stealth({
+                        ...Address.generateKeys(fixture.sender.privKey),
+                    });
+                    const receiver = new Stealth({
+                        ...Address.generateKeys(fixture.receiverSpend.privKey),
+                    });
+
+                    // create proof for a transaction
+                    const proof = sender.genTransactionProof(1000,
+                        receiver.pubSpendKey, receiver.pubViewKey);
+
+                    console.log('result ', proof);
+
+                    // prove above information belong to receiver
+                    const result = receiver.checkTransactionProof(
+                        proof.txPublicKey, proof.onetimeAddress, proof.encryptedAmount,
+                    );
+
+                    // prove above information belong to receiver
+                    assert.notEqual(result, null);
+                    assert.equal(result.amount, 1000);
+                });
+
+                it('should not claim proof for tx not belong', () => {
+                    const sender = new Stealth({
+                        ...Address.generateKeys(fixture.sender.privKey),
+                    });
+                    const receiver = new Stealth({
+                        ...Address.generateKeys(randomHex()),
+                    });
+
+                    // create proof for a transaction for an other receiver - not above one
+                    const proof = sender.genTransactionProof(1000, new Buffer(fixture.receiverSpend.pubKey, 'hex'), new Buffer(fixture.receiverView.pubKey, 'hex'));
+
+                    // try to claim the ownership and not success
+                    const result = receiver.checkTransactionProof(
+                        proof.txPublicKey, proof.onetimeAddress,
+                    );
+                    assert.equal(result, null);
+                });
+            });
+        }
+
         describe('#checkTransactionProof()', () => {
             it('should claim proof for right account', () => {
                 const sender = new Stealth({

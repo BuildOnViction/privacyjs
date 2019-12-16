@@ -24,7 +24,7 @@ const trimPrefix = (str, char) => {
 };
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 15; count++) {
+    for (let count = 0; count < 25; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {

@@ -6,7 +6,7 @@ import Wallet from '../../src/wallet';
 import { generateKeys } from '../../src/address';
 import { toBN } from '../../src/common';
 import UTXO from '../../src/utxo';
-import { BigInteger } from '../../src/crypto';
+import { BigInteger } from '../../src/constants';
 
 const { expect } = chai;
 chai.should();
@@ -191,7 +191,7 @@ describe('#ete #wallet', () => {
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
                 sendWallet.send(receiver.pubAddr, '4000000000000000000').then((txs) => {
-                    let receiveMoney = BigInteger.ZERO;
+                    let receiveMoney = BigInteger.ZERO();
                     expect(txs).to.be.an('array');
                     expect(txs.length).to.be.above(0);
                     _.each(txs, (NewUTXO) => {

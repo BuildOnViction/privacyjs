@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 /* eslint-disable class-methods-use-this */
 // @flow
 
@@ -19,19 +20,19 @@ import HDWalletProvider from '@truffle/hdwallet-provider';
 import assert from 'assert';
 import * as _ from 'lodash';
 import toBN from 'number-to-bn'; // this is converter to bn.js, this lib support more utils than bigi
+import { keccak256 } from 'js-sha3';
+// import base58 from 'bs58';
+import base58 from 'bs58';
 import * as CONSTANT from './constants';
 import * as Address from './address';
 import Stealth, { toPoint } from './stealth';
 import UTXO from './utxo';
 import MLSAG, { keyImage } from './mlsag';
 import BulletProof from './bullet_proof';
-// import { randomBI } from './crypto';
+import { decodeTx, encodeTx } from './crypto';
+import { toHex, padLeft } from './common';
 
 const BigInteger = CONSTANT.BigInteger;
-
-// const EC = require('elliptic').ec;
-
-// const secp256k1 = new EC('secp256k1');
 
 type SmartContractOpts = {
     RPC_END_POINT: string,
@@ -131,7 +132,7 @@ export default class Wallet extends EventEmitter {
         this.privacyContract = new web3.eth.Contract(
             scOpts.ABI, this.scOpts.ADDRESS, {
                 gasPrice: '250000000',
-                gas: '20000000',
+                gas: '3000000',
             },
         );
 
@@ -169,7 +170,7 @@ export default class Wallet extends EventEmitter {
             `0x${proof.mask}`,
             `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
             `0x${proof.encryptedMask}`,
-            _.fill(Array(137), 0), // data parameters
+            _.fill(Array(137), '0x0'), // data parameters
         ];
     }
 
@@ -612,7 +613,7 @@ export default class Wallet extends EventEmitter {
             privacyContract = new web3.eth.Contract(
                 this.scOpts.ABI, this.scOpts.ADDRESS, {
                     gasPrice: '250000000',
-                    gas: '20000000',
+                    gas: '10000000',
                 },
             );
         } catch (ex) {
@@ -628,6 +629,7 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
+                    console.log(receipt.gasUsed);
                     resolve(receipt.events);
                 });
         });
@@ -719,7 +721,7 @@ export default class Wallet extends EventEmitter {
         const privacyContract = new web3.eth.Contract(
             this.scOpts.ABI, this.scOpts.ADDRESS, {
                 gasPrice: '250000000',
-                gas: '20000000',
+                gas: '10000000',
             },
         );
 
@@ -732,6 +734,7 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
+                    console.log(receipt.gasUsed);
                     resolve(receipt.events);
                 });
         });
@@ -994,6 +997,7 @@ export default class Wallet extends EventEmitter {
                 BigInteger.fromHex(outputProofs[1].mask),
                 BigInteger.fromHex(outputProofs[0].mask),
             ]),
+            _.fill(Array(137), '0x0'),
         ];
     }
 
@@ -1030,6 +1034,7 @@ export default class Wallet extends EventEmitter {
                 BigInteger.fromHex(outputProofs[1].mask),
                 BigInteger.fromHex(outputProofs[0].mask),
             ]),
+            _.fill(Array(137), '0x0'),
         ];
     }
 
@@ -1099,6 +1104,92 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
+     * Tx_data is a struct that encoded by
+     * Secretkey = hash(hash(privateViewKey) + tx_utxo_stealth_1 ... tx_utxo_stealth_n)
+     * So for checking weather TX created by you
+     * just need to check yourown first 8 data bytes as check sum
+     * @param {Array<number> | Array<UTXO>} utxos output utxos
+     * @param {Buffer} data Transaction data
+     * @returns {Object | null} return decrypted tx data
+     */
+    async checkTxOwnership(utxos: Array<number> | Array<UTXO>, data: Buffer) {
+        assert(utxos && utxos.length, 'Blank utxos input ');
+
+        let rawUTXOs;
+
+        if (typeof utxos[0] === 'string' || typeof utxos[0] === 'number') {
+            rawUTXOs = await this.getUTXOs(utxos);
+        } else {
+            rawUTXOs = utxos;
+        }
+
+        // generate and compare TX-secretkey with the original
+        const secretKey = keccak256(
+            this.privViewKey + _.map(rawUTXOs, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
+        );
+        let decodedData = decodeTx(
+            data.slice(8, 137).toString('hex'),
+            secretKey,
+            false, // arithmetic calculation not on secp256k1 curve
+        );
+
+        decodedData = padLeft(decodedData, 256);
+        const computedCheckSum = keccak256(decodedData).slice(0, 16);
+
+        if (computedCheckSum === data.slice(0, 8).toString('hex')) {
+            return {
+                amount: BigInteger.fromHex(decodedData.substr(0, 16)).toString(10),
+                createdAt: BigInteger.fromHex(decodedData.substr(16, 16)).toString(10),
+                receiver: base58.encode(Buffer.from(decodedData.substr(32, 140), 'hex')).toString('hex'),
+                message: Web3.utils.hexToAscii('0x' + decodedData.substr(172, 84)).replace(/\u0000/igm, ''),
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Encrypt the transaction data
+     * @param {Array<UTXO>} output utxos
+     * @param {number} amount plain spending amount - in gwei
+     * @param {string} receiver privacy address out receiver
+     * @param {string} message meta data of tx
+     */
+    _encryptedTransactionData(outputUTXOs: Array<UTXO>, amount: number, receiver: string, message: string) {
+        const secretKey = keccak256(
+            this.privViewKey + _.map(outputUTXOs, utxo => utxo.lfTxPublicKey.encode('hex', false)).join(''),
+        );
+
+        // conver to buffer array
+        const data = Buffer.concat([
+            Buffer.from(
+                padLeft(toHex(amount), 16), 'hex',
+            ),
+            Buffer.from(
+                padLeft(toHex(parseInt(new Date() / 1000)), 16), 'hex',
+            ),
+            Buffer.from(base58.decode(receiver)),
+            Buffer.from(
+                padLeft(
+                    Web3.utils.asciiToHex(message).slice(2),
+                    84,
+                ),
+                'hex',
+            )]);
+
+        const encodedData = encodeTx(
+            data.toString('hex'),
+            secretKey,
+            false, // arithmetic calculation not on secp256k1 curve
+        );
+
+        const checksum = keccak256(data.toString('hex')).slice(0, 16);
+
+        return Buffer.from(checksum
+            + padLeft(encodedData, 258), 'hex');
+    }
+
+    /**
      * Check utxo belongs
      * @param {UTXO} utxo UTXO instance
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
@@ -1123,6 +1214,7 @@ export default class Wallet extends EventEmitter {
         const web3Socket = new Web3(webSocketProvider);
         this.privacyContractSocket = new web3Socket.eth.Contract(scOpts.ABI, scOpts.ADDRESS);
 
+        // listen to new UTXO
         this.privacyContractSocket.events.NewUTXO().on('data', (evt) => {
             const utxoInstance = new UTXO(evt.returnValues);
             const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
@@ -1141,6 +1233,13 @@ export default class Wallet extends EventEmitter {
 
                 this.emit('NEW_UTXO', rawutxo);
             }
+        });
+
+        // listen to new TX - this for history
+        this.privacyContractSocket.events.NewTransaction().on('data', (evt) => {
+            const { isMine, txData } = this.checkTxOwnership(evt.returnValues);
+
+            if (isMine) { this.emit('NEW_TRANSACTION', txData); }
         });
     }
 

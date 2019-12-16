@@ -10,11 +10,7 @@ import * as common from './common';
 const assert = require('assert');
 const bs58 = require('bs58');
 
-// const ecparams = ecurve.getCurveByName('secp256k1');
-// const { Point } = ecurve;
 const EC = require('elliptic').ec;
-
-// type Point = Curve.short.ShortPoint;
 
 const secp256k1 = new EC('secp256k1');
 

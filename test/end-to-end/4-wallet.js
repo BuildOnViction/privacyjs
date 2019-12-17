@@ -1,12 +1,14 @@
 /* eslint-disable no-loop-func */
 import chai from 'chai';
 import * as _ from 'lodash';
+import toBN from 'number-to-bn';
 import TestConfig from '../config.json';
 import Wallet from '../../src/wallet';
 import { generateKeys } from '../../src/address';
-import { toBN } from '../../src/common';
 import UTXO from '../../src/utxo';
 import { BigInteger } from '../../src/constants';
+
+const Address = require('../../src/address');
 
 const { expect } = chai;
 chai.should();
@@ -74,6 +76,69 @@ describe('#ete #wallet', () => {
         });
     });
 
+    describe('#tx_data', () => {
+        sendWallet = new Wallet(WALLETS[1].privateKey, {
+            RPC_END_POINT: TestConfig.RPC_END_POINT,
+            ABI: TestConfig.PRIVACY_ABI,
+            ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
+        }, WALLETS[1].address);
+
+        sendWallet.scannedTo = 0;
+        for (let index = 0; index < 5; index++) {
+            it('Should able to send and receive correct encrypted tx data TOMO', (done) => {
+                const receiver = generateKeys(WALLETS[2].privateKey);
+                try {
+                    sendWallet.send(receiver.pubAddr, '50000000000000000', `test multiple sending ${index}`).then((txs) => {
+                        expect(txs).to.be.an('array');
+                        expect(txs.length).to.be.above(0);
+                        _.each(txs, (NewUTXO) => {
+                            expect(NewUTXO).to.not.equal(undefined);
+                            expect(NewUTXO.length).to.equal(2); // always create two
+                            const returnUTXOs = NewUTXO.map(utxo => utxo.returnValues);
+
+                            // make sure at least one utxo belonging to receiver, one for sender
+                            // and encrypted amount correct
+                            const senderUTXOIns = new UTXO(returnUTXOs[0]);
+                            const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+
+                            const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[1].privateKey);
+                            const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
+                                WALLETS[2].privateKey,
+                            );
+
+                            expect(senderUTXOIns.checkOwnership(WALLETS[1].privateKey)).to.not.equal(null);
+                            expect(receiverUTXOIns.checkOwnership(WALLETS[2].privateKey)).to.not.equal(null);
+
+                            expect(decodedSenderUTXO).to.not.be.equal(null);
+                            expect(decodedReceiverUTXO).to.not.be.equal(null);
+
+                            sendWallet.getTxs([returnUTXOs[0]._txIndex]).then((txData) => {
+                                const data = _.map(txData[0][1], byte => byte.substr(2, 2)).join('');
+
+                                sendWallet.checkTxOwnership(
+                                    [senderUTXOIns, receiverUTXOIns],
+                                    Buffer.from(data, 'hex'),
+                                ).then((decryptedTxData) => {
+                                    expect(decryptedTxData).to.not.equal(null);
+                                    expect(decryptedTxData.amount).to.equal('50000000');
+                                    expect(decryptedTxData.message).to.equal(`test multiple sending ${index}`);
+                                    expect(decryptedTxData.receiver.toUpperCase()).to.equal(receiver.pubAddr.toUpperCase());
+                                    done();
+                                }).catch((ex) => {
+                                    done(ex);
+                                });
+                            });
+                        });
+                    }).catch((err) => {
+                        done(err);
+                    });
+                } catch (ex) {
+                    done(ex);
+                }
+            });
+        }
+    });
+
     describe('#send', () => {
         // beforeEach(() => {
         sendWallet = new Wallet(WALLETS[1].privateKey, {
@@ -110,8 +175,8 @@ describe('#ete #wallet', () => {
 
                         // make sure at least one utxo belonging to receiver, one for sender
                         // and encrypted amount correct
-                        const senderUTXOIns = new UTXO(returnUTXOs[0]);
-                        const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+                        const senderUTXOIns = new UTXO(returnUTXOs[1]);
+                        const receiverUTXOIns = new UTXO(returnUTXOs[0]);
 
                         const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[1].privateKey);
                         const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
@@ -141,7 +206,7 @@ describe('#ete #wallet', () => {
             it('Should able to send 1.5 TOMO', (done) => {
                 const receiver = generateKeys(WALLETS[1].privateKey);
                 try {
-                    sendWallet.send(receiver.pubAddr, '1500000000000000000').then((txs) => {
+                    sendWallet.send(receiver.pubAddr, '1500000000000000000', `test multiple sending ${index}`).then((txs) => {
                         expect(txs).to.be.an('array');
                         expect(txs.length).to.be.above(0);
                         _.each(txs, (NewUTXO) => {
@@ -151,8 +216,8 @@ describe('#ete #wallet', () => {
 
                             // make sure at least one utxo belonging to receiver, one for sender
                             // and encrypted amount correct
-                            const senderUTXOIns = new UTXO(returnUTXOs[0]);
-                            const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+                            const senderUTXOIns = new UTXO(returnUTXOs[1]);
+                            const receiverUTXOIns = new UTXO(returnUTXOs[0]);
 
                             const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[1].privateKey);
                             const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(
@@ -165,8 +230,6 @@ describe('#ete #wallet', () => {
                             expect(decodedSenderUTXO).to.not.be.equal(null);
                             expect(decodedReceiverUTXO).to.not.be.equal(null);
 
-                            // expect(decodedSenderUTXO.amount === (2.5 * TOMO).toString()).to.be.equal(true);
-                            // expect(decodedReceiverUTXO.amount === '100000000000000000').to.be.equal(true);
                         });
 
                         // TODO wallet need includes new generated utxos
@@ -190,7 +253,7 @@ describe('#ete #wallet', () => {
              */
             const receiver = generateKeys(WALLETS[1].privateKey);
             try {
-                sendWallet.send(receiver.pubAddr, '4000000000000000000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '400000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO();
                     expect(txs).to.be.an('array');
                     expect(txs.length).to.be.above(0);
@@ -201,8 +264,8 @@ describe('#ete #wallet', () => {
 
                         // make sure at least one utxo belonging to receiver, one for sender
                         // and encrypted amount correct
-                        const senderUTXOIns = new UTXO(returnUTXOs[0]);
-                        const receiverUTXOIns = new UTXO(returnUTXOs[1]);
+                        const senderUTXOIns = new UTXO(returnUTXOs[1]);
+                        const receiverUTXOIns = new UTXO(returnUTXOs[0]);
 
                         const decodedSenderUTXO = senderUTXOIns.checkOwnership(WALLETS[1].privateKey);
                         const decodedReceiverUTXO = receiverUTXOIns.checkOwnership(

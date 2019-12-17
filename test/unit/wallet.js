@@ -36,7 +36,7 @@ describe('#unittest #wallet', () => {
                 ABI: Configs.PRIVACY_ABI,
                 ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
                 gasPrice: '250000000',
-                gas: '2000000',
+                gas: '20000000',
             }, SENDER_WALLET.address);
 
             expect(wallet.addresses).to.not.equal(null);
@@ -64,7 +64,7 @@ describe('#unittest #wallet', () => {
                 ABI: Configs.PRIVACY_ABI,
                 ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
                 gasPrice: '250000000',
-                gas: '2000000',
+                gas: '20000000',
             }, SENDER_WALLET.address);
 
             wallet1 = new Wallet(WALLETS[1].privateKey, {
@@ -72,7 +72,7 @@ describe('#unittest #wallet', () => {
                 ABI: Configs.PRIVACY_ABI,
                 ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
                 gasPrice: '250000000',
-                gas: '2000000',
+                gas: '20000000',
             }, SENDER_WALLET.address);
 
             proof = wallet._genUTXOProof(1000000000);
@@ -183,7 +183,7 @@ describe('#unittest #wallet', () => {
             ABI: Configs.PRIVACY_ABI,
             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
             gasPrice: '250000000',
-            gas: '2000000',
+            gas: '20000000',
         }, SENDER_WALLET.address);
 
         wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
@@ -305,7 +305,7 @@ describe('#unittest #wallet', () => {
             ABI: Configs.PRIVACY_ABI,
             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
             gasPrice: '250000000',
-            gas: '2000000',
+            gas: '20000000',
         }, SENDER_WALLET.address);
 
         wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
@@ -442,7 +442,7 @@ describe('#unittest #wallet', () => {
     //             ABI: Configs.PRIVACY_ABI,
     //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
     //             gasPrice: '250000000',
-    //             gas: '2000000',
+    //             gas: '20000000',
     //         }, SENDER_WALLET.address);
 
     //         wallet1 = new Wallet(WALLETS[1].privateKey, {
@@ -450,7 +450,7 @@ describe('#unittest #wallet', () => {
     //             ABI: Configs.PRIVACY_ABI,
     //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
     //             gasPrice: '250000000',
-    //             gas: '2000000',
+    //             gas: '20000000',
     //         }, SENDER_WALLET.address);
 
     //         proof = wallet._genUTXOProof(1000000000);

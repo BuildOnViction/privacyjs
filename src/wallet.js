@@ -32,6 +32,10 @@ import BulletProof from './bullet_proof';
 import { decodeTx, encodeTx } from './crypto';
 import { toHex, padLeft } from './common';
 
+// const EC = require('elliptic').ec;
+
+// const secp256k1 = new EC('secp256k1');
+
 const BigInteger = CONSTANT.BigInteger;
 
 type SmartContractOpts = {
@@ -516,10 +520,11 @@ export default class Wallet extends EventEmitter {
      * TODO code look ugly on utxo.checkOwnership
      * @param {string} privacyAddress
      * @param {string|number} amount
+     * @param {string} message
      * @returns {object} includes new utxos and original created proof
      * on some very first version, we store the proof locally to help debugging if error happens
      */
-    async send(privacyAddress: string, amount: string | number) {
+    async send(privacyAddress: string, amount: string | number, message: ?string) {
         assert(privacyAddress.length === CONSTANT.PRIVACY_ADDRESS_LENGTH, 'Malform privacy address !!');
 
         if (!this.balance) {
@@ -561,6 +566,7 @@ export default class Wallet extends EventEmitter {
                     txs[currentTx].receivAmount,
                     txs[currentTx].utxos,
                     txs[currentTx].remainAmount,
+                    message,
                 );
 
                 // eslint-disable-next-line no-await-in-loop
@@ -613,7 +619,7 @@ export default class Wallet extends EventEmitter {
             privacyContract = new web3.eth.Contract(
                 this.scOpts.ABI, this.scOpts.ADDRESS, {
                     gasPrice: '250000000',
-                    gas: '10000000',
+                    gas: '20000000',
                 },
             );
         } catch (ex) {
@@ -629,7 +635,6 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
-                    console.log(receipt.gasUsed);
                     resolve(receipt.events);
                 });
         });
@@ -639,10 +644,11 @@ export default class Wallet extends EventEmitter {
      * Private send money to privacy address
      * @param {string} privacyAddress
      * @param {string|number} amount
+     * @param {string} message
      * @returns {object} includes new utxos and original created proof
      * on some very first version, we store the proof locally to help debugging if error happens
      */
-    async withdraw(address: string, amount: string | number) {
+    async withdraw(address: string, amount: string | number, message: ?string) {
         assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
 
         if (!this.balance) {
@@ -683,6 +689,7 @@ export default class Wallet extends EventEmitter {
                     txs[txIndex].receivAmount,
                     txs[txIndex].utxos,
                     txs[txIndex].remainAmount,
+                    message,
                 );
 
                 // eslint-disable-next-line no-await-in-loop
@@ -721,7 +728,7 @@ export default class Wallet extends EventEmitter {
         const privacyContract = new web3.eth.Contract(
             this.scOpts.ABI, this.scOpts.ADDRESS, {
                 gasPrice: '250000000',
-                gas: '10000000',
+                gas: '20000000',
             },
         );
 
@@ -734,7 +741,6 @@ export default class Wallet extends EventEmitter {
                     reject(error);
                 })
                 .then((receipt) => {
-                    console.log(receipt.gasUsed);
                     resolve(receipt.events);
                 });
         });
@@ -962,10 +968,12 @@ export default class Wallet extends EventEmitter {
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
+     * @param {Array<UTXO>} spendingUTXOs
      * @param {BigInteger} remain
+     * @param {string} [message]
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
+    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
         const outputProofs = this._genOutputProofs(receiver, amount, remain);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
@@ -997,7 +1005,11 @@ export default class Wallet extends EventEmitter {
                 BigInteger.fromHex(outputProofs[1].mask),
                 BigInteger.fromHex(outputProofs[0].mask),
             ]),
-            _.fill(Array(137), '0x0'),
+            _.map(
+                this._encryptedTransactionData(
+                    [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
+                ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
+            ),
         ];
     }
 
@@ -1006,10 +1018,11 @@ export default class Wallet extends EventEmitter {
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
      * @param {Array<UTXO>} spendingUTXOs
-     * * @param {BigInteger} remain
+     * @param {BigInteger} remain
+     * @param {string} string
      * @returns {Object} proof output
      */
-    async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger): Array {
+    async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
         const outputProofs = this._genOutputProofs(receiver, amount, remain, true);
         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
@@ -1023,7 +1036,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
                 `0x${outputProofs[1].txPublicKey.substr(-64)}`,
             ],
-            '0x' + amount.mul(PRIVACY_TOKEN_UNIT).toString(16), // withdaw need multiple with 10^9, convert gwei to wei
+            '0x' + amount.mul(PRIVACY_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
@@ -1034,7 +1047,12 @@ export default class Wallet extends EventEmitter {
                 BigInteger.fromHex(outputProofs[1].mask),
                 BigInteger.fromHex(outputProofs[0].mask),
             ]),
-            _.fill(Array(137), '0x0'),
+            // _.fill(Array(137), '0x0'),
+            _.map(
+                this._encryptedTransactionData(
+                    [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
+                ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
+            ),
         ];
     }
 
@@ -1090,6 +1108,25 @@ export default class Wallet extends EventEmitter {
     }
 
     /**
+     * Check if the utxo spent or not by KeyImage (refer MLSAG)
+     * @param {UTXO} utxo
+     * @returns {boolean}
+     */
+    getTxs(txIndexs: Array<number>): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            this.privacyContract.methods.getTxs(
+                txIndexs,
+            )
+                .call({
+                    from: this.scOpts.from,
+                })
+                .then(txs => resolve(txs)).catch((exception) => {
+                    reject(exception);
+                });
+        });
+    }
+
+    /**
      * Check utxo's proof belongs
      * consider changing input format
      * @param {Buffer | string} txPubkey transaction public key
@@ -1125,8 +1162,9 @@ export default class Wallet extends EventEmitter {
 
         // generate and compare TX-secretkey with the original
         const secretKey = keccak256(
-            this.privViewKey + _.map(rawUTXOs, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
+            this.addresses.privViewKey + _.map(rawUTXOs, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
         );
+
         let decodedData = decodeTx(
             data.slice(8, 137).toString('hex'),
             secretKey,
@@ -1134,13 +1172,19 @@ export default class Wallet extends EventEmitter {
         );
 
         decodedData = padLeft(decodedData, 256);
+
         const computedCheckSum = keccak256(decodedData).slice(0, 16);
 
         if (computedCheckSum === data.slice(0, 8).toString('hex')) {
+            let receiver = decodedData.substr(32, 140);
+
+            if (receiver.replace(/^0*/, '').length !== 42) {
+                receiver = base58.encode(Buffer.from(decodedData.substr(32, 140), 'hex')).toString('hex');
+            }
             return {
                 amount: BigInteger.fromHex(decodedData.substr(0, 16)).toString(10),
                 createdAt: BigInteger.fromHex(decodedData.substr(16, 16)).toString(10),
-                receiver: base58.encode(Buffer.from(decodedData.substr(32, 140), 'hex')).toString('hex'),
+                receiver,
                 message: Web3.utils.hexToAscii('0x' + decodedData.substr(172, 84)).replace(/\u0000/igm, ''),
             };
         }
@@ -1155,9 +1199,9 @@ export default class Wallet extends EventEmitter {
      * @param {string} receiver privacy address out receiver
      * @param {string} message meta data of tx
      */
-    _encryptedTransactionData(outputUTXOs: Array<UTXO>, amount: number, receiver: string, message: string) {
+    _encryptedTransactionData(outputUTXOs: Array<Object>, amount: number, receiver: string, message: string) {
         const secretKey = keccak256(
-            this.privViewKey + _.map(outputUTXOs, utxo => utxo.lfTxPublicKey.encode('hex', false)).join(''),
+            this.addresses.privViewKey + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
         );
 
         // conver to buffer array
@@ -1168,7 +1212,7 @@ export default class Wallet extends EventEmitter {
             Buffer.from(
                 padLeft(toHex(parseInt(new Date() / 1000)), 16), 'hex',
             ),
-            Buffer.from(base58.decode(receiver)),
+            Buffer.from(receiver.length === 42 ? receiver : base58.decode(receiver)),
             Buffer.from(
                 padLeft(
                     Web3.utils.asciiToHex(message).slice(2),
@@ -1185,8 +1229,10 @@ export default class Wallet extends EventEmitter {
 
         const checksum = keccak256(data.toString('hex')).slice(0, 16);
 
-        return Buffer.from(checksum
+        const res = Buffer.from(checksum
             + padLeft(encodedData, 258), 'hex');
+
+        return res;
     }
 
     /**

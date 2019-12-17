@@ -42,8 +42,6 @@ describe('#unittest #stealth', () => {
                     const proof = sender.genTransactionProof(1000,
                         receiver.pubSpendKey, receiver.pubViewKey);
 
-                    console.log('result ', proof);
-
                     // prove above information belong to receiver
                     const result = receiver.checkTransactionProof(
                         proof.txPublicKey, proof.onetimeAddress, proof.encryptedAmount,
@@ -86,8 +84,6 @@ describe('#unittest #stealth', () => {
                 // create proof for a transaction
                 const proof = sender.genTransactionProof(1000,
                     receiver.pubSpendKey, receiver.pubViewKey);
-
-                console.log('result ', proof);
 
                 // prove above information belong to receiver
                 const result = receiver.checkTransactionProof(

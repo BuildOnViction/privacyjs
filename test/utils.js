@@ -26,7 +26,7 @@ const privacyContract = new web3.eth.Contract(
     TestConfig.PRIVACY_ABI, TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS, {
         from: SENDER_WALLET.address, // default from address
         gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-        gas: '2000000',
+        gas: '20000000',
     },
 );
 
@@ -108,7 +108,7 @@ const privacyAddressContract = new web3.eth.Contract(
     TestConfig.PRIVACYADD_MAPPING_ABI, TestConfig.PRIVACYADD_MAPPING_SMART_CONTRACT, {
         from: SENDER_WALLET.address, // default from address
         gasPrice: '250000000', // default gas price in wei, 20 gwei in this case,
-        gas: '2000000',
+        gas: '20000000',
     },
 );
 

@@ -1,5 +1,4 @@
-tomoprivacyjs
-*** TOMO privacy wallet's apis ***
+***TOMO privacy wallet's apis***
 =======
 Terms
 - `keys`: private spend key, private view key, public spend key, public view key.

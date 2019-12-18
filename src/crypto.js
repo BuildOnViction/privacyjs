@@ -1,16 +1,10 @@
 import { keccak256 } from 'js-sha3';
-import { BigInteger as BN } from './constants';
+import { BigInteger } from './common';
 
 const crypto = require('crypto');
 const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
-
-// TODO will be remove after finishing adapting elliptic
-// const ecurve = require('ecurve');
-
-// const ecparams = ecurve.getCurveByName('secp256k1');
-// export const BigInteger = ecparams.n.constructor;
 
 export function hash160(buffer) {
     const sha256 = crypto.createHash('sha256').update(buffer).digest();
@@ -31,9 +25,9 @@ export function encode(plaintext, key) {
     const sha256sum = crypto.createHash('sha256');
     const _key = sha256sum.update(key).digest().toString('hex');
 
-    return BN.fromHex(_key)
+    return BigInteger.fromHex(_key)
         .umod(secp256k1.n).add(
-            BN.fromHex(plaintext).umod(secp256k1.n),
+            BigInteger.fromHex(plaintext).umod(secp256k1.n),
         ).umod(secp256k1.n)
         .toString(16);
 }
@@ -43,8 +37,8 @@ export function decode(encrypted, key) {
     const sha256sum = crypto.createHash('sha256');
     const _key = sha256sum.update(key).digest().toString('hex');
 
-    return BN.fromHex(encrypted).sub(
-        BN.fromHex(_key),
+    return BigInteger.fromHex(encrypted).sub(
+        BigInteger.fromHex(_key),
     ).umod(secp256k1.n).toString(16);
 }
 
@@ -66,9 +60,9 @@ export function encodeTx(plaintext, key) {
 
     realKey = realKey.slice(0, plaintext.length);
 
-    return BN.fromHex(realKey)
+    return BigInteger.fromHex(realKey)
         .add(
-            BN.fromHex(plaintext),
+            BigInteger.fromHex(plaintext),
         )
         .toString(16);
 }
@@ -91,14 +85,14 @@ export function decodeTx(encrypted, key) {
     }
     realKey = realKey.slice(0, encrypted.length);
 
-    if (BN.fromHex(realKey).cmp(
-        BN.fromHex(encrypted),
+    if (BigInteger.fromHex(realKey).cmp(
+        BigInteger.fromHex(encrypted),
     ) > 0) {
         realKey = realKey.slice(0, realKey.length - 1);
     }
 
-    return BN.fromHex(encrypted).sub(
-        BN.fromHex(realKey),
+    return BigInteger.fromHex(encrypted).sub(
+        BigInteger.fromHex(realKey),
     ).toString(16);
 }
 
@@ -119,7 +113,7 @@ export function randomHex(n) {
     }
 
     if (n % 2 === 1) n++;
-    return BN.fromHex(result).umod(secp256k1.n).toString(16, n);
+    return BigInteger.fromHex(result).umod(secp256k1.n).toString(16, n);
 }
 
 /**

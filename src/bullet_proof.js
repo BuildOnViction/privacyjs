@@ -12,10 +12,10 @@ import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
 import toBN from 'number-to-bn';
-import { BigInteger } from './constants';
+import { BigInteger, innerProduct, twoVectorPCommitWithGens } from './common';
 import InnerProduct from './inner_product';
 import { randomBI } from './crypto';
-import { innerProduct, twoVectorPCommitWithGens } from './common';
+
 
 const EC = require('elliptic').ec;
 

@@ -13,7 +13,14 @@ import BN from 'bn.js';
 import assert from 'assert';
 import Web3 from 'web3';
 
-// import { BigInteger } from './constants';
+BN.fromHex = hexstring => new BN(hexstring.toString(), 16);
+
+BN.fromBuffer = buffer => new BN(buffer.toString('hex'), 16);
+BN.TWO = () => new BN('10', 2);
+BN.ZERO = () => new BN('0', 2);
+BN.ONE = () => new BN('01', 2);
+
+export const BigInteger = BN;
 
 // const atob = require('atob') || window.atob;
 const EC = require('elliptic').ec;

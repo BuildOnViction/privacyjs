@@ -1,6 +1,6 @@
 
 import chai from 'chai';
-import { BigInteger } from '../../src/constants';
+import { BigInteger } from '../../src/common';
 import BulletProof from '../../src/bullet_proof';
 import { randomHex, randomBI } from '../../src/crypto';
 

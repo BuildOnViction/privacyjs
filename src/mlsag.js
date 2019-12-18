@@ -5,7 +5,7 @@ import assert from 'assert';
 import * as _ from 'lodash';
 import { randomBI } from './crypto';
 
-import { BigInteger } from './constants';
+import { BigInteger } from './common';
 import UTXO from './utxo';
 
 const EC = require('elliptic').ec;

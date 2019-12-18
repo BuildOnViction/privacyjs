@@ -6,9 +6,7 @@ import TestConfig from '../config.json';
 import Wallet from '../../src/wallet';
 import { generateKeys } from '../../src/address';
 import UTXO from '../../src/utxo';
-import { BigInteger } from '../../src/constants';
-
-const Address = require('../../src/address');
+import { BigInteger } from '../../src/common';
 
 const { expect } = chai;
 chai.should();

@@ -1,6 +1,6 @@
 import toBN from 'number-to-bn';
-import { BigInteger, baseH } from './constants';
-import * as common from './common';
+import { baseH } from './constants';
+import { numberToHex, BigInteger } from './common';
 
 const EC = require('elliptic').ec;
 
@@ -37,7 +37,7 @@ class Commitment {
         if (!mask || mask.toString() === '0') {
             return baseH.mul(
                 BigInteger.fromHex(
-                    common.numberToHex(amount),
+                    numberToHex(amount),
                 ),
             ).encode('hex', encoded);
         }
@@ -47,7 +47,7 @@ class Commitment {
         )
             .add(baseH.mul(
                 BigInteger.fromHex(
-                    common.numberToHex(amount),
+                    numberToHex(amount),
                 ),
             )).encode('hex', encoded);
     }

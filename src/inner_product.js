@@ -5,12 +5,13 @@
 import { keccak256 } from 'js-sha3';
 import assert from 'assert';
 import * as _ from 'lodash';
-import { BigInteger } from './constants';
 import {
+    BigInteger,
     innerProduct,
     bconcat,
     twoVectorPCommitWithGens,
 } from './common';
+
 
 const ZERO = BigInteger.ZERO();
 const EC = require('elliptic').ec;

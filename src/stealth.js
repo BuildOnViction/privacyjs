@@ -2,11 +2,11 @@ import toBN from 'number-to-bn';
 import {
     encode, decode, hmacSha256, randomBI,
 } from './crypto';
-import { BigInteger } from './constants';
-// eslint-disable-next-line import/no-cycle
+
 import Commitment from './commitment';
 import * as common from './common';
 
+const BigInteger = common.BigInteger;
 const assert = require('assert');
 const bs58 = require('bs58');
 

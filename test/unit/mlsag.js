@@ -7,10 +7,10 @@ import TestConfig from '../config.json';
 import MLSAG_DATA from './mlsag.json';
 import MLSAG, { hashToPoint } from '../../src/mlsag';
 import Stealth, { toPoint } from '../../src/stealth';
-import { hexToNumberString } from '../../src/common';
+import { hexToNumberString, BigInteger } from '../../src/common';
 import UTXO from '../../src/utxo';
 import { randomBI } from '../../src/crypto';
-import { BigInteger } from '../../src/constants';
+
 import { generateKeys } from '../../src/address';
 
 const EC = require('elliptic').ec;

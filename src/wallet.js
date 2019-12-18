@@ -350,7 +350,7 @@ export default class Wallet extends EventEmitter {
                  * TODO ad qr generator for those data
                  */
                 _self.emit('FINISH_SCANNING');
-                // this.updateWalletState(rawUTXOs, _self.balance, _self.scannedTo);
+                _self.emit('ON_BALANCE_CHANGE');
 
                 console.log('Total Balance : ', _self.balance.toString(10));
                 console.log('Scanned To : ', _self.scannedTo);
@@ -364,16 +364,16 @@ export default class Wallet extends EventEmitter {
         });
     }
 
-    restoreWalletState() {
-        this.balance = BigInteger.fromHex(
-            this._fromStorage('BALANCE') || '00',
-        );
+    _restoreWalletState(balance: number | string, scannedTo: number, utxos: Array<Object>) {
+        if (balance !== null) {
+            this.balance = BigInteger.fromHex(
+                balance || '00',
+            );
+        }
 
-        this.scannedTo = parseInt(this._fromStorage('SCANNEDTO')) || 0;
+        if (scannedTo !== null) { this.scannedTo = parseInt(scannedTo) || -1; }
 
-        // Load all UTXO object
-        // TODO just load decodedAmount and index so the memory is very light
-        this.utxos = this._fromStorage('UTXOS');
+        if (utxos !== null) { this.utxos = utxos; }
     }
 
     qrUTXOsData() {
@@ -551,7 +551,7 @@ export default class Wallet extends EventEmitter {
         } catch (ex) {
             this.utxos.splice(0, totalSpent - txs.length);
             this.balance = this._calTotal(this.utxos);
-            // this.updateWalletState(this.utxos, this.balance, this.scannedTo);
+            this.emit('ON_BALANCE_CHANGE');
             this.emit('STOP_SENDING', ex);
             throw ex;
         }
@@ -560,11 +560,10 @@ export default class Wallet extends EventEmitter {
         console.log('totalSpent ', totalSpent);
 
         this.utxos.splice(0, totalSpent);
-
         this.balance = this._calTotal(this.utxos);
-        // this.updateWalletState(this.utxos, this.balance, this.scannedTo);
 
         this.emit('FINISH_SENDING');
+        this.emit('ON_BALANCE_CHANGE');
         return totalResponse;
     }
 
@@ -675,14 +674,16 @@ export default class Wallet extends EventEmitter {
             this.emit('STOP_WITHDRAW', ex);
             this.utxos.splice(0, totalSpent - txs.length);
             this.balance = this._calTotal(this.utxos);
-            // this.updateWalletState(this.utxos, this.balance, this.scannedTo);
+            this.emit('ON_BALANCE_CHANGE');
 
             throw ex;
         }
 
         this.utxos.splice(0, totalSpent);
         this.balance = this._calTotal(this.utxos);
-        // this.updateWalletState(this.utxos, this.balance, this.scannedTo);
+
+        this.emit('FINISH_WITHDRAW');
+        this.emit('ON_BALANCE_CHANGE');
 
         return totalResponse;
     }
@@ -1228,7 +1229,23 @@ export default class Wallet extends EventEmitter {
         return this.balance ? '0x' + this.balance.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16) : '0x0';
     }
 
-    // TODO find way to do automation test on browser
+    state(state: Object) {
+        // need to update wallet state
+        if (state) {
+            this._restoreWalletState(
+                state.balance,
+                state.scannedTo,
+                state.utxos,
+            );
+        }
+
+        return {
+            balance: this.balance ? this.balance.toString(10) : '0',
+            scannedTo: this.scannedTo !== -1 ? this.scannedTo : -1,
+            utxos: this.utxos,
+        };
+    }
+
     listenNewUTXO(scOpts: SmartContractOpts) {
         const webSocketProvider = new Web3.providers.WebsocketProvider(scOpts.SOCKET_END_POINT);
         const web3Socket = new Web3(webSocketProvider);
@@ -1249,7 +1266,7 @@ export default class Wallet extends EventEmitter {
 
                 this.balance = this._calTotal(this.utxos);
 
-                // this.updateWalletState(this.utxos, this.balance, parseInt(rawutxo._index));
+                this.emit('ON_BALANCE_CHANGE');
 
                 this.emit('NEW_UTXO', rawutxo);
             }
@@ -1257,9 +1274,10 @@ export default class Wallet extends EventEmitter {
 
         // listen to new TX - this for history
         this.privacyContractSocket.events.NewTransaction().on('data', async (evt) => {
-            const data = _.map(evt.returnValues[1], byte => byte.substr(2, 2)).join('');
+            console.log(evt);
+            const data = _.map(evt.returnValues[2], byte => byte.substr(2, 2)).join('');
             const txData = await this.checkTxOwnership(
-                evt.returnValues[0],
+                _.map(evt.returnValues[1], raw => new UTXO(raw)),
                 Buffer.from(data, 'hex'),
             );
 

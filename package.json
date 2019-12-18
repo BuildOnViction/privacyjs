@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "Tomo privacy wallet apis.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -111,7 +111,7 @@
     "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "build": "npm run lint &&  node tools/build",
     "minify": "minify ./dist/*.js --out-dir ./dist/",
-    "prepublish": "npm run test  && npm run build"
+    "prepublish": "npm run build"
   },
   "husky": {
     "hooks": {

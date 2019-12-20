@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - v8
 env:
-        - TEST_SUITE=test:cover
+        - TEST_SUITE=test
 script: "sudo apt-get install build-essential && npm run-script $TEST_SUITE"
 after_success:
   - npm install codecov

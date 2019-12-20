@@ -13,6 +13,7 @@ Terms
 Additional requests/features please contact anhnt@tomochain.com
 
 [![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
+[![codecov](https://codecov.io/gh/tomochain/privacyjs/branch/master/graph/badge.svg)](https://codecov.io/gh/tomochain/privacyjs)
 ### ROADMAP
 - Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
 - Integrated to tomowallet web and integrated bullet proof, demo on testnet

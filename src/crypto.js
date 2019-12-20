@@ -69,6 +69,7 @@ export function encodeTx(plaintext, key) {
 
 export function decodeTx(encrypted, key) {
     // const _key = sha256sum.update(key).digest().toString('hex');
+    let realKey;
     let _key = key;
 
     do {
@@ -76,7 +77,7 @@ export function decodeTx(encrypted, key) {
         _key = sha256sum.update(_key).digest().toString('hex');
     } while (_key[0] === '0');
 
-    let realKey = _key;
+    realKey = _key;
 
     while (encrypted[0] === '0') encrypted = encrypted.substr(1, encrypted.length - 1);
 

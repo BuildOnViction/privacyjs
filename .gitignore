@@ -4,3 +4,4 @@ dist/
 .vscode/
 go.mod
 go.sum
+.nyc_output/

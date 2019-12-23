@@ -108,7 +108,7 @@
     "testcase": "npm run lint && mocha --require @babel/register --exit -g ",
     "test:watch": "npm run lint &&  mocha --config './.mocharc.yaml' --recursive --require @babel/register --reporter min --watch",
     "test:cover": "npm run lint &&  nyc npm test",
-    "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
     "build": "npm run lint &&  node tools/build",
     "minify": "minify ./dist/*.js --out-dir ./dist/",
     "prepublish": "npm run build"

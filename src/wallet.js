@@ -136,7 +136,7 @@ export default class Wallet extends EventEmitter {
      * @returns {Array<string>} onetimeAdressX, onetimeAddressY, txPublicKeyX, txPublicKeyY,
      * mask, encryptedAmount, encryptedMask in hex string
      */
-    _genUTXOProof(amount: number, pubSpendKey: ?string, pubViewKey: ?string, predefinedMask: ?Buffer): Array<string> {
+    _genUTXOProof = (amount: number, pubSpendKey: ?string, pubViewKey: ?string, predefinedMask: ?Buffer): Array<string> => {
         const proof = this.stealth.genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask);
 
         return [
@@ -156,7 +156,7 @@ export default class Wallet extends EventEmitter {
      * @param {number} amount Plain money to send to privacy address
      * @returns {Object} TxObject includes UTXO and original proof
      */
-    deposit(amount: number): Promise<any> {
+    deposit = (amount: number): Promise<any> => {
         this.emit('START_DEPOSIT');
 
         return new Promise((resolve, reject) => {
@@ -190,43 +190,39 @@ export default class Wallet extends EventEmitter {
      * @param {number} index
      * @returns {Object} utxo data
      */
-    getUTXO(index: number): Promise<Object> {
-        return new Promise((resolve, reject) => {
-            this.privacyContract.methods.getUTXO(index)
-                .call({
-                    from: this.scOpts.from,
-                })
-                // eslint-disable-next-line quote-props
-                .then(utxo => resolve({ ...utxo, '3': index })).catch((exception) => {
-                    reject(exception);
-                });
-        });
-    }
+    getUTXO = (index: number): Promise<Object> => new Promise((resolve, reject) => {
+        this.privacyContract.methods.getUTXO(index)
+            .call({
+                from: this.scOpts.from,
+            })
+        // eslint-disable-next-line quote-props
+            .then(utxo => resolve({ ...utxo, '3': index })).catch((exception) => {
+                reject(exception);
+            });
+    })
 
     /**
      * Request UTXOs data from smart-contract
      * @param {number} index
      * @returns {Object} utxo data
      */
-    getUTXOs(utxosIndexs: Array<number>): Promise<Object> {
-        return new Promise((resolve, reject) => {
-            this.privacyContract.methods.getUTXOs(
-                utxosIndexs,
-            )
-                .call()
-                .then((utxos) => {
-                    utxos = _.map(utxos, (raw, index) => {
-                        raw['3'] = utxosIndexs[parseInt(index)];
-                        return raw;
-                    });
-                    resolve(utxos);
-                }).catch((exception) => {
-                    reject(exception);
+    getUTXOs = (utxosIndexs: Array<number>): Promise<Object> => new Promise((resolve, reject) => {
+        this.privacyContract.methods.getUTXOs(
+            utxosIndexs,
+        )
+            .call()
+            .then((utxos) => {
+                utxos = _.map(utxos, (raw, index) => {
+                    raw['3'] = utxosIndexs[parseInt(index)];
+                    return raw;
                 });
-        });
-    }
+                resolve(utxos);
+            }).catch((exception) => {
+                reject(exception);
+            });
+    })
 
-    async _verifyUsableUTXO(rawUTXO) {
+    _verifyUsableUTXO = async (rawUTXO) => {
         let utxoInstance = new UTXO(rawUTXO);
         const isMine = utxoInstance.checkOwnership(this.addresses.privSpendKey);
 
@@ -249,7 +245,7 @@ export default class Wallet extends EventEmitter {
         return false;
     }
 
-    async _verifyUsableUTXOs(rawutxos) {
+    _verifyUsableUTXOs = async (rawutxos) => {
         try {
             const res = await this.areSpent(
                 _.map(rawutxos, utxo => new UTXO(utxo)),
@@ -268,7 +264,7 @@ export default class Wallet extends EventEmitter {
      * maybe the babel compiler is not optimized when using async, await inside loop
      * @param {number} fromIndex start scanning utxos on smart-contract for find your balance
      */
-    async scan(fromIndex: number) {
+    scan = async (fromIndex: number) => {
         const _self = this;
         return new Promise((resolve, reject) => {
             _self.emit('START_SCANNING');
@@ -336,7 +332,7 @@ export default class Wallet extends EventEmitter {
                 _self.balance = balance;
                 _self.scannedTo = scannedTo;
 
-                _self.utxos = rawUTXOs;
+                _self.utxos = (_self.utxos || []).concat(rawUTXOs);
 
                 /**
                  * Store balance, scannedTo, raw utxos to cache
@@ -377,7 +373,7 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} needed utxos, number of transaction to send all the amount
      */
-    _getSpendingUTXO(amount: BigInteger): Array<UTXO> {
+    _getSpendingUTXO = (amount: BigInteger): Array<UTXO> => {
         const spendingUTXOS = [];
         let i = 0;
         let justEnoughBalance = BigInteger.ZERO();
@@ -432,7 +428,7 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} txAmount total amount need to transfer
      * @returns {Array<Object>} list transaction each include needed utxos, remain amount, receiver amount
      */
-    _splitTransaction(utxos: Array<UTXO>, txTimes: number, txAmount: BigInteger) : Array<Object> {
+    _splitTransaction = (utxos: Array<UTXO>, txTimes: number, txAmount: BigInteger) : Array<Object> => {
         const txs = [];
         let sentAmount = BigInteger.ZERO();
 
@@ -466,7 +462,7 @@ export default class Wallet extends EventEmitter {
      * @param {Array<UTXO>} utxos
      * @returns {BigInteger}
      */
-    _calTotal(utxos: Array<UTXO>): BigInteger {
+    _calTotal = (utxos: Array<UTXO>): BigInteger => {
         let balance = BigInteger.ZERO();
         _.each(utxos, (utxo) => {
             if (!utxo.decodedAmount) {
@@ -490,7 +486,7 @@ export default class Wallet extends EventEmitter {
      * @returns {object} includes new utxos and original created proof
      * on some very first version, we store the proof locally to help debugging if error happens
      */
-    async send(privacyAddress: string, amount: string | number, message: ?string) {
+    send = async (privacyAddress: string, amount: string | number, message: ?string) => {
         assert(privacyAddress.length === CONSTANT.PRIVACY_ADDRESS_LENGTH, 'Malform privacy address !!');
 
         if (!this.balance) {
@@ -567,7 +563,7 @@ export default class Wallet extends EventEmitter {
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
-    _send(proof: Array<any>): Promise<any> {
+    _send = (proof: Array<any>): Promise<any> => {
         let address;
         let privacyContract;
 
@@ -613,107 +609,107 @@ export default class Wallet extends EventEmitter {
      * @returns {object} includes new utxos and original created proof
      * on some very first version, we store the proof locally to help debugging if error happens
      */
-    async withdraw(address: string, amount: string | number, message: ?string) {
-        assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
+     withdraw = async (address: string, amount: string | number, message: ?string) => {
+         assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
 
-        if (!this.balance) {
-            await this.scan();
-        }
+         if (!this.balance) {
+             await this.scan();
+         }
 
-        const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+         const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
 
-        assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
-        assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
+         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
+         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
 
-        this.emit('START_WITHDRAW');
+         this.emit('START_WITHDRAW');
 
-        const {
-            utxos, txTimes,
-        } = this._getSpendingUTXO(
-            biAmount,
-        );
+         const {
+             utxos, txTimes,
+         } = this._getSpendingUTXO(
+             biAmount,
+         );
 
-        assert(utxos !== null, 'Balance is not enough');
+         assert(utxos !== null, 'Balance is not enough');
 
-        const utxoInstances = _.map(utxos, (raw) => {
-            const utxo = new UTXO(raw);
-            utxo.checkOwnership(this.addresses.privSpendKey);
-            return utxo;
-        });
+         const utxoInstances = _.map(utxos, (raw) => {
+             const utxo = new UTXO(raw);
+             utxo.checkOwnership(this.addresses.privSpendKey);
+             return utxo;
+         });
 
-        const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
-        const totalResponse = [];
-        const totalSpent = utxoInstances.length;
+         const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
+         const totalResponse = [];
+         const totalSpent = utxoInstances.length;
 
-        try {
-            let txIndex = 0;
-            while (txs[txIndex]) {
-                // eslint-disable-next-line no-await-in-loop
-                const proof = await this._makeWithdrawProof(
-                    address,
-                    txs[txIndex].receivAmount,
-                    txs[txIndex].utxos,
-                    txs[txIndex].remainAmount,
-                    message,
-                );
+         try {
+             let txIndex = 0;
+             while (txs[txIndex]) {
+                 // eslint-disable-next-line no-await-in-loop
+                 const proof = await this._makeWithdrawProof(
+                     address,
+                     txs[txIndex].receivAmount,
+                     txs[txIndex].utxos,
+                     txs[txIndex].remainAmount,
+                     message,
+                 );
 
-                // eslint-disable-next-line no-await-in-loop
-                const res = await this._withdraw(proof);
-                totalResponse.push(res.NewUTXO);
-                txIndex++;
-            }
-            this.emit('FINISH_WITHDRAW');
-        } catch (ex) {
-            this.emit('STOP_WITHDRAW', ex);
-            this.utxos.splice(0, totalSpent - txs.length);
-            this.balance = this._calTotal(this.utxos);
-            this.emit('ON_BALANCE_CHANGE');
+                 // eslint-disable-next-line no-await-in-loop
+                 const res = await this._withdraw(proof);
+                 totalResponse.push(res.NewUTXO);
+                 txIndex++;
+             }
+             this.emit('FINISH_WITHDRAW');
+         } catch (ex) {
+             this.emit('STOP_WITHDRAW', ex);
+             this.utxos.splice(0, totalSpent - txs.length);
+             this.balance = this._calTotal(this.utxos);
+             this.emit('ON_BALANCE_CHANGE');
 
-            throw ex;
-        }
+             throw ex;
+         }
 
-        this.utxos.splice(0, totalSpent);
-        this.balance = this._calTotal(this.utxos);
+         this.utxos.splice(0, totalSpent);
+         this.balance = this._calTotal(this.utxos);
 
-        this.emit('FINISH_WITHDRAW');
-        this.emit('ON_BALANCE_CHANGE');
+         this.emit('FINISH_WITHDRAW');
+         this.emit('ON_BALANCE_CHANGE');
 
-        return totalResponse;
-    }
+         return totalResponse;
+     }
 
-    /**
+     /**
      * Use Web3 to sign and make tx to smart-contract
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
-    _withdraw(proof: Array<any>): Promise<any> {
-        // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
-        const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
-        const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
-        const web3 = new Web3(provider);
-        const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
-        const privacyContract = new web3.eth.Contract(
-            this.scOpts.ABI, this.scOpts.ADDRESS, {
-                gasPrice: this.scOpts.gasPrice,
-                gas: this.scOpts.gas,
-            },
-        );
+     _withdraw(proof: Array<any>): Promise<any> {
+         // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
+         const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
+         const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+         const web3 = new Web3(provider);
+         const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+         const privacyContract = new web3.eth.Contract(
+             this.scOpts.ABI, this.scOpts.ADDRESS, {
+                 gasPrice: this.scOpts.gasPrice,
+                 gas: this.scOpts.gas,
+             },
+         );
 
-        return new Promise((resolve, reject) => {
-            privacyContract.methods.withdrawFunds(...proof)
-                .send({
-                    from: address,
-                })
-                .on('error', (error) => {
-                    reject(error);
-                })
-                .then((receipt) => {
-                    resolve(receipt.events);
-                });
-        });
-    }
+         return new Promise((resolve, reject) => {
+             privacyContract.methods.withdrawFunds(...proof)
+                 .send({
+                     from: address,
+                 })
+                 .on('error', (error) => {
+                     reject(error);
+                 })
+                 .then((receipt) => {
+                     resolve(receipt.events);
+                 });
+         });
+     }
 
-    /**
+     /**
      * Generate decoys for ring
      * we get random 15 UTXOs then select a random numberOfRing set with size = UTXO_RING_SIZE
      * @param {number} numberOfRing
@@ -721,34 +717,34 @@ export default class Wallet extends EventEmitter {
      * @returns {Array<Array<UTXO>>} two dimension array of decoys,
      * actually we just need the commitment and public_key of decoys here
      */
-    async _getDecoys(numberOfRing: number, spendingIndexes: Array<number>): Promise<Array<Array<UTXO>>> {
-        // the total decoys we need to get from smart-contract = UTXO_RING_SIZE * ring_size
-        const decoysIndex = [];
+     async _getDecoys(numberOfRing: number, spendingIndexes: Array<number>): Promise<Array<Array<UTXO>>> {
+         // the total decoys we need to get from smart-contract = UTXO_RING_SIZE * ring_size
+         const decoysIndex = [];
 
-        const MAXIMUM_RANDOMIZATION_TIMES = 50;
-        let randomizationTimes = 0;
+         const MAXIMUM_RANDOMIZATION_TIMES = 50;
+         let randomizationTimes = 0;
 
-        // should stop if after 50 randomization times can't get all decoys
-        for (let counter = 0; counter < CONSTANT.UTXO_RING_SIZE + 1; counter++) {
-            let rd;
-            do {
-                rd = Math.round(Math.random() * this.scannedTo);
-                randomizationTimes++;
-            } while ((spendingIndexes.indexOf(rd) >= 0 || decoysIndex.indexOf(rd) >= 0) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
-            decoysIndex.push(rd);
-        }
+         // should stop if after 50 randomization times can't get all decoys
+         for (let counter = 0; counter < CONSTANT.UTXO_RING_SIZE + 1; counter++) {
+             let rd;
+             do {
+                 rd = Math.round(Math.random() * this.scannedTo);
+                 randomizationTimes++;
+             } while ((spendingIndexes.indexOf(rd) >= 0 || decoysIndex.indexOf(rd) >= 0) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
+             decoysIndex.push(rd);
+         }
 
-        // eslint-disable-next-line no-await-in-loop
-        let utxos = await this.getUTXOs(decoysIndex);
-        utxos = _.map(utxos, raw => new UTXO(raw));
+         // eslint-disable-next-line no-await-in-loop
+         let utxos = await this.getUTXOs(decoysIndex);
+         utxos = _.map(utxos, raw => new UTXO(raw));
 
-        return _.map(Array(numberOfRing), () => {
-            utxos = _.shuffle(utxos);
-            return utxos.slice(0, 11);
-        });
-    }
+         return _.map(Array(numberOfRing), () => {
+             utxos = _.shuffle(utxos);
+             return utxos.slice(0, 11);
+         });
+     }
 
-    /**
+     /**
      * Generate ring confidental transaction proof
      * 1. Generate ring-signature from spending utxos
      * 2. generate additional ring for proof commitment_input = commitment_output
@@ -756,103 +752,103 @@ export default class Wallet extends EventEmitter {
      * @param {Array<Object>} UTXOs's proof generated for this tx
      * @returns {Object} RingCT
      */
-    async _genRingCT(spendingUTXOs: Array<UTXO>, proofs: Array<Object>) {
-        const numberOfRing = spendingUTXOs.length;
-        const ringSize = CONSTANT.UTXO_RING_SIZE; // 11 decoys + one spending
+     async _genRingCT(spendingUTXOs: Array<UTXO>, proofs: Array<Object>) {
+         const numberOfRing = spendingUTXOs.length;
+         const ringSize = CONSTANT.UTXO_RING_SIZE; // 11 decoys + one spending
 
-        let decoys = await this._getDecoys(numberOfRing, _.map(spendingUTXOs, utxo => utxo.index));
+         let decoys = await this._getDecoys(numberOfRing, _.map(spendingUTXOs, utxo => utxo.index));
 
-        // random index each time generating ringct
-        const index = Math.round(Math.random() * (ringSize - 1));
+         // random index each time generating ringct
+         const index = Math.round(Math.random() * (ringSize - 1));
 
-        const pubkeys = []; // public keys of utxo
+         const pubkeys = []; // public keys of utxo
 
-        decoys = _.map(decoys, (decoyRing, counter) => {
-            decoyRing.splice(index, 0, spendingUTXOs[counter]);
-            return decoyRing;
-        });
-        _.each(_.flatten(decoys), (decoy) => {
-            pubkeys.push(decoy.lfStealth);
-        });
+         decoys = _.map(decoys, (decoyRing, counter) => {
+             decoyRing.splice(index, 0, spendingUTXOs[counter]);
+             return decoyRing;
+         });
+         _.each(_.flatten(decoys), (decoy) => {
+             pubkeys.push(decoy.lfStealth);
+         });
 
-        let totalSpending = BigInteger.ZERO();
+         let totalSpending = BigInteger.ZERO();
 
-        const privkeys = [];
+         const privkeys = [];
 
-        _.each(spendingUTXOs, (utxo) => {
-            const utxoIns = utxo;
-            // utxoIns.checkOwnership(this.addresses.privSpendKey);
-            totalSpending = totalSpending.add(
-                toBN(utxoIns.decodedAmount),
-            );
-            privkeys.push(
-                toBN(utxoIns.privKey),
-            );
-        });
+         _.each(spendingUTXOs, (utxo) => {
+             const utxoIns = utxo;
+             // utxoIns.checkOwnership(this.addresses.privSpendKey);
+             totalSpending = totalSpending.add(
+                 toBN(utxoIns.decodedAmount),
+             );
+             privkeys.push(
+                 toBN(utxoIns.privKey),
+             );
+         });
 
-        let message = new Buffer([]);
+         let message = new Buffer([]);
 
-        // ct ring
-        const {
-            privKey,
-            publicKeys,
-        } = MLSAG.genCTRing(
-            this.addresses.privSpendKey,
-            decoys,
-            _.map(proofs, (proof) => {
-                // console.log(
-                //     proof,
-                // );
-                const lfCommitment = toPoint(proof.commitment);
-                // console.log('lf Commitment ', lfCommitment);
-                message = Buffer.concat([
-                    message,
-                    Buffer.from(proof.onetimeAddress.slice(-128), 'hex'),
-                ]);
-                return {
-                    lfCommitment,
-                    decodedMask: proof.mask,
-                };
-            }),
-            index,
-        );
+         // ct ring
+         const {
+             privKey,
+             publicKeys,
+         } = MLSAG.genCTRing(
+             this.addresses.privSpendKey,
+             decoys,
+             _.map(proofs, (proof) => {
+                 // console.log(
+                 //     proof,
+                 // );
+                 const lfCommitment = toPoint(proof.commitment);
+                 // console.log('lf Commitment ', lfCommitment);
+                 message = Buffer.concat([
+                     message,
+                     Buffer.from(proof.onetimeAddress.slice(-128), 'hex'),
+                 ]);
+                 return {
+                     lfCommitment,
+                     decodedMask: proof.mask,
+                 };
+             }),
+             index,
+         );
 
-        // put ct ring to ring-signature to make ringct
-        privkeys.push(privKey);
+         // put ct ring to ring-signature to make ringct
+         privkeys.push(privKey);
 
-        const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
+         const ringctDecoys = [..._.map(decoys, ring => _.map(ring, utxo => utxo.lfStealth)), publicKeys];
 
-        const ringSignature = MLSAG.mulSign(
-            privkeys,
-            ringctDecoys,
-            index,
-            message,
-        );
+         const ringSignature = MLSAG.mulSign(
+             privkeys,
+             ringctDecoys,
+             index,
+             message,
+         );
 
-        assert(
-            MLSAG.verifyMul(
-                ringctDecoys,
-                ringSignature.I,
-                ringSignature.c1,
-                ringSignature.s,
-                message,
-            ) === true, 'Wrong signature !!',
-        );
-        return {
-            decoys,
-            signature: Buffer.from(
-                `${toBN(numberOfRing + 1).toString(16, 16)
-                }${toBN(ringSize).toString(16, 16)
-                }${ringSignature.message.toString('hex')
-                }${ringSignature.c1.toString(16, 64)
-                }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 64)).join('')
-                }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
-                'hex',
-            ),
-        };
-    }
+         assert(
+             MLSAG.verifyMul(
+                 ringctDecoys,
+                 ringSignature.I,
+                 ringSignature.c1,
+                 ringSignature.s,
+                 message,
+             ) === true, 'Wrong signature !!',
+         );
+         return {
+             decoys,
+             signature: Buffer.from(
+                 `${toBN(numberOfRing + 1).toString(16, 16)
+                 }${toBN(ringSize).toString(16, 16)
+                 }${ringSignature.message.toString('hex')
+                 }${ringSignature.c1.toString(16, 64)
+                 }${_.map(_.flatten(ringSignature.s), element => element.toString(16, 64)).join('')
+                 }${_.map(_.flatten(ringSignature.I), element => element.encode('hex', true)).join('')}`,
+                 'hex',
+             ),
+         };
+     }
 
-    /**
+     /**
      * Generate range proof to prove a number in a range
      * in tomo system, the range from 0 to 2^64
      * we can choose what kind of range proof to use here
@@ -861,19 +857,19 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} Proof
      */
-    _genRangeProof(remain: BigInteger, amount: BigInteger, masks: Array<BigInteger>): Buffer {
-        let result = BulletProof.prove([
-            remain,
-            amount,
-        ], [
-            masks[0],
-            masks[1],
-        ]);
+     _genRangeProof(remain: BigInteger, amount: BigInteger, masks: Array<BigInteger>): Buffer {
+         let result = BulletProof.prove([
+             remain,
+             amount,
+         ], [
+             masks[0],
+             masks[1],
+         ]);
 
-        result = BulletProof.proofToHex(result);
+         result = BulletProof.proofToHex(result);
 
-        return Buffer.from(
-            toBN(result.CommsLength).toString(16, 8)
+         return Buffer.from(
+             toBN(result.CommsLength).toString(16, 8)
             + result.Comms
             + result.A
             + result.S
@@ -892,11 +888,11 @@ export default class Wallet extends EventEmitter {
             + result.cy
             + result.cz
             + result.cx,
-            'hex',
-        );
-    }
+             'hex',
+         );
+     }
 
-    /**
+     /**
      * Generate utxos for sending transaction, one for sender (even balance = 0), one for receiver
      * @param {string} receiver privacy address of receiver
      * @param {BigInteger} amount sending amount
@@ -904,34 +900,34 @@ export default class Wallet extends EventEmitter {
      * @param {boolean} isWithdraw
      * @returns {Array<Proof>} [proofOfReceiver, proofOfMe]
      */
-    _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger, isWithdraw: boolean): Array<Object> {
-        let receiverStealth;
-        let proofOfReceiver;
+     _genOutputProofs(receiver: string, amount: BigInteger, remain: BigInteger, isWithdraw: boolean): Array<Object> {
+         let receiverStealth;
+         let proofOfReceiver;
 
-        if (isWithdraw) {
-            // When withdraw, we set mask = 0, so commitment  = value*H
-            proofOfReceiver = this.stealth.genTransactionProof(
-                amount.toString(10), null, null, '0',
-            );
-        } else {
-            receiverStealth = Stealth.fromString(receiver);
-            proofOfReceiver = receiverStealth.genTransactionProof(
-                amount.toString(10),
-            );
-        }
+         if (isWithdraw) {
+             // When withdraw, we set mask = 0, so commitment  = value*H
+             proofOfReceiver = this.stealth.genTransactionProof(
+                 amount.toString(10), null, null, '0',
+             );
+         } else {
+             receiverStealth = Stealth.fromString(receiver);
+             proofOfReceiver = receiverStealth.genTransactionProof(
+                 amount.toString(10),
+             );
+         }
 
-        const proofOfMe = this.stealth.genTransactionProof(
-            remain.toString(10),
-        );
+         const proofOfMe = this.stealth.genTransactionProof(
+             remain.toString(10),
+         );
 
-        const proofOfFee = this.stealth.genTransactionProof(
-            CONSTANT.PRIVACY_FLAT_FEE.toString(10), null, null, '0',
-        );
+         const proofOfFee = this.stealth.genTransactionProof(
+             CONSTANT.PRIVACY_FLAT_FEE.toString(10), null, null, '0',
+         );
 
-        return [proofOfReceiver, proofOfMe, proofOfFee];
-    }
+         return [proofOfReceiver, proofOfMe, proofOfFee];
+     }
 
-    /**
+     /**
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
@@ -940,47 +936,47 @@ export default class Wallet extends EventEmitter {
      * @param {string} [message]
      * @returns {Object} proof output
      */
-    async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
-        const outputProofs = this._genOutputProofs(receiver, amount, remain);
-        const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
+     async _makePrivateSendProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
+         const outputProofs = this._genOutputProofs(receiver, amount, remain);
+         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
-        return [
-            // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]
-            _.map(_.flatten(decoys), decoy => decoy.index),
-            [
-                `0x${outputProofs[1].commitment.substr(2, 64)}`,
-                `0x${outputProofs[1].commitment.substr(-64)}`,
-                `0x${outputProofs[0].commitment.substr(2, 64)}`,
-                `0x${outputProofs[0].commitment.substr(-64)}`,
-                `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
-                `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
-                `0x${outputProofs[0].onetimeAddress.substr(2, 64)}`,
-                `0x${outputProofs[0].onetimeAddress.substr(-64)}`,
-                `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
-                `0x${outputProofs[1].txPublicKey.substr(-64)}`,
-                `0x${outputProofs[0].txPublicKey.substr(2, 64)}`,
-                `0x${outputProofs[0].txPublicKey.substr(-64)}`,
-            ],
-            [
-                `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
-                `0x${outputProofs[0].encryptedAmount}`, // encrypt of amount using ECDH],
-                `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
-                `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
-            ],
-            signature,
-            this._genRangeProof(remain, amount, [
-                BigInteger.fromHex(outputProofs[1].mask),
-                BigInteger.fromHex(outputProofs[0].mask),
-            ]),
-            _.map(
-                this._encryptedTransactionData(
-                    [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
-                ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
-            ),
-        ];
-    }
+         return [
+             // [ring_element_index_00,ring_element_index_01,ring_element_index_02,ring_element_index_11...]
+             _.map(_.flatten(decoys), decoy => decoy.index),
+             [
+                 `0x${outputProofs[1].commitment.substr(2, 64)}`,
+                 `0x${outputProofs[1].commitment.substr(-64)}`,
+                 `0x${outputProofs[0].commitment.substr(2, 64)}`,
+                 `0x${outputProofs[0].commitment.substr(-64)}`,
+                 `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
+                 `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
+                 `0x${outputProofs[0].onetimeAddress.substr(2, 64)}`,
+                 `0x${outputProofs[0].onetimeAddress.substr(-64)}`,
+                 `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
+                 `0x${outputProofs[1].txPublicKey.substr(-64)}`,
+                 `0x${outputProofs[0].txPublicKey.substr(2, 64)}`,
+                 `0x${outputProofs[0].txPublicKey.substr(-64)}`,
+             ],
+             [
+                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
+                 `0x${outputProofs[0].encryptedAmount}`, // encrypt of amount using ECDH],
+                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
+                 `0x${outputProofs[0].encryptedMask}`, // encrypt of mask using ECDH],
+             ],
+             signature,
+             this._genRangeProof(remain, amount, [
+                 BigInteger.fromHex(outputProofs[1].mask),
+                 BigInteger.fromHex(outputProofs[0].mask),
+             ]),
+             _.map(
+                 this._encryptedTransactionData(
+                     [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
+                 ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
+             ),
+         ];
+     }
 
-    /**
+     /**
      * Create proof base on amount and privacy_addres
      * @param {string} receiver privacy address
      * @param {BigInteger} amount
@@ -989,46 +985,46 @@ export default class Wallet extends EventEmitter {
      * @param {string} string
      * @returns {Object} proof output
      */
-    async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
-        const outputProofs = this._genOutputProofs(receiver, amount, remain, true);
-        const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
+     async _makeWithdrawProof(receiver: string, amount: BigInteger, spendingUTXOs: Array<UTXO>, remain: BigInteger, message: ?string): Array {
+         const outputProofs = this._genOutputProofs(receiver, amount, remain, true);
+         const { signature, decoys } = await this._genRingCT(spendingUTXOs, outputProofs);
 
-        return [
-            _.map(_.flatten(decoys), decoy => decoy.index),
-            [
-                `0x${outputProofs[1].commitment.substr(2, 64)}`,
-                `0x${outputProofs[1].commitment.substr(-64)}`,
-                `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
-                `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
-                `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
-                `0x${outputProofs[1].txPublicKey.substr(-64)}`,
-            ],
-            '0x' + amount.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
-            [
-                `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
-                `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
-            ],
-            receiver,
-            signature,
-            this._genRangeProof(remain, amount, [
-                BigInteger.fromHex(outputProofs[1].mask),
-                BigInteger.fromHex(outputProofs[0].mask),
-            ]),
-            // _.fill(Array(137), '0x0'),
-            _.map(
-                this._encryptedTransactionData(
-                    [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
-                ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
-            ),
-        ];
-    }
+         return [
+             _.map(_.flatten(decoys), decoy => decoy.index),
+             [
+                 `0x${outputProofs[1].commitment.substr(2, 64)}`,
+                 `0x${outputProofs[1].commitment.substr(-64)}`,
+                 `0x${outputProofs[1].onetimeAddress.substr(2, 64)}`,
+                 `0x${outputProofs[1].onetimeAddress.substr(-64)}`,
+                 `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
+                 `0x${outputProofs[1].txPublicKey.substr(-64)}`,
+             ],
+             '0x' + amount.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
+             [
+                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
+                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
+             ],
+             receiver,
+             signature,
+             this._genRangeProof(remain, amount, [
+                 BigInteger.fromHex(outputProofs[1].mask),
+                 BigInteger.fromHex(outputProofs[0].mask),
+             ]),
+             // _.fill(Array(137), '0x0'),
+             _.map(
+                 this._encryptedTransactionData(
+                     [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
+                 ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
+             ),
+         ];
+     }
 
     /**
      * Check if the utxo spent or not by KeyImage (refer MLSAG)
      * @param {UTXO} utxo
      * @returns {boolean}
      */
-    isSpent(utxo: UTXO): Promise<boolean> {
+    isSpent = (utxo: UTXO): Promise<boolean> => {
         const ringctKeys = utxo.getRingCTKeys(this.addresses.privSpendKey);
 
         return new Promise((resolve, reject) => {
@@ -1052,7 +1048,7 @@ export default class Wallet extends EventEmitter {
      * @param {UTXO} utxo
      * @returns {boolean}
      */
-    areSpent(utxos: Array<UTXO>): Promise<boolean> {
+    areSpent = (utxos: Array<UTXO>): Promise<boolean> => {
         const privKey = this.addresses.privSpendKey;
 
         return new Promise((resolve, reject) => {
@@ -1079,19 +1075,17 @@ export default class Wallet extends EventEmitter {
      * @param {UTXO} utxo
      * @returns {boolean}
      */
-    getTxs(txIndexs: Array<number>): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this.privacyContract.methods.getTxs(
-                txIndexs,
-            )
-                .call({
-                    from: this.scOpts.from,
-                })
-                .then(txs => resolve(txs)).catch((exception) => {
-                    reject(exception);
-                });
-        });
-    }
+    getTxs = (txIndexs: Array<number>): Promise<boolean> => new Promise((resolve, reject) => {
+        this.privacyContract.methods.getTxs(
+            txIndexs,
+        )
+            .call({
+                from: this.scOpts.from,
+            })
+            .then(txs => resolve(txs)).catch((exception) => {
+                reject(exception);
+            });
+    })
 
     /**
      * Check utxo's proof belongs
@@ -1101,11 +1095,9 @@ export default class Wallet extends EventEmitter {
      * @param {string} encryptedAmount AES(ECDH, amount) in hex string
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
      */
-    isMine(txPubkey: Buffer | string, stealth: Buffer | string, encryptedAmount: string): DecodedProof {
-        return this.stealth.checkTransactionProof(
-            txPubkey, stealth, encryptedAmount,
-        );
-    }
+    isMine = (txPubkey: Buffer | string, stealth: Buffer | string, encryptedAmount: string): DecodedProof => this.stealth.checkTransactionProof(
+        txPubkey, stealth, encryptedAmount,
+    )
 
     /**
      * Tx_data is a struct that encoded by
@@ -1116,7 +1108,7 @@ export default class Wallet extends EventEmitter {
      * @param {Buffer} data Transaction data
      * @returns {Object | null} return decrypted tx data
      */
-    async checkTxOwnership(utxos: Array<number> | Array<UTXO>, data: Buffer) {
+    checkTxOwnership = async (utxos: Array<number> | Array<UTXO>, data: Buffer) => {
         assert(utxos && utxos.length, 'Blank utxos input ');
 
         let UTXOIns;
@@ -1255,9 +1247,9 @@ export default class Wallet extends EventEmitter {
                     decodedAmount: isMine.amount,
                 };
 
-                this.utxos.push(rawutxo);
+                // this.utxos.push(rawutxo);
 
-                this.balance = this._calTotal(this.utxos);
+                // this.balance = this._calTotal(this.utxos);
 
                 this.emit('ON_BALANCE_CHANGE');
 

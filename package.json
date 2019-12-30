@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Tomo privacy wallet apis.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -26,7 +26,8 @@
       "@babel/preset-flow"
     ],
     "plugins": [
-      "@babel/plugin-transform-runtime"
+      "@babel/plugin-transform-runtime",
+      "@babel/plugin-proposal-class-properties"
     ],
     "env": {
       "production": {
@@ -68,6 +69,7 @@
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
     "@babel/node": "^7.6.1",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
     "@babel/plugin-transform-runtime": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",

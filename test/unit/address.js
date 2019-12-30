@@ -24,7 +24,7 @@ describe('#unittest #address', () => {
                 address.privateKeyToPub(generatedKeys.privViewKey));
         });
 
-        it('Return address with format Base58.encode(public spend key + public view key + checksum', () => {
+        it('Return address with format Base58.encode(public spend key + public view key + checksum', (done) => {
             // length after using base58 should reduce from 140 to 95
             assert.equal(generatedKeys.pubAddr.length, 95);
 
@@ -40,9 +40,12 @@ describe('#unittest #address', () => {
             assert.equal(generatedKeys.pubViewKey, publicViewKey);
 
             // double test check sum
-            const preAddr = generatedKeys.pubSpendKey + generatedKeys.pubViewKey;
-            const hash = common.fastHash(preAddr).slice(0, 8);
-            assert.equal(hash, decodedPrivacyAddress.substr(132, 8));
+            try {
+                address.validatePrivacyAddress(generatedKeys.pubAddr);
+                done();
+            } catch (ex) {
+                done(ex);
+            }
         });
 
     });

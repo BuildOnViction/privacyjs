@@ -21,7 +21,6 @@ import assert from 'assert';
 import * as _ from 'lodash';
 import toBN from 'number-to-bn'; // this is converter to bn.js, this lib support more utils than bigi
 import { keccak256 } from 'js-sha3';
-// import base58 from 'bs58';
 import base58 from 'bs58';
 import * as CONSTANT from './constants';
 import * as Address from './address';
@@ -31,12 +30,6 @@ import MLSAG, { keyImage } from './mlsag';
 import BulletProof from './bullet_proof';
 import { decodeTx, encodeTx } from './crypto';
 import { toHex, padLeft, BigInteger } from './common';
-
-// const EC = require('elliptic').ec;
-
-// const secp256k1 = new EC('secp256k1');
-
-// const BigInteger = CONSTANT.BigInteger;
 
 type SmartContractOpts = {
     RPC_END_POINT: string,

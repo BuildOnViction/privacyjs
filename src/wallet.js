@@ -329,10 +329,15 @@ export default class Wallet extends EventEmitter {
             }
 
             getUTXO(index).then(() => {
-                _self.balance = balance;
-                _self.scannedTo = scannedTo;
+                if (!_self.balance) {
+                    _self.balance = balance;
+                } else {
+                    _self.balance = _self.balance.add(balance);
+                }
 
-                _self.utxos = (_self.utxos || []).concat(rawUTXOs);
+                _self.scannedTo = scannedTo;
+                _self.utxos = _self.utxos || [];
+                _self.utxos = _self.utxos.concat(rawUTXOs);
 
                 /**
                  * Store balance, scannedTo, raw utxos to cache
@@ -412,6 +417,7 @@ export default class Wallet extends EventEmitter {
             };
         }
 
+        console.log('spendingUTXOS.length', spendingUTXOS.length);
         return {
             utxos: spendingUTXOS,
             totalAmount: justEnoughBalance,
@@ -455,6 +461,26 @@ export default class Wallet extends EventEmitter {
         });
 
         return txs;
+    }
+
+    /**
+     * Estimate fee
+     */
+    estimateFee = (amount: number) : BigInteger => {
+        const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+
+        assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
+        assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
+
+        const {
+            totalFee,
+        } = this._getSpendingUTXO(
+            biAmount,
+        );
+
+        console.log('totalFee ', totalFee);
+
+        return totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT);
     }
 
     /**
@@ -1205,9 +1231,7 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        return this.balance ? Web3.utils.fromWei(
-            this.balance.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(10),
-        ) : '0';
+        return this.balance ? this.balance.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(10) : BigInteger.ZERO();
     }
 
     hexBalance() {

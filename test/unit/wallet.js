@@ -320,7 +320,33 @@ describe('#unittest #wallet', () => {
             5 * GWEI,
             0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
 
-        wallet.balance = toBN(10.1 * GWEI);
+        wallet.balance = toBN(20.2 * GWEI);
+
+        it('Estimate Fee ', (done) => {
+            expect(wallet.estimateFee('1500000000000000000').eq(
+                CONSTANT.PRIVACY_FLAT_FEE.mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            )).to.be.equal(true);
+
+            expect(wallet.estimateFee('10000000000000000000').eq(
+                CONSTANT.PRIVACY_FLAT_FEE.mul(
+                    toBN(2),
+                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            )).to.be.equal(true);
+
+            expect(wallet.estimateFee('11000000000000000000').eq(
+                CONSTANT.PRIVACY_FLAT_FEE.mul(
+                    toBN(2),
+                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            )).to.be.equal(true);
+
+            expect(wallet.estimateFee('15100000000000000000').eq(
+                CONSTANT.PRIVACY_FLAT_FEE.mul(
+                    toBN(3),
+                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            )).to.be.equal(true);
+
+            done();
+        });
 
         it('Select utxos with tx amount = first utxo', (done) => {
             const {

@@ -214,7 +214,7 @@ export default class Wallet extends EventEmitter {
             .then((utxos) => {
                 utxos = _.map(utxos, (raw, index) => {
                     raw['3'] = utxosIndexs[parseInt(index)];
-                    return raw;
+                    return { ...raw };
                 });
                 resolve(utxos);
             }).catch((exception) => {
@@ -276,11 +276,7 @@ export default class Wallet extends EventEmitter {
 
             async function getUTXO(i) {
                 let utxos = [];
-                try {
-                    utxos = await _self.getUTXOs(_.range(i, i + 49));
-                } catch (ex) {
-                    scannedTo = i - 1;
-                }
+                utxos = await _self.getUTXOs(_.range(i, i + 49));
 
                 if (!utxos.length) {
                     return false;
@@ -295,7 +291,7 @@ export default class Wallet extends EventEmitter {
                         utxos.splice(ct, 1);
 
                         if (!isFinished) {
-                            scannedTo = utxo[3] - 1;
+                            scannedTo = utxo[3];
                         }
 
                         isFinished = true;

@@ -360,7 +360,7 @@ export default class Wallet extends EventEmitter {
 
     _restoreWalletState(balance: number | string, scannedTo: number, utxos: Array<Object>) {
         if (balance !== null) {
-            this.balance = BigInteger.fromHex(
+            this.balance = toBN(
                 balance || '00',
             );
         }

@@ -51,23 +51,29 @@ export const generateKeys = function (secretKey) {
     };
 };
 
-export const validatePrivacyAddress = function (address) {
-    // length after using base58 should reduce from 140 to 95
-    assert.equal(address.length, 95);
+export const validate = function (address) {
+    try {
+        // length after using base58 should reduce from 140 to 95
+        assert.equal(address.length, 95);
 
-    // decode the public address to get public spend key and public view key - length 140
-    const decodedPrivacyAddress = common.bintohex(Base58.decode(address));
+        // decode the public address to get public spend key and public view key - length 140
+        const decodedPrivacyAddress = common.bintohex(Base58.decode(address));
 
-    // get first 33 bytes - 66 hex string of public spend key
-    const publicSpendKey = decodedPrivacyAddress.substr(0, 66);
-    assert.equal(publicSpendKey.length, 66);
+        // get first 33 bytes - 66 hex string of public spend key
+        const publicSpendKey = decodedPrivacyAddress.substr(0, 66);
+        assert.equal(publicSpendKey.length, 66);
 
-    // get first 33 bytes - 66 hex string of public view key
-    const publicViewKey = decodedPrivacyAddress.substr(66, 66);
-    assert.equal(publicViewKey.length, 66);
+        // get first 33 bytes - 66 hex string of public view key
+        const publicViewKey = decodedPrivacyAddress.substr(66, 66);
+        assert.equal(publicViewKey.length, 66);
 
-    // double test check sum
-    const preAddr = publicSpendKey + publicViewKey;
-    const hash = common.fastHash(preAddr).slice(0, 8);
-    assert.equal(hash, decodedPrivacyAddress.substr(132, 8));
+        // double test check sum
+        const preAddr = publicSpendKey + publicViewKey;
+        const hash = common.fastHash(preAddr).slice(0, 8);
+        assert.equal(hash, decodedPrivacyAddress.substr(132, 8));
+        return true;
+    } catch (ex) {
+        console.error(ex);
+        return false;
+    }
 };

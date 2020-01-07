@@ -40,12 +40,13 @@ describe('#unittest #address', () => {
             assert.equal(generatedKeys.pubViewKey, publicViewKey);
 
             // double test check sum
-            try {
-                address.validatePrivacyAddress(generatedKeys.pubAddr);
-                done();
-            } catch (ex) {
-                done(ex);
+            const isValidted = address.validate(generatedKeys.pubAddr);
+
+            if (!isValidted) {
+                return done(new Error('Privacy address is malform'));
             }
+
+            done();
         });
 
     });

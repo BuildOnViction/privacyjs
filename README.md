@@ -34,7 +34,6 @@ Usage
 TEST
 ---
 - [x] Unit test - done
-- [x] Smock test - partial implemented for wallet's api
 - [x] End to end test on tomochain testnet - cover main flow deposit, withdraw, sendtoprivate
 
 License

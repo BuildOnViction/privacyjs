@@ -213,8 +213,14 @@ export default class Wallet extends EventEmitter {
         )
             .call()
             .then((utxos) => {
-                utxos = _.map(utxos, (raw, index) => {
-                    raw['3'] = utxosIndexs[parseInt(index)];
+                utxos = _.map(utxos, (raw) => {
+                    // remove all redundant field - because solidity return both by field name and by index with struct
+                    // we use just index for sync with other method
+                    delete raw.XBits;
+                    delete raw.YBits;
+                    delete raw.encodeds;
+                    delete raw.index;
+
                     return { ...raw };
                 });
                 resolve(utxos);
@@ -473,8 +479,6 @@ export default class Wallet extends EventEmitter {
         } = this._getSpendingUTXO(
             biAmount,
         );
-
-        console.log('totalFee ', totalFee);
 
         return totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT);
     }

@@ -35,7 +35,7 @@ type Signature = EC.Signature;
     * 1 - [commitmentYBit, pubkeyYBit, txPubYBit],
     * 2 - [EncryptedAmount, EncryptedMask],
     * 3 - _index
-    *
+    * 4 - txID
 */
 
 type UTXOType = {
@@ -99,7 +99,11 @@ class UTXO {
         this.mask = numberToHex(utxo['2'][1]);
         this.txPubX = utxo['0']['2'];
         this.txPubYBit = utxo['1']['2'];
-        this.index = utxo['3'];
+        this.index = parseInt(utxo['3']);
+        this.txID = parseInt(utxo['4']);
+
+        assert(this.txID >= 0, 'TxId not found');
+        assert(this.index >= 0, 'utxos\'index not found');
 
         this.lfStealth = secp256k1.curve.pointFromX(
             toBN(this.pubkeyX),

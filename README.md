@@ -27,10 +27,6 @@ Additional requests/features please contact anhnt@tomochain.com
 Usage
 -----
 
-***The fun part of privacy is the client must calculate all the things. Any wrong calculation results in money loss :)***
-
-***Comming Soon - High-level apis comming for instant use***
-
 TEST
 ---
 - [x] Unit test - done

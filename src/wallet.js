@@ -138,6 +138,7 @@ export default class Wallet extends EventEmitter {
      */
     _genUTXOProof = (amount: number, pubSpendKey: ?string, pubViewKey: ?string, predefinedMask: ?Buffer): Array<string> => {
         const proof = this.stealth.genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask);
+        // const randomProof = this.stealth.genTransactionProof(0, pubSpendKey, pubViewKey);
 
         return [
             `0x${proof.onetimeAddress.substr(2, 64)}`, // the X part of point
@@ -147,7 +148,12 @@ export default class Wallet extends EventEmitter {
             `0x${proof.mask}`,
             `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
             `0x${proof.encryptedMask}`,
-            _.fill(Array(137), '0x0'), // data parameters
+            // _.fill(Array(137), '0x0'), // data parameters
+            _.map(
+                this._encryptedTransactionData(
+                    [proof], amount, this.addresses.pubAddr, '',
+                ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
+            ),
         ];
     }
 
@@ -572,8 +578,6 @@ export default class Wallet extends EventEmitter {
         }
 
         // we don't add the response here because of listening to SC-event already
-        console.log('totalSpent ', totalSpent);
-
         this.utxos.splice(0, totalSpent);
         this.balance = this._calTotal(this.utxos);
 
@@ -825,11 +829,7 @@ export default class Wallet extends EventEmitter {
             this.addresses.privSpendKey,
             decoys,
             _.map(proofs, (proof) => {
-                // console.log(
-                //     proof,
-                // );
                 const lfCommitment = toPoint(proof.commitment);
-                // console.log('lf Commitment ', lfCommitment);
                 message = Buffer.concat([
                     message,
                     Buffer.from(proof.onetimeAddress.slice(-128), 'hex'),

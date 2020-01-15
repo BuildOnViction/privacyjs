@@ -219,7 +219,8 @@ export default class Wallet extends EventEmitter {
         )
             .call()
             .then((utxos) => {
-                utxos = _.map(utxos, (raw) => {
+                utxos = _.map(utxos, (raw, index) => {
+                    raw['3'] = utxosIndexs[parseInt(index)];
                     // remove all redundant field - because solidity return both by field name and by index with struct
                     // we use just index for sync with other method
                     delete raw.XBits;

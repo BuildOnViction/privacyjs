@@ -1043,7 +1043,7 @@ export default class Wallet extends EventEmitter {
             // _.fill(Array(137), '0x0'),
             _.map(
                 this._encryptedTransactionData(
-                    [outputProofs[1], outputProofs[0]], amount, receiver, message || '',
+                    [outputProofs[1]], amount, receiver, message || '',
                 ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
             ),
         ];
@@ -1190,12 +1190,14 @@ export default class Wallet extends EventEmitter {
      * @param {string} message meta data of tx
      */
     _encryptedTransactionData(outputUTXOs: Array<Object>, amount: number, receiver: string, message: string) {
+        assert(outputUTXOs && outputUTXOs.length, 'Blank utxos input ');
+
         const secretKey = keccak256(
             this.addresses.privViewKey + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
         );
 
         // conver to buffer array
-        const data = Buffer.concat([
+        let data = Buffer.concat([
             Buffer.from(
                 padLeft(toHex(amount), 16), 'hex',
             ),
@@ -1210,6 +1212,8 @@ export default class Wallet extends EventEmitter {
                 ),
                 'hex',
             )]);
+
+        data = Buffer.from(padLeft(data.toString('hex'), 256), 'hex');
 
         const encodedData = encodeTx(
             data.toString('hex'),
@@ -1275,10 +1279,6 @@ export default class Wallet extends EventEmitter {
                     decodedAmount: isMine.amount,
                 };
 
-                // this.utxos.push(rawutxo);
-
-                // this.balance = this._calTotal(this.utxos);
-
                 this.emit('ON_BALANCE_CHANGE');
 
                 this.emit('NEW_UTXO', rawutxo);
@@ -1287,7 +1287,6 @@ export default class Wallet extends EventEmitter {
 
         // listen to new TX - this for history
         this.privacyContractSocket.events.NewTransaction().on('data', async (evt) => {
-            console.log(evt);
             const data = _.map(evt.returnValues[2], byte => byte.substr(2, 2)).join('');
             const txData = await this.checkTxOwnership(
                 _.map(evt.returnValues[1], raw => new UTXO(raw)),

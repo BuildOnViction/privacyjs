@@ -31,6 +31,14 @@ import BulletProof from './bullet_proof';
 import { decodeTx, encodeTx } from './crypto';
 import { toHex, padLeft, BigInteger } from './common';
 
+const EC = require('elliptic').ec;
+
+const secp256k1 = new EC('secp256k1');
+const FAKE_POINT = secp256k1.curve.pointFromX(
+    '59929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',
+    true,
+);
+
 type SmartContractOpts = {
     RPC_END_POINT: string,
     SOCKET_END_POINT: string,
@@ -1150,6 +1158,12 @@ export default class Wallet extends EventEmitter {
             UTXOIns = utxos;
         }
 
+        if (UTXOIns.length === 1) {
+            UTXOIns.push({
+                lfTxPublicKey: FAKE_POINT,
+            });
+        }
+
         // generate and compare TX-secretkey with the original
         const secretKey = keccak256(
             this.addresses.privViewKey + _.map(UTXOIns, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
@@ -1167,9 +1181,10 @@ export default class Wallet extends EventEmitter {
 
         if (computedCheckSum === data.slice(0, 8).toString('hex')) {
             let receiver = decodedData.substr(32, 140);
-
-            if (receiver.replace(/^0*/, '').length !== 42) {
+            if (receiver.replace(/^0*/, '').length !== 40) {
                 receiver = base58.encode(Buffer.from(decodedData.substr(32, 140), 'hex')).toString('hex');
+            } else {
+                receiver = '0x' + receiver.replace(/^0*/, '');
             }
             return {
                 amount: BigInteger.fromHex(decodedData.substr(0, 16)).toString(10),
@@ -1191,12 +1206,22 @@ export default class Wallet extends EventEmitter {
      */
     _encryptedTransactionData(outputUTXOs: Array<Object>, amount: number, receiver: string, message: string) {
         assert(outputUTXOs && outputUTXOs.length, 'Blank utxos input ');
+        // create an fake utxo for encoding
+        if (outputUTXOs.length === 1) {
+            outputUTXOs.push({
+                txPublicKey: FAKE_POINT.encode('hex', false),
+            });
+        }
 
         const secretKey = keccak256(
             this.addresses.privViewKey + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
         );
 
         // conver to buffer array
+        if (!Web3.utils.isBN(amount)) {
+            amount = toBN(amount);
+        }
+
         let data = Buffer.concat([
             Buffer.from(
                 padLeft(toHex(amount), 16), 'hex',
@@ -1204,7 +1229,7 @@ export default class Wallet extends EventEmitter {
             Buffer.from(
                 padLeft(toHex(parseInt(new Date() / 1000)), 16), 'hex',
             ),
-            Buffer.from(receiver.length === 42 ? receiver : base58.decode(receiver)),
+            receiver.length === 42 ? Buffer.from(padLeft(receiver.substring(2, 42), 140), 'hex') : Buffer.from(base58.decode(receiver)),
             Buffer.from(
                 padLeft(
                     Web3.utils.asciiToHex(message).slice(2),
@@ -1214,7 +1239,6 @@ export default class Wallet extends EventEmitter {
             )]);
 
         data = Buffer.from(padLeft(data.toString('hex'), 256), 'hex');
-
         const encodedData = encodeTx(
             data.toString('hex'),
             secretKey,

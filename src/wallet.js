@@ -62,6 +62,7 @@ type DecodedProof = {
     mask: ?string
 };
 
+const LIMITED_SCANNING_UTXOS = 70;
 export default class Wallet extends EventEmitter {
     addresses: {
         privSpendKey: string,
@@ -298,8 +299,7 @@ export default class Wallet extends EventEmitter {
 
             async function getUTXO(i) {
                 let utxos = [];
-                utxos = await _self.getUTXOs(_.range(i, i + 49));
-
+                utxos = await _self.getUTXOs(_.range(i, i + LIMITED_SCANNING_UTXOS - 1));
                 if (!utxos.length) {
                     return false;
                 }
@@ -343,7 +343,7 @@ export default class Wallet extends EventEmitter {
                     rawUTXOs = rawUTXOs.concat(filteredRawUTXOs);
                 }
 
-                if (!isFinished) { await getUTXO(i + 50); }
+                if (!isFinished) { await getUTXO(i + LIMITED_SCANNING_UTXOS); }
             }
 
             getUTXO(index).then(() => {

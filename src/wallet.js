@@ -570,7 +570,6 @@ export default class Wallet extends EventEmitter {
         });
 
         const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
-        console.log('txs ', txs);
 
         const totalResponse = [];
         const totalSpent = utxos.length;
@@ -1188,7 +1187,7 @@ export default class Wallet extends EventEmitter {
 
         // generate and compare TX-secretkey with the original
         const secretKey = keccak256(
-            this.addresses.privViewKey + _.map(UTXOIns, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
+            this.addresses.privViewKey.toUpperCase() + _.map(UTXOIns, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
         );
 
         let decodedData = decodeTx(
@@ -1236,7 +1235,7 @@ export default class Wallet extends EventEmitter {
         }
 
         const secretKey = keccak256(
-            this.addresses.privViewKey + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
+            this.addresses.privViewKey.toUpperCase() + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
         );
 
         // conver to buffer array

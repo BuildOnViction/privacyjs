@@ -1,6 +1,6 @@
 {
   "name": "tomoprivacyjs",
-  "version": "0.4.3",
+  "version": "0.4.5",
   "description": "Tomo privacy wallet apis.",
   "homepage": "https://github.com/tomochain/privacyjs",
   "directories": {
@@ -63,7 +63,7 @@
     "lodash": "^4.17.15",
     "number-to-bn": "^1.7.0",
     "utf8": "^3.0.0",
-    "web3": "^1.2.1"
+    "web3": "^1.2.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
@@ -81,7 +81,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chain": "^0.1.3",
-    "coveralls": "^2.11.14",
+    "coveralls": "^3.0.9",
     "del": "^2.2.2",
     "easystatic": "^0.1.12",
     "eslint": "^5.9.0",

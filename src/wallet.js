@@ -396,7 +396,7 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} needed utxos, number of transaction to send all the amount
      */
-    _getSpendingUTXO = (amount: BigInteger): Array<UTXO> => {
+    _getSpendingUTXO = (amount: BigInteger, isSpendingAll: ?boolean): Array<UTXO> => {
         const spendingUTXOS = [];
         let i = 0;
         let justEnoughBalance = BigInteger.ZERO();
@@ -421,11 +421,8 @@ export default class Wallet extends EventEmitter {
             i++;
         }
 
-        console.log('... Doing TX with ', spendingUTXOS.length, ' UTXOs');
-        console.log('... Split into ', txTimes, ' sub-tx');
-
         // not enough balance to pay fee + amount
-        if (amount.cmp(
+        if (!isSpendingAll && amount.cmp(
             justEnoughBalance.sub(
                 toBN(txTimes).mul(CONSTANT.PRIVACY_FLAT_FEE),
             ),
@@ -437,7 +434,9 @@ export default class Wallet extends EventEmitter {
 
         return {
             utxos: spendingUTXOS,
-            totalAmount: justEnoughBalance,
+            totalAmount: isSpendingAll ? justEnoughBalance.sub(
+                toBN(txTimes).mul(CONSTANT.PRIVACY_FLAT_FEE),
+            ) : amount,
             txTimes,
             totalFee: toBN(txTimes).mul(CONSTANT.PRIVACY_FLAT_FEE),
         };
@@ -456,9 +455,9 @@ export default class Wallet extends EventEmitter {
         let sentAmount = BigInteger.ZERO();
 
         for (let index = 0; index < txTimes - 1; index++) {
-            // TODO pick CONSTANT.MAXIMUM_ALLOWED_RING_NUMBER utxos each round while total > CONSTANT.PRIVACY_FLAT_FEE
             const spendingUTXO = utxos.splice(0, CONSTANT.MAXIMUM_ALLOWED_RING_NUMBER);
             const totalThisRound = this._calTotal(spendingUTXO);
+
             if (totalThisRound.cmp(CONSTANT.PRIVACY_FLAT_FEE) > 0) {
                 const sentAmountThisTx = this._calTotal(spendingUTXO).sub(CONSTANT.PRIVACY_FLAT_FEE);
                 txs.push({
@@ -483,16 +482,24 @@ export default class Wallet extends EventEmitter {
     /**
      * Estimate fee
      */
-    estimateFee = (amount: number): BigInteger => {
-        const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+    estimateFee = (amount: ?number): BigInteger => {
+        let biAmount;
+        if (amount) {
+            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
 
-        assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
+            assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
+        } else {
+            // spending all balance
+            biAmount = this.balance;
+        }
+
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
 
         const {
             totalFee,
         } = this._getSpendingUTXO(
             biAmount,
+            !amount,
         );
 
         return totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT);
@@ -534,7 +541,13 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+        let biAmount;
+
+        if (amount) {
+            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+        } else {
+            biAmount = this.balance;
+        }
 
         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
@@ -542,9 +555,10 @@ export default class Wallet extends EventEmitter {
         this.emit('START_SENDING');
 
         const {
-            utxos, txTimes,
+            utxos, txTimes, totalAmount,
         } = this._getSpendingUTXO(
             biAmount,
+            !amount,
         );
 
         assert(utxos !== null, 'Balance is not enough');
@@ -555,7 +569,7 @@ export default class Wallet extends EventEmitter {
             return utxo;
         });
 
-        const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
+        const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
 
         const totalResponse = [];
         const totalSpent = utxos.length;
@@ -655,7 +669,13 @@ export default class Wallet extends EventEmitter {
             await this.scan();
         }
 
-        const biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+        let biAmount;
+
+        if (amount) {
+            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+        } else {
+            biAmount = this.balance;
+        }
 
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
@@ -663,9 +683,10 @@ export default class Wallet extends EventEmitter {
         this.emit('START_WITHDRAW');
 
         const {
-            utxos, txTimes,
+            utxos, txTimes, totalAmount,
         } = this._getSpendingUTXO(
             biAmount,
+            !amount,
         );
 
         assert(utxos !== null, 'Balance is not enough');
@@ -676,7 +697,7 @@ export default class Wallet extends EventEmitter {
             return utxo;
         });
 
-        const txs = this._splitTransaction(utxoInstances, txTimes, biAmount);
+        const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
         const totalResponse = [];
         const totalSpent = utxoInstances.length;
 
@@ -1166,7 +1187,7 @@ export default class Wallet extends EventEmitter {
 
         // generate and compare TX-secretkey with the original
         const secretKey = keccak256(
-            this.addresses.privViewKey + _.map(UTXOIns, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
+            this.addresses.privViewKey.toUpperCase() + _.map(UTXOIns, raw => raw.lfTxPublicKey.encode('hex', false)).join(''),
         );
 
         let decodedData = decodeTx(
@@ -1214,7 +1235,7 @@ export default class Wallet extends EventEmitter {
         }
 
         const secretKey = keccak256(
-            this.addresses.privViewKey + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
+            this.addresses.privViewKey.toUpperCase() + _.map(outputUTXOs, utxo => utxo.txPublicKey).join(''),
         );
 
         // conver to buffer array

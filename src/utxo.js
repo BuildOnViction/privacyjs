@@ -103,6 +103,7 @@ class UTXO {
         this.txID = parseInt(utxo['4']);
 
         assert(this.txID >= 0, 'TxId not found');
+
         assert(this.index >= 0, 'utxos\'index not found');
 
         this.lfStealth = secp256k1.curve.pointFromX(

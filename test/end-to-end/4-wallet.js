@@ -319,6 +319,22 @@ describe('#ete #wallet', () => {
                 done(ex);
             }
         });
+
+        // it('Should able to send max balance', (done) => {
+        //     const receiver = generateKeys(WALLETS[1].privateKey);
+        //     try {
+        //         sendWallet.scan(0).then(() => {
+        //             sendWallet.send(receiver.pubAddr).then(() => {
+        //                 console.log(sendWallet.balance.toString(10));
+        //                 done();
+        //             }).catch((err) => {
+        //                 done(err);
+        //             });
+        //         });
+        //     } catch (ex) {
+        //         done(ex);
+        //     }
+        // });
     });
 
     describe('#withdraw', () => {
@@ -383,6 +399,24 @@ describe('#ete #wallet', () => {
                     done(new Error(''));
                 }).catch(() => {
                     done();
+                });
+            } catch (ex) {
+                done(ex);
+            }
+        });
+
+        it('Should able to withdraw all balance', (done) => {
+            const receiver = WALLETS[1].address;
+            try {
+                withdrawWallet.scan(0).then(() => {
+                    withdrawWallet.withdraw(receiver).then(() => {
+                        console.log(withdrawWallet.balance.toString(10));
+                        done();
+                    }).catch((err) => {
+                        done(err);
+                    });
+                }).catch((err) => {
+                    done(err);
                 });
             } catch (ex) {
                 done(ex);

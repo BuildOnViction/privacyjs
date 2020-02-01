@@ -21,6 +21,7 @@ const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
 
+// TODO refactoring
 const baseH = secp256k1.g;
 const baseG = secp256k1.curve.point(
     '50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0',

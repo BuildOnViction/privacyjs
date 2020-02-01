@@ -202,14 +202,11 @@ describe('#unittest #wallet', () => {
 
         it('Select utxos with tx amount = first utxo', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(GWEI),
             );
             expect(utxos.length === 2).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(2 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
             expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
@@ -217,56 +214,44 @@ describe('#unittest #wallet', () => {
 
         it('Select utxos with tx amount = 1.5 * first utxo', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(1.5 * GWEI),
             );
             expect(utxos.length === 2).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(2 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
             expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 2 utxos', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(2 * GWEI),
             );
             expect(utxos.length === 3).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(5 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
             expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 4 utxos', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(10 * GWEI),
             );
             expect(utxos.length === 5).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(10.1 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
             expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum 6 utxos', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(11.1 * GWEI),
             );
             expect(utxos.length === 7).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(12.1 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
             expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
             done();
@@ -274,14 +259,11 @@ describe('#unittest #wallet', () => {
 
         it('Select utxos with tx amount = sum 9 utxos', (done) => {
             const {
-                utxos, totalAmount, totalFee, txTimes,
+                utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
                 toBN(20.1 * GWEI),
             );
             expect(utxos.length === 10).to.be.equal(true);
-            expect(totalAmount.eq(
-                toBN(20.2 * GWEI),
-            )).to.be.equal(true);
             expect(txTimes === 3).to.be.equal(true);
             expect(totalFee.eq(toBN(0.03 * GWEI))).to.be.equal(true);
             done();
@@ -340,6 +322,13 @@ describe('#unittest #wallet', () => {
             )).to.be.equal(true);
 
             expect(wallet.estimateFee('15100000000000000000').eq(
+                CONSTANT.PRIVACY_FLAT_FEE.mul(
+                    toBN(3),
+                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            )).to.be.equal(true);
+
+            // spend all
+            expect(wallet.estimateFee().eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(3),
                 ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
@@ -452,83 +441,31 @@ describe('#unittest #wallet', () => {
             done();
         });
 
+
+        it('Select utxos with tx amount = total balance', (done) => {
+            const {
+                utxos, txTimes, totalAmount,
+            } = wallet._getSpendingUTXO(
+                toBN(20.2 * GWEI),
+                true,
+            );
+
+            const txs = wallet._splitTransaction(utxos, txTimes, totalAmount);
+            expect(txs.length).to.be.equal(3);
+
+            expect(txs[0].utxos.length).to.be.equal(4);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+
+            expect(txs[1].utxos.length).to.be.equal(4);
+            expect(txs[1].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+
+            expect(txs[2].utxos.length).to.be.equal(2);
+            expect(txs[2].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
+            expect(txs[2].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            done();
+        });
     });
 
-    // describe('#send()', () => {
-    //     let wallet;
-    //     let wallet1;
-    //     let stealthPoint;
-    //     let txPubkeyPoint;
-    //     let decodedProof;
-    //     let proof;
-
-    //     beforeEach((done) => {
-    //         wallet = new Wallet(SENDER_WALLET.privateKey, {
-    //             RPC_END_POINT: Configs.RPC_END_POINT,
-    //             ABI: Configs.PRIVACY_ABI,
-    //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
-    //             gasPrice: '250000000',
-    //             gas: '20000000',
-    //         }, SENDER_WALLET.address);
-
-    //         wallet1 = new Wallet(WALLETS[1].privateKey, {
-    //             RPC_END_POINT: Configs.RPC_END_POINT,
-    //             ABI: Configs.PRIVACY_ABI,
-    //             ADDRESS: Configs.PRIVACY_SMART_CONTRACT_ADDRESS,
-    //             gasPrice: '250000000',
-    //             gas: '20000000',
-    //         }, SENDER_WALLET.address);
-
-    //         proof = wallet._genUTXOProof(1000000000);
-    //         stealthPoint = Point.fromAffine(ecparams,
-    //             new BigInteger(proof[0].slice(2), 16),
-    //             new BigInteger(proof[1].slice(2), 16));
-    //         txPubkeyPoint = Point.fromAffine(ecparams,
-    //             new BigInteger(proof[2].slice(2), 16),
-    //             new BigInteger(proof[3].slice(2), 16));
-
-    //         done();
-    //     });
-
-    // it('should able to create correct output utxos', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should able to create correct ringct', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should able to create correct bullet proof', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should call to sc correctly to send and receive exactly same output utxos', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should not create single ring', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should not able to create an tx with sum output \n
-    // commitment > sum input commitment', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should not able to create an tx with privatekey not in the ring', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should not create proof with ringsize > 5', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should not execute-time > 10s ', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-
-    // it('should emit event correctly in sending progress', (done) => {
-    //     done(new Error('Not implemented yet'));
-    // });
-    // });
 });

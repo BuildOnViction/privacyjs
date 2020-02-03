@@ -95,7 +95,6 @@ describe('#unittest #ringct #mlsag', () => {
             expect(signature.c1).not.to.equal(null);
             expect(signature.s).not.to.equal(null);
 
-
             expect(
                 MLSAG.verifyMul(
                     [_.map(inputUTXOS, utxo => utxo.lfStealth), publicKeys],

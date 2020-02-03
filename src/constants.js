@@ -19,7 +19,7 @@ export const baseH = secp256k1.curve.point(
 );
 
 export const UTXO_RING_SIZE = 12;
-export const MAXIMUM_ALLOWED_RING_NUMBER = 4;
+export const MAXIMUM_ALLOWED_RING_NUMBER = 8;
 export const PRIVACY_FLAT_FEE = toBN(
     '10000000',
 ); // 0.01 TOMO

@@ -616,10 +616,7 @@ export default class Wallet extends EventEmitter {
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
-    _send = (proof: Array<any>): Promise<any> => {
-        let address;
-        let privacyContract;
-
+    _send = (proof: Array<any>): Promise<any> => new Promise((resolve, reject) => {
         try {
             // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
             const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
@@ -628,19 +625,14 @@ export default class Wallet extends EventEmitter {
             const web3 = new Web3(provider);
             const account = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
 
-            address = account.address;
+            const address = account.address;
 
-            privacyContract = new web3.eth.Contract(
+            const privacyContract = new web3.eth.Contract(
                 this.scOpts.ABI, this.scOpts.ADDRESS, {
                     gasPrice: this.scOpts.gasPrice,
                     gas: this.scOpts.gas,
                 },
             );
-        } catch (ex) {
-            console.log('EX -- ', ex);
-        }
-
-        return new Promise((resolve, reject) => {
             privacyContract.methods.privateSend(...proof)
                 .send({
                     from: address,
@@ -651,8 +643,11 @@ export default class Wallet extends EventEmitter {
                 .then((receipt) => {
                     resolve(receipt.events);
                 });
-        });
-    }
+        } catch (ex) {
+            console.log('EX -- ', ex);
+            reject(ex);
+        }
+    })
 
     /**
      * Private send money to privacy address
@@ -743,32 +738,34 @@ export default class Wallet extends EventEmitter {
     * @returns {object} new utxos and proof
     */
     _withdraw(proof: Array<any>): Promise<any> {
-        // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
-        const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
-        const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
-        const web3 = new Web3(provider);
-        const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
-        const privacyContract = new web3.eth.Contract(
-            this.scOpts.ABI, this.scOpts.ADDRESS, {
-                gasPrice: this.scOpts.gasPrice,
-                gas: this.scOpts.gas,
-            },
-        );
-
         return new Promise((resolve, reject) => {
-            privacyContract.methods.withdrawFunds(...proof)
-                .send({
-                    from: address,
-                })
-                .on('error', (error) => {
-                    reject(error);
-                })
-                .then((receipt) => {
-                    resolve({
-                        ...receipt.events,
-                        tx: receipt,
+            try {
+                const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
+                const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+                const web3 = new Web3(provider);
+                const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+                const privacyContract = new web3.eth.Contract(
+                    this.scOpts.ABI, this.scOpts.ADDRESS, {
+                        gasPrice: this.scOpts.gasPrice,
+                        gas: this.scOpts.gas,
+                    },
+                );
+                privacyContract.methods.withdrawFunds(...proof)
+                    .send({
+                        from: address,
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    })
+                    .then((receipt) => {
+                        resolve({
+                            ...receipt.events,
+                            tx: receipt,
+                        });
                     });
-                });
+            } catch (ex) {
+                reject(ex);
+            }
         });
     }
 

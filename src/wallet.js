@@ -62,7 +62,7 @@ type DecodedProof = {
     mask: ?string
 };
 
-const LIMITED_SCANNING_UTXOS = 70;
+const LIMITED_SCANNING_UTXOS = 200;
 export default class Wallet extends EventEmitter {
     addresses: {
         privSpendKey: string,

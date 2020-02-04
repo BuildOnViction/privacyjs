@@ -199,6 +199,7 @@ describe('#unittest #wallet', () => {
             0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
 
         wallet.balance = toBN(10.1 * GWEI);
+        CONSTANT.MAXIMUM_ALLOWED_RING_NUMBER = 4;
 
         it('Select utxos with tx amount = first utxo', (done) => {
             const {
@@ -235,6 +236,7 @@ describe('#unittest #wallet', () => {
             done();
         });
         it('Select utxos with tx amount = sum first 4 utxos', (done) => {
+
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(

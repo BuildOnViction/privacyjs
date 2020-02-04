@@ -88,6 +88,14 @@ export default class Wallet extends EventEmitter {
     // scanned to
     scannedTo: number;
 
+    // status
+    txState: {
+        type: string,
+        status: string, // done, proving, making
+        txs: Object<Array>,
+        proofs: Object<Array>
+    } = {};
+
     /**
      *
      * @param {string} privateKey
@@ -525,9 +533,34 @@ export default class Wallet extends EventEmitter {
         return balance;
     }
 
+    setTxState = (type, status: string, txs: Object<Array>, proofs: Object<Array>) => {
+        this.txState = {
+            type,
+            status,
+            txs,
+            proofs,
+        };
+        this.emit(status);
+    }
+
+    resetTxState = () => {
+        this.txState.proofs = [];
+        this.txState.txs = [];
+        this.txState = {
+            type: null,
+            status: 'IDLE',
+            txs: [],
+            proofs: [],
+        };
+        this.emit('IDLE');
+    }
+
+    getTxState = () => this.txState
+
     /**
-     * Private send money to privacy address
-     * TODO code look ugly on utxo.checkOwnership
+     * Private send money to privacy address 2 steps
+     * 1. make send proof
+     * 2. send proof to smart contract
      * @param {string} privacyAddress
      * @param {string|number} amount
      * @param {string} message
@@ -535,6 +568,15 @@ export default class Wallet extends EventEmitter {
      * on some very first version, we store the proof locally to help debugging if error happens
      */
     send = async (privacyAddress: string, amount: string | number, message: ?string) => {
+        await this.makeSendProof(privacyAddress, amount, message);
+        const newUTXOS = await this.doTx();
+
+        return newUTXOS;
+    }
+
+    makeSendProof = async (privacyAddress: string, amount: string | number, message: ?string) => {
+        this.resetTxState();
+
         assert(privacyAddress.length === CONSTANT.PRIVACY_ADDRESS_LENGTH, 'Malform privacy address !!');
 
         if (!this.balance) {
@@ -542,11 +584,10 @@ export default class Wallet extends EventEmitter {
         }
 
         let biAmount;
-
         if (amount) {
             biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
         } else {
-            biAmount = this.balance;
+            biAmount = toBN(this.balance.toString(10));
         }
 
         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
@@ -571,10 +612,11 @@ export default class Wallet extends EventEmitter {
 
         const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
 
-        const totalResponse = [];
-        const totalSpent = utxos.length;
+        this.emit('FINISH_SPLITING_TRANSACTIONS');
 
         let currentTx = 0;
+        const txsProofs = [];
+
         try {
             while (txs[currentTx]) {
                 // eslint-disable-next-line no-await-in-loop
@@ -586,26 +628,57 @@ export default class Wallet extends EventEmitter {
                     message,
                 );
 
-                // eslint-disable-next-line no-await-in-loop
-                const res = await this._send(proof);
-                totalResponse.push(res.NewUTXO);
+                txsProofs.push(proof);
                 currentTx++;
             }
-            this.emit('FINISH_SENDING');
+            this.setTxState('_send', 'FINISH_CREATING_PROOFS', txs, txsProofs);
+            return txsProofs;
         } catch (ex) {
-            this.utxos.splice(0, totalSpent - txs.length);
-            this.balance = this._calTotal(this.utxos);
-            this.emit('ON_BALANCE_CHANGE');
-            this.emit('STOP_SENDING', ex);
+            this.emit('FAILED_CREATING_PROOFS');
             throw ex;
         }
+    }
 
-        // we don't add the response here because of listening to SC-event already
-        this.utxos.splice(0, totalSpent);
+    doTx = async () => {
+        const totalResponse = [];
+        const txState = this.getTxState();
+        const failedTxs = [];
+        const sentUTXOs = [];
+        const successfulTxs = [];
+
+        // try {
+        this.emit('START_DOING_TXS');
+        let currentTx = 0;
+
+        while (txState.proofs[currentTx]) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                const res = await this[txState.type](txState.proofs[currentTx]);
+                totalResponse.push(res.NewUTXO);
+                successfulTxs.push({
+                    tx: txState.txs[currentTx],
+                    new_utxo: res.NewUTXO,
+                });
+                sentUTXOs.push(
+                    ..._.map(txState.txs[currentTx].utxos, utxo => utxo.index),
+                );
+            } catch (ex) {
+                failedTxs.push({
+                    error: ex,
+                    tx: txState.txs[currentTx],
+                    proof: txState.proofs[currentTx],
+                });
+            }
+            currentTx++;
+        }
+
+        // remove spent utxos
+        this.utxos = _.filter(this.utxos, utxo => !(sentUTXOs.indexOf(parseInt(utxo['3'])) >= 0));
         this.balance = this._calTotal(this.utxos);
 
-        this.emit('FINISH_SENDING');
         this.emit('ON_BALANCE_CHANGE');
+        this.emit('FINISH_DOING_TXS', successfulTxs, failedTxs);
+
         return totalResponse;
     }
 
@@ -616,10 +689,7 @@ export default class Wallet extends EventEmitter {
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
-    _send = (proof: Array<any>): Promise<any> => {
-        let address;
-        let privacyContract;
-
+    _send = (proof: Array<any>): Promise<any> => new Promise((resolve, reject) => {
         try {
             // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
             const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
@@ -628,19 +698,14 @@ export default class Wallet extends EventEmitter {
             const web3 = new Web3(provider);
             const account = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
 
-            address = account.address;
+            const address = account.address;
 
-            privacyContract = new web3.eth.Contract(
+            const privacyContract = new web3.eth.Contract(
                 this.scOpts.ABI, this.scOpts.ADDRESS, {
                     gasPrice: this.scOpts.gasPrice,
                     gas: this.scOpts.gas,
                 },
             );
-        } catch (ex) {
-            console.log('EX -- ', ex);
-        }
-
-        return new Promise((resolve, reject) => {
             privacyContract.methods.privateSend(...proof)
                 .send({
                     from: address,
@@ -651,18 +716,28 @@ export default class Wallet extends EventEmitter {
                 .then((receipt) => {
                     resolve(receipt.events);
                 });
-        });
-    }
+        } catch (ex) {
+            console.log('EX -- ', ex);
+            reject(ex);
+        }
+    })
 
     /**
-     * Private send money to privacy address
-     * @param {string} privacyAddress
+     * Withdraw money from private account to public account
+     * @param {string} address
      * @param {string|number} amount
      * @param {string} message
      * @returns {object} includes new utxos and original created proof
      * on some very first version, we store the proof locally to help debugging if error happens
      */
     withdraw = async (address: string, amount: string | number, message: ?string) => {
+        await this.makeWithdrawProof(address, amount, message);
+        const newUTXOS = await this.doTx();
+
+        return newUTXOS;
+    }
+
+    makeWithdrawProof = async (address: string, amount: string | number, message: ?string) => {
         assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
 
         if (!this.balance) {
@@ -698,8 +773,7 @@ export default class Wallet extends EventEmitter {
         });
 
         const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
-        const totalResponse = [];
-        const totalSpent = utxoInstances.length;
+        const txsProofs = [];
 
         try {
             let txIndex = 0;
@@ -712,29 +786,15 @@ export default class Wallet extends EventEmitter {
                     txs[txIndex].remainAmount,
                     message,
                 );
-
-                // eslint-disable-next-line no-await-in-loop
-                const res = await this._withdraw(proof);
-                totalResponse.push(res.NewUTXO);
                 txIndex++;
+                txsProofs.push(proof);
             }
-            this.emit('FINISH_WITHDRAW');
+            this.setTxState('_withdraw', 'FINISH_CREATING_PROOFS', txs, txsProofs);
+            return txsProofs;
         } catch (ex) {
-            this.emit('STOP_WITHDRAW', ex);
-            this.utxos.splice(0, totalSpent - txs.length);
-            this.balance = this._calTotal(this.utxos);
-            this.emit('ON_BALANCE_CHANGE');
-
+            this.emit('FAILED_CREATING_PROOFS');
             throw ex;
         }
-
-        this.utxos.splice(0, totalSpent);
-        this.balance = this._calTotal(this.utxos);
-
-        this.emit('FINISH_WITHDRAW');
-        this.emit('ON_BALANCE_CHANGE');
-
-        return totalResponse;
     }
 
     /**
@@ -743,32 +803,34 @@ export default class Wallet extends EventEmitter {
     * @returns {object} new utxos and proof
     */
     _withdraw(proof: Array<any>): Promise<any> {
-        // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
-        const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
-        const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
-        const web3 = new Web3(provider);
-        const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
-        const privacyContract = new web3.eth.Contract(
-            this.scOpts.ABI, this.scOpts.ADDRESS, {
-                gasPrice: this.scOpts.gasPrice,
-                gas: this.scOpts.gas,
-            },
-        );
-
         return new Promise((resolve, reject) => {
-            privacyContract.methods.withdrawFunds(...proof)
-                .send({
-                    from: address,
-                })
-                .on('error', (error) => {
-                    reject(error);
-                })
-                .then((receipt) => {
-                    resolve({
-                        ...receipt.events,
-                        tx: receipt,
+            try {
+                const randomPrivatekey = Web3.utils.randomHex(32).slice(2);
+                const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+                const web3 = new Web3(provider);
+                const { address } = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+                const privacyContract = new web3.eth.Contract(
+                    this.scOpts.ABI, this.scOpts.ADDRESS, {
+                        gasPrice: this.scOpts.gasPrice,
+                        gas: this.scOpts.gas,
+                    },
+                );
+                privacyContract.methods.withdrawFunds(...proof)
+                    .send({
+                        from: address,
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    })
+                    .then((receipt) => {
+                        resolve({
+                            ...receipt.events,
+                            tx: receipt,
+                        });
                     });
-                });
+            } catch (ex) {
+                reject(ex);
+            }
         });
     }
 
@@ -1104,6 +1166,8 @@ export default class Wallet extends EventEmitter {
 
     /**
      * Check if the utxo spent or not by KeyImage (refer MLSAG)
+     * Note that all utxos must check ownership of this wallet first
+     * wallet.isMine(utxo) or utxo.checkOwnership()
      * @param {UTXO} utxo
      * @returns {boolean}
      */
@@ -1313,7 +1377,7 @@ export default class Wallet extends EventEmitter {
      * @param {Array<UTXO>} utxos array of utxo after check areSpent
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
      */
-    updateUTXOs(utxos:  Object<Array>) {
+    updateUTXOs(utxos: Object<Array>) {
         this.utxos = utxos;
         this.balance = this._calTotal(this.utxos);
     }

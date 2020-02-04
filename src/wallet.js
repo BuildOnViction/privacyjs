@@ -1108,6 +1108,7 @@ export default class Wallet extends EventEmitter {
      * @returns {boolean}
      */
     areSpent = (utxos: Array<UTXO>): Promise<boolean> => {
+        console.log('utxosutxos', utxos);
         const privKey = this.addresses.privSpendKey;
 
         return new Promise((resolve, reject) => {
@@ -1306,6 +1307,15 @@ export default class Wallet extends EventEmitter {
             scannedTo: this.scannedTo !== -1 ? this.scannedTo : -1,
             utxos: this.utxos,
         };
+    }
+    /**
+     * Update balance, utxo afer check areSpent
+     * @param {Array<UTXO>} utxos array of utxo after check areSpent
+     * @returns {Object} stealth_private_key, stealth_public_key, real amount
+     */
+    updateUTXOs(utxos:  Object<Array>) {
+        this.utxos = utxos;
+        this.balance = this._calTotal(this.utxos);
     }
 
     listenNewUTXO(scOpts: SmartContractOpts) {

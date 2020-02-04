@@ -405,23 +405,5 @@ describe('#ete #wallet', () => {
             }
         });
 
-        it('Should able to withdraw all balance', (done) => {
-            const receiver = WALLETS[1].address;
-            try {
-                withdrawWallet.scan(0).then(() => {
-                    withdrawWallet.withdraw(receiver).then(() => {
-                        console.log(withdrawWallet.balance.toString(10));
-                        done();
-                    }).catch((err) => {
-                        done(err);
-                    });
-                }).catch((err) => {
-                    done(err);
-                });
-            } catch (ex) {
-                done(ex);
-            }
-        });
-
     });
 });

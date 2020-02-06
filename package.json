@@ -59,6 +59,7 @@
     "ecurve": "^1.0.1",
     "elliptic": "^6.5.1",
     "eventemitter3": "^4.0.0",
+    "isomorphic-fetch": "^2.2.1",
     "js-sha3": "^0.8.0",
     "lodash": "^4.17.15",
     "number-to-bn": "^1.7.0",

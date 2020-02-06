@@ -466,6 +466,58 @@ export default class BulletProof {
         return MRPResult;
     }
 
+    /**
+     * Convert to smart-contract readable format
+     * @param {Object} proof
+     * @returns {Object}
+     */
+    static proofToHexFromWasm(proof) {
+        const MRPResult = {
+            Ipp: {},
+            CommsLength: proof.Comms.length,
+        };
+        MRPResult.Comms = _.map(proof.Comms, v => secp256k1.curve.point(
+            toBN(v.X),
+            toBN(v.Y),
+        ).encode('hex', true)).join('');
+        MRPResult.A = secp256k1.curve.point(
+            toBN(proof.A.X),
+            toBN(proof.A.Y),
+        ).encode('hex', true);
+        MRPResult.S = secp256k1.curve.point(
+            toBN(proof.S.X),
+            toBN(proof.S.Y),
+        ).encode('hex', true);
+        MRPResult.cy = toBN(proof.Cy).toString(16, 64);
+        MRPResult.cz = toBN(proof.Cz).toString(16, 64);
+        MRPResult.T1 = secp256k1.curve.point(
+            toBN(proof.T1.X),
+            toBN(proof.T1.Y),
+        ).encode('hex', true);
+        MRPResult.T2 = secp256k1.curve.point(
+            toBN(proof.T2.X),
+            toBN(proof.T2.Y),
+        ).encode('hex', true);
+        MRPResult.cx = toBN(proof.Cx).toString(16, 64);
+        MRPResult.Th = toBN(proof.Th).toString(16, 64);
+        MRPResult.Tau = toBN(proof.Tau).toString(16, 64);
+        MRPResult.Mu = toBN(proof.Mu).toString(16, 64);
+        MRPResult.Ipp.L = _.map(proof.IPP.L, point => secp256k1.curve.point(
+            toBN(point.X),
+            toBN(point.Y),
+        ).encode('hex', true)).join('');
+        MRPResult.Ipp.R = _.map(proof.IPP.R, point => secp256k1.curve.point(
+            toBN(point.X),
+            toBN(point.Y),
+        ).encode('hex', true)).join('');
+
+        MRPResult.Ipp.A = toBN(proof.IPP.A).toString(16, 64);
+        MRPResult.Ipp.B = toBN(proof.IPP.B).toString(16, 64);
+        MRPResult.Ipp.Challenges = _.map(proof.IPP.Challenges, bi => toBN(bi).toString(16, 64)).join('');
+
+        return MRPResult;
+    }
+
     static verify(mrp) : Boolean {
         M = mrp.Comms.length;
         let VinBuffer = _.flatten(_.map(mrp.Comms, vi => vi.encode('array', false).slice(1)));

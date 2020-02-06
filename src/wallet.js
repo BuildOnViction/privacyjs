@@ -31,6 +31,8 @@ import BulletProof from './bullet_proof';
 import { decodeTx, encodeTx } from './crypto';
 import { toHex, padLeft, BigInteger } from './common';
 
+import loadWASM from '../wasm/load_wasm';
+
 const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
@@ -61,6 +63,8 @@ type DecodedProof = {
     amount: ?string,
     mask: ?string
 };
+
+loadWASM();
 
 const LIMITED_SCANNING_UTXOS = 200;
 export default class Wallet extends EventEmitter {
@@ -979,15 +983,25 @@ export default class Wallet extends EventEmitter {
     * @returns {Object} Proof
     */
     _genRangeProof(remain: BigInteger, amount: BigInteger, masks: Array<BigInteger>): Buffer {
-        let result = BulletProof.prove([
-            remain,
-            amount,
-        ], [
-            masks[0],
-            masks[1],
-        ]);
+        // eslint-disable-next-line no-undef
+        let proof = mrpProve(remain.toString(10), amount.toString(10), masks[0].toString(10), masks[1].toString(10));
+        const num = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+        let counter = 0;
+        while (counter < proof.length) {
+            if ((proof[counter] === ':' && num.indexOf(proof[counter + 1]) >= 0)
+                    || (num.indexOf(proof[counter]) >= 0 && proof[counter + 1] === ',')
+                    || (num.indexOf(proof[counter]) >= 0 && proof[counter + 1] === '}')
+                    || (proof[counter] === '[' && num.indexOf(proof[counter + 1]) >= 0)
+                    || (proof[counter] === ',' && num.indexOf(proof[counter + 1]) >= 0)
+                    || (num.indexOf(proof[counter]) >= 0 && proof[counter + 1] === ']')
+            ) {
+                proof = proof.splice(counter + 1, 0, '"');
+            }
+            counter++;
+        }
 
-        result = BulletProof.proofToHex(result);
+        // result = BulletProof.proofToHex(result);
+        const result = BulletProof.proofToHexFromWasm(JSON.parse(proof));
 
         return Buffer.from(
             toBN(result.CommsLength).toString(16, 8)

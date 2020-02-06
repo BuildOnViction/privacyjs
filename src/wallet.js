@@ -1385,6 +1385,15 @@ export default class Wallet extends EventEmitter {
             utxos: this.utxos,
         };
     }
+    /**
+     * Update balance, utxo afer check areSpent
+     * @param {Array<UTXO>} utxos array of utxo after check areSpent
+     * @returns {Object} stealth_private_key, stealth_public_key, real amount
+     */
+    updateUTXOs(utxos: Object<Array>) {
+        this.utxos = utxos;
+        this.balance = this._calTotal(this.utxos);
+    }
 
     listenNewUTXO(scOpts: SmartContractOpts) {
         const webSocketProvider = new Web3.providers.WebsocketProvider(scOpts.SOCKET_END_POINT);

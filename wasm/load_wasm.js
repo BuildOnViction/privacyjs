@@ -1,11 +1,8 @@
 require('isomorphic-fetch');
 require('./wasm_exec');
-const path = require('path');
-const fs = require('fs');
 
 // load WASM
 let isWASMRunned = false;
-const fileName = path.resolve(path.dirname('./wasm/privacy.wasm'), 'privacy.wasm');
 
 if (!String.prototype.splice) {
     /**
@@ -20,7 +17,7 @@ if (!String.prototype.splice) {
      * @param {string} newSubStr The String that is spliced in.
      * @return {string} A new string with the spliced substring.
      */
-    String.prototype.splice = function(start, delCount, newSubStr) {
+    String.prototype.splice = function (start, delCount, newSubStr) {
         return this.slice(0, start) + newSubStr + this.slice(start + Math.abs(delCount));
     };
 }
@@ -35,18 +32,42 @@ function loadWASM() {
         // eslint-disable-next-line
         const go = new Go();
         let inst;
-        const data = fs.readFileSync(fileName);
 
-        WebAssembly.instantiate(data, go.importObject).then((result) => {
-            inst = result.instance;
-            isWASMRunned = true;
-            go.run(inst)
-            
-            resolve();
-        }).catch((ex) => {
-            console.log(ex)
-            reject(ex);
-        });
+        if (typeof window !== 'undefined') {
+
+            // todo put to config
+            fetch('http://206.189.39.242/privacy.wasm').then(response =>
+                response.arrayBuffer()
+            ).then(bytes =>
+                WebAssembly.instantiate(bytes, go.importObject)
+            ).then(result => {
+                console.log("result.instance ", result.instance)
+                inst = result.instance;
+                isWASMRunned = true;
+                go.run(inst)
+
+                resolve();
+            }).catch((ex) => {
+                console.log(ex)
+                reject(ex);
+            });
+        } else {
+            const path = require('path');
+            const fs = require('fs');
+            const fileName = path.resolve(path.dirname('./wasm/privacy.wasm'), 'privacy.wasm');
+            const data = fs.readFileSync(fileName);
+ 
+            WebAssembly.instantiate(data, go.importObject).then((result) => {
+                inst = result.instance;
+                isWASMRunned = true;
+                go.run(inst)
+                resolve();
+            }).catch((ex) => {
+                console.log(ex)
+                reject(ex);
+            });
+        }
+
     });
 }
 

@@ -1385,6 +1385,7 @@ export default class Wallet extends EventEmitter {
             utxos: this.utxos,
         };
     }
+
     /**
      * Update balance, utxo afer check areSpent
      * @param {Array<UTXO>} utxos array of utxo after check areSpent

@@ -1429,4 +1429,20 @@ export default class Wallet extends EventEmitter {
             if (txData !== null) { this.emit('NEW_TRANSACTION', txData); }
         });
     }
+    /**
+     * Return total number of utxo
+     * @returns {Interger} total number of utxo
+     */
+    totalUTXO () {
+        return new Promise((resolve, reject) => {
+            this.privacyContract.methods.totalUTXO()
+            .call({
+                from: this.scOpts.from,
+            })
+            // eslint-disable-next-line quote-props
+            .then(total => resolve(total)).catch((exception) => {
+                reject(exception);
+            });
+        })
+    }
 }

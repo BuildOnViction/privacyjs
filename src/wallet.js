@@ -379,7 +379,9 @@ export default class Wallet extends EventEmitter {
                 console.log('Total Balance : ', _self.balance.toString(10));
                 console.log('Scanned To : ', _self.scannedTo);
                 resolve({
-                    utxos: rawUTXOs,
+                    utxos: rawUTXOs.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
+                        toBN(secondEl.decodedAmount),
+                    ) < 0),
                     balance: this.decimalBalance(),
                 });
             }).catch((ex) => {
@@ -397,7 +399,11 @@ export default class Wallet extends EventEmitter {
 
         if (scannedTo !== null) { this.scannedTo = parseInt(scannedTo) || -1; }
 
-        if (utxos !== null) { this.utxos = utxos; }
+        if (utxos !== null) {
+            this.utxos = utxos.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
+                toBN(secondEl.decodedAmount),
+            ) < 0);
+        }
     }
 
     qrUTXOsData() {
@@ -1395,7 +1401,9 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
      */
     updateUTXOs(utxos: Object<Array>) {
-        this.utxos = utxos;
+        this.utxos = utxos.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
+            toBN(secondEl.decodedAmount),
+        ) < 0);
         this.balance = this._calTotal(this.utxos);
     }
 
@@ -1432,20 +1440,21 @@ export default class Wallet extends EventEmitter {
             if (txData !== null) { this.emit('NEW_TRANSACTION', txData); }
         });
     }
+
     /**
      * Return total number of utxo
      * @returns {Interger} total number of utxo
      */
-    totalUTXO () {
+    totalUTXO() {
         return new Promise((resolve, reject) => {
             this.privacyContract.methods.totalUTXO()
-            .call({
-                from: this.scOpts.from,
-            })
+                .call({
+                    from: this.scOpts.from,
+                })
             // eslint-disable-next-line quote-props
-            .then(total => resolve(total)).catch((exception) => {
-                reject(exception);
-            });
-        })
+                .then(total => resolve(total)).catch((exception) => {
+                    reject(exception);
+                });
+        });
     }
 }

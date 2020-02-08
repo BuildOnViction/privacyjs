@@ -408,7 +408,7 @@ export default class Wallet extends EventEmitter {
      * @param {BigInteger} amount
      * @returns {Object} needed utxos, number of transaction to send all the amount
      */
-    _getSpendingUTXO = (amount: BigInteger, isSpendingAll: ?boolean): Array<UTXO> => {
+    _getSpendingUTXO = (amount: BigInteger, isSpendingAll: ?boolean): Object => {
         const spendingUTXOS = [];
         let i = 0;
         let justEnoughBalance = BigInteger.ZERO();
@@ -508,13 +508,16 @@ export default class Wallet extends EventEmitter {
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
 
         const {
-            totalFee,
+            totalFee, utxos,
         } = this._getSpendingUTXO(
             biAmount,
             !amount,
         );
 
-        return totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT);
+        return {
+            fee: totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            utxos,
+        };
     }
 
     /**

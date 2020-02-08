@@ -41,7 +41,6 @@ function loadWASM() {
             ).then(bytes =>
                 WebAssembly.instantiate(bytes, go.importObject)
             ).then(result => {
-                console.log("result.instance ", result.instance)
                 inst = result.instance;
                 isWASMRunned = true;
                 go.run(inst)

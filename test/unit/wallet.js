@@ -307,30 +307,30 @@ describe('#unittest #wallet', () => {
         wallet.balance = toBN(20.2 * GWEI);
 
         it('Estimate Fee ', (done) => {
-            expect(wallet.estimateFee('1500000000000000000').eq(
+            expect(wallet.estimateFee('1500000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(CONSTANT.PRIVACY_TOKEN_UNIT),
             )).to.be.equal(true);
 
-            expect(wallet.estimateFee('10000000000000000000').eq(
+            expect(wallet.estimateFee('10000000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
                 ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
             )).to.be.equal(true);
 
-            expect(wallet.estimateFee('11000000000000000000').eq(
+            expect(wallet.estimateFee('11000000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
                 ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
             )).to.be.equal(true);
 
-            expect(wallet.estimateFee('15100000000000000000').eq(
+            expect(wallet.estimateFee('15100000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(3),
                 ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
             )).to.be.equal(true);
 
             // spend all
-            expect(wallet.estimateFee().eq(
+            expect(wallet.estimateFee().fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(3),
                 ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),

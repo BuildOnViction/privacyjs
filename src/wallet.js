@@ -367,7 +367,9 @@ export default class Wallet extends EventEmitter {
 
                 _self.scannedTo = scannedTo;
                 _self.utxos = _self.utxos || [];
-                _self.utxos = _self.utxos.concat(rawUTXOs);
+                _self.utxos = _self.utxos.concat(rawUTXOs).sort((firstEl, secondEl) => 0 - toBN(firstEl.decodedAmount).cmp(
+                    toBN(secondEl.decodedAmount),
+                ));
 
                 /**
                  * Store balance, scannedTo, raw utxos to cache
@@ -379,9 +381,7 @@ export default class Wallet extends EventEmitter {
                 console.log('Total Balance : ', _self.balance.toString(10));
                 console.log('Scanned To : ', _self.scannedTo);
                 resolve({
-                    utxos: rawUTXOs.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
-                        toBN(secondEl.decodedAmount),
-                    ) < 0),
+                    utxos: rawUTXOs,
                     balance: this.decimalBalance(),
                 });
             }).catch((ex) => {
@@ -400,9 +400,9 @@ export default class Wallet extends EventEmitter {
         if (scannedTo !== null) { this.scannedTo = parseInt(scannedTo) || -1; }
 
         if (utxos !== null) {
-            this.utxos = utxos.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
+            this.utxos = utxos.sort((firstEl, secondEl) => 0 - toBN(firstEl.decodedAmount).cmp(
                 toBN(secondEl.decodedAmount),
-            ) < 0);
+            ));
         }
     }
 
@@ -959,15 +959,15 @@ export default class Wallet extends EventEmitter {
             message,
         );
 
-        assert(
-            MLSAG.verifyMul(
-                ringctDecoys,
-                ringSignature.I,
-                ringSignature.c1,
-                ringSignature.s,
-                message,
-            ) === true, 'Wrong signature !!',
-        );
+        // assert(
+        //     MLSAG.verifyMul(
+        //         ringctDecoys,
+        //         ringSignature.I,
+        //         ringSignature.c1,
+        //         ringSignature.s,
+        //         message,
+        //     ) === true, 'Wrong signature !!',
+        // );
         return {
             decoys,
             signature: Buffer.from(
@@ -1401,9 +1401,9 @@ export default class Wallet extends EventEmitter {
      * @returns {Object} stealth_private_key, stealth_public_key, real amount
      */
     updateUTXOs(utxos: Object<Array>) {
-        this.utxos = utxos.sort((firstEl, secondEl) => toBN(firstEl.decodedAmount).cmp(
+        this.utxos = utxos.sort((firstEl, secondEl) => 0 - toBN(firstEl.decodedAmount).cmp(
             toBN(secondEl.decodedAmount),
-        ) < 0);
+        ));
         this.balance = this._calTotal(this.utxos);
     }
 

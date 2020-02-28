@@ -108,6 +108,7 @@ export default class Wallet extends EventEmitter {
     constructor(privateKey: string, scOpts: SmartContractOpts) {
         super();
         assert(privateKey && privateKey.length === CONSTANT.PRIVATE_KEY_LENGTH, 'Malform private key !!');
+        privateKey = privateKey.toLowerCase();
 
         this.addresses = Address.generateKeys(privateKey);
         this.stealth = new Stealth({

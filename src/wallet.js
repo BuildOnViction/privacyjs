@@ -67,6 +67,8 @@ type DecodedProof = {
 loadWASM();
 
 const LIMITED_SCANNING_UTXOS = 200;
+const UTXO_INDEX_NAME = '3';
+
 export default class Wallet extends EventEmitter {
     addresses: {
         privSpendKey: string,
@@ -242,7 +244,7 @@ export default class Wallet extends EventEmitter {
             .call()
             .then((utxos) => {
                 utxos = _.map(utxos, (raw, index) => {
-                    raw['3'] = utxosIndexs[parseInt(index)];
+                    raw[UTXO_INDEX_NAME] = utxosIndexs[parseInt(index)];
                     // remove all redundant field - because solidity return both by field name and by index with struct
                     // we use just index for sync with other method
                     delete raw.XBits;
@@ -306,7 +308,7 @@ export default class Wallet extends EventEmitter {
             _self.emit('START_SCANNING');
             const index = fromIndex || _self.scannedTo;
             let scannedTo = 0;
-            let balance = BigInteger.ZERO();
+            // const balance = BigInteger.ZERO();
             let isFinished = false;
             let rawUTXOs = [];
 
@@ -349,10 +351,6 @@ export default class Wallet extends EventEmitter {
                 const filteredRawUTXOs = await _self._verifyUsableUTXOs(utxos);
 
                 if (filteredRawUTXOs.length) {
-                    balance = balance.add(
-                        _self._calTotal(filteredRawUTXOs),
-                    );
-
                     rawUTXOs = rawUTXOs.concat(filteredRawUTXOs);
                 }
 
@@ -360,17 +358,13 @@ export default class Wallet extends EventEmitter {
             }
 
             getUTXO(index).then(() => {
-                if (!_self.balance) {
-                    _self.balance = balance;
-                } else {
-                    _self.balance = _self.balance.add(balance);
-                }
-
-                _self.scannedTo = scannedTo;
+                // check duplicated utxo
                 _self.utxos = _self.utxos || [];
-                _self.utxos = _self.utxos.concat(rawUTXOs).sort((firstEl, secondEl) => 0 - toBN(firstEl.decodedAmount).cmp(
-                    toBN(secondEl.decodedAmount),
-                ));
+                _self.utxos = _.unionWith(_self.utxos, rawUTXOs, (utxo1, utxo2) => utxo1[UTXO_INDEX_NAME] === utxo2[UTXO_INDEX_NAME] || parseInt(utxo1[UTXO_INDEX_NAME]) === parseInt(utxo2[UTXO_INDEX_NAME]));
+             
+                // recalculate balance
+                _self.balance = _self._calTotal(_self.utxos);
+                _self.scannedTo = scannedTo;
 
                 /**
                  * Store balance, scannedTo, raw utxos to cache
@@ -687,7 +681,7 @@ export default class Wallet extends EventEmitter {
         }
 
         // remove spent utxos
-        this.utxos = _.filter(this.utxos, utxo => !(sentUTXOs.indexOf(parseInt(utxo['3'])) >= 0));
+        this.utxos = _.filter(this.utxos, utxo => !(sentUTXOs.indexOf(parseInt(utxo[UTXO_INDEX_NAME])) >= 0));
         this.balance = this._calTotal(this.utxos);
 
         this.emit('ON_BALANCE_CHANGE');
@@ -868,6 +862,7 @@ export default class Wallet extends EventEmitter {
             let rd;
             do {
                 rd = Math.round(Math.random() * this.scannedTo);
+                rd = rd - 1 > 0 ? rd - 1 : rd;
                 randomizationTimes++;
             } while ((spendingIndexes.indexOf(rd) >= 0 || decoysIndex.indexOf(rd) >= 0) && randomizationTimes < MAXIMUM_RANDOMIZATION_TIMES);
             decoysIndex.push(rd);
@@ -1410,6 +1405,8 @@ export default class Wallet extends EventEmitter {
 
     listenNewUTXO(scOpts: SmartContractOpts) {
         const webSocketProvider = new Web3.providers.WebsocketProvider(scOpts.SOCKET_END_POINT);
+        webSocketProvider.on('error', e => console.error('WS Error', e));
+        webSocketProvider.on('end', () => this.listenNewUTXO(this.scOpts));
         const web3Socket = new Web3(webSocketProvider);
         this.privacyContractSocket = new web3Socket.eth.Contract(scOpts.ABI, scOpts.ADDRESS);
 

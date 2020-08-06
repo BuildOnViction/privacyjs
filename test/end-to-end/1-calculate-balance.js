@@ -12,7 +12,7 @@ chai.should();
 
 
 const { WALLETS } = TestConfig;
-const SENDER_WALLET = WALLETS[1]; // hold around 1 mil tomo
+const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
 describe('#ete #balance', () => {
     it('#scanUTXOs and sum balance', (done) => {

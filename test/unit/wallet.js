@@ -16,7 +16,7 @@ chai.use(chaiAsPromised);
 
 const { WALLETS } = Configs;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
-const GWEI = 1000000000;
+const TOMOP_DECIMAL = 100000000;
 
 describe('#unittest #wallet', () => {
     describe('#init()', () => {
@@ -187,29 +187,29 @@ describe('#unittest #wallet', () => {
         }, SENDER_WALLET.address);
 
         wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
-            GWEI,
-            GWEI,
-            3 * GWEI,
-            5 * GWEI,
-            0.1 * GWEI,
-            GWEI,
-            GWEI,
-            3 * GWEI,
-            5 * GWEI,
-            0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
+            TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            3 * TOMOP_DECIMAL,
+            5 * TOMOP_DECIMAL,
+            0.1 * TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            3 * TOMOP_DECIMAL,
+            5 * TOMOP_DECIMAL,
+            0.1 * TOMOP_DECIMAL]); // create 10 utxos total balance = 10 tomo
 
-        wallet.balance = toBN(10.1 * GWEI);
+        wallet.balance = toBN(10.1 * TOMOP_DECIMAL);
         CONSTANT.MAXIMUM_ALLOWED_RING_NUMBER = 4;
 
         it('Select utxos with tx amount = first utxo', (done) => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(GWEI),
+                toBN(TOMOP_DECIMAL),
             );
             expect(utxos.length === 2).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -217,22 +217,22 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(1.5 * GWEI),
+                toBN(1.5 * TOMOP_DECIMAL),
             );
             expect(utxos.length === 2).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 2 utxos', (done) => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(2 * GWEI),
+                toBN(2 * TOMOP_DECIMAL),
             );
             expect(utxos.length === 3).to.be.equal(true);
             expect(txTimes === 1).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.01 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.01 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum first 4 utxos', (done) => {
@@ -240,22 +240,22 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(10 * GWEI),
+                toBN(10 * TOMOP_DECIMAL),
             );
             expect(utxos.length === 5).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.02 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
         it('Select utxos with tx amount = sum 6 utxos', (done) => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(11.1 * GWEI),
+                toBN(11.1 * TOMOP_DECIMAL),
             );
             expect(utxos.length === 7).to.be.equal(true);
             expect(txTimes === 2).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.02 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.02 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -263,11 +263,11 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, totalFee, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(20.1 * GWEI),
+                toBN(parseInt(20.1 * TOMOP_DECIMAL)),
             );
             expect(utxos.length === 10).to.be.equal(true);
             expect(txTimes === 3).to.be.equal(true);
-            expect(totalFee.eq(toBN(0.03 * GWEI))).to.be.equal(true);
+            expect(totalFee.eq(toBN(0.03 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -275,7 +275,7 @@ describe('#unittest #wallet', () => {
             const {
                 utxos,
             } = wallet._getSpendingUTXO(
-                toBN(20.2 * GWEI),
+                toBN(20.2 * TOMOP_DECIMAL),
             );
             expect(utxos).to.be.equal(null);
             done();
@@ -293,47 +293,47 @@ describe('#unittest #wallet', () => {
         }, SENDER_WALLET.address);
 
         wallet.utxos = randomUTXOS(SENDER_WALLET.privateKey, [
-            GWEI,
-            GWEI,
-            3 * GWEI,
-            5 * GWEI,
-            0.1 * GWEI,
-            GWEI,
-            GWEI,
-            3 * GWEI,
-            5 * GWEI,
-            0.1 * GWEI]); // create 10 utxos total balance = 10 tomo
+            TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            3 * TOMOP_DECIMAL,
+            5 * TOMOP_DECIMAL,
+            0.1 * TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            TOMOP_DECIMAL,
+            3 * TOMOP_DECIMAL,
+            5 * TOMOP_DECIMAL,
+            0.1 * TOMOP_DECIMAL]); // create 10 utxos total balance = 10 tomo
 
-        wallet.balance = toBN(20.2 * GWEI);
+        wallet.balance = toBN(20.2 * TOMOP_DECIMAL);
 
         it('Estimate Fee ', (done) => {
             expect(wallet.estimateFee('1500000000000000000').fee.eq(
-                CONSTANT.PRIVACY_FLAT_FEE.mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+                CONSTANT.PRIVACY_FLAT_FEE.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
             expect(wallet.estimateFee('10000000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
-                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+                ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
             expect(wallet.estimateFee('11000000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
-                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+                ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
             expect(wallet.estimateFee('15100000000000000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(3),
-                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+                ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
             // spend all
             expect(wallet.estimateFee().fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(3),
-                ).mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+                ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
             done();
@@ -343,14 +343,14 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(GWEI),
+                toBN(TOMOP_DECIMAL),
             );
 
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(2);
-            expect(txs[0].receivAmount.eq(toBN(GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0.99 * TOMOP_DECIMAL))).to.be.equal(true);
 
             done();
         });
@@ -359,13 +359,13 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(1.5 * GWEI),
+                toBN(1.5 * TOMOP_DECIMAL),
             );
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(1.5 * GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(1.5 * TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(2);
-            expect(txs[0].receivAmount.eq(toBN(1.5 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0.49 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(1.5 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0.49 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -373,13 +373,13 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(2 * GWEI),
+                toBN(2 * TOMOP_DECIMAL),
             );
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(2 * GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(2 * TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(1);
             expect(txs[0].utxos.length).to.be.equal(3);
-            expect(txs[0].receivAmount.eq(toBN(2 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(2.99 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(2 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(2.99 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -387,17 +387,17 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(10 * GWEI),
+                toBN(10 * TOMOP_DECIMAL),
             );
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(10 * GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(10 * TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(2);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
             expect(txs[1].utxos.length).to.be.equal(1);
-            expect(txs[1].receivAmount.eq(toBN(0.01 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.eq(toBN(0.08 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(0.01 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0.08 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -405,18 +405,18 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(11.1 * GWEI),
+                toBN(11.1 * TOMOP_DECIMAL),
             );
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(11.1 * GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(11.1 * TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(2);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
 
             expect(txs[1].utxos.length).to.be.equal(3);
-            expect(txs[1].receivAmount.eq(toBN(1.11 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.eq(toBN(0.98 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(parseInt(1.11 * TOMOP_DECIMAL)))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0.98 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -424,22 +424,22 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes,
             } = wallet._getSpendingUTXO(
-                toBN(15.1 * GWEI),
+                toBN(15.1 * TOMOP_DECIMAL),
             );
-            const txs = wallet._splitTransaction(utxos, txTimes, toBN(15.1 * GWEI));
+            const txs = wallet._splitTransaction(utxos, txTimes, toBN(15.1 * TOMOP_DECIMAL));
             expect(txs.length).to.be.equal(3);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
 
             expect(txs[1].utxos.length).to.be.equal(4);
-            expect(txs[1].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(5.09 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
 
             expect(txs[2].utxos.length).to.be.equal(1);
-            expect(txs[2].receivAmount.eq(toBN(0.02 * GWEI))).to.be.equal(true);
-            expect(txs[2].remainAmount.eq(toBN(4.97 * GWEI))).to.be.equal(true);
+            expect(txs[2].receivAmount.eq(toBN(0.02 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[2].remainAmount.eq(toBN(4.97 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
 
@@ -448,7 +448,7 @@ describe('#unittest #wallet', () => {
             const {
                 utxos, txTimes, totalAmount,
             } = wallet._getSpendingUTXO(
-                toBN(20.2 * GWEI),
+                toBN(20.2 * TOMOP_DECIMAL),
                 true,
             );
 
@@ -456,16 +456,16 @@ describe('#unittest #wallet', () => {
             expect(txs.length).to.be.equal(3);
 
             expect(txs[0].utxos.length).to.be.equal(4);
-            expect(txs[0].receivAmount.eq(toBN(9.99 * GWEI))).to.be.equal(true);
-            expect(txs[0].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[0].receivAmount.eq(toBN(9.99 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[0].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
 
             expect(txs[1].utxos.length).to.be.equal(4);
-            expect(txs[1].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
-            expect(txs[1].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[1].receivAmount.eq(toBN(5.09 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[1].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
 
             expect(txs[2].utxos.length).to.be.equal(2);
-            expect(txs[2].receivAmount.eq(toBN(5.09 * GWEI))).to.be.equal(true);
-            expect(txs[2].remainAmount.eq(toBN(0 * GWEI))).to.be.equal(true);
+            expect(txs[2].receivAmount.eq(toBN(5.09 * TOMOP_DECIMAL))).to.be.equal(true);
+            expect(txs[2].remainAmount.eq(toBN(0 * TOMOP_DECIMAL))).to.be.equal(true);
             done();
         });
     });

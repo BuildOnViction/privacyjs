@@ -76,8 +76,7 @@ class Stealth {
      * for further information
      * to prove the asset belongs the receiver with known pair
      * If there is input publickeys -> make transaction for other
-     * If there is no input -> deposit yourself to privacy account
-     * (public spend key/public view key of receiver)
+     * If there is no input -> deposit to privacy sc
      * @param {number} amount Plain money
      * @param {string} [pubSpendKey] Public spend key in hex (without 0x)
      * @param {string} [pubViewKey] Public view key in hex (without 0x)
@@ -95,7 +94,6 @@ class Stealth {
         const receiverPubSpendKey = toPoint(pubSpendKey);
 
         const hexAmount = toBN(amount.toString()).toString(16);
-        // const randomHex = 'f042298df7ea67d6bd8cf8e32537f23656ae36d3d9e04955f86997addb2dc4ee';
 
         const blindingFactor = randomBI();
 
@@ -145,6 +143,7 @@ class Stealth {
             if (mask.indexOf('00') === 0) {
                 mask = '1' + mask.slice(1);
             }
+
             commitment = Commitment.genCommitment(amount, mask, false);
         }
 

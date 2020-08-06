@@ -11,6 +11,7 @@ import Wallet from '../src/wallet';
 import {
     hextobin, DEPOSIT_FEE_WEI,
 } from '../src/common';
+import { TOMO_TOKEN_UNIT, PRIVACY_TOKEN_UNIT } from '../src/constants';
 
 chai.should();
 
@@ -29,10 +30,6 @@ const privacyContract = new web3.eth.Contract(
         gas: '20000000',
     },
 );
-
-const PRIVACY_TOKEN_UNIT = toBN(
-    '1000000000',
-); // use gwei as base unit for reducing size of rangeproof
 
 // we deposit a lot, actually all cases need deposit first
 // to make sure we all have data in case mocha doesnt run deposit first
@@ -57,10 +54,9 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
     const sender = new Stealth({
         ...Address.generateKeys(privateKey || SENDER_WALLET.privateKey),
     });
-
     // create proof for a transaction
     const proof = sender.genTransactionProof(
-        toBN(amount).div(PRIVACY_TOKEN_UNIT).toString(10), sender.pubSpendKey, sender.pubViewKey,
+        toBN(amount).mul(PRIVACY_TOKEN_UNIT).div(TOMO_TOKEN_UNIT).toString(10), sender.pubSpendKey, sender.pubViewKey,
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 

@@ -188,11 +188,11 @@ export default class Wallet extends EventEmitter {
      */
     deposit = (amount: number): Promise<any> => {
         this.emit('START_DEPOSIT');
-
         return new Promise((resolve, reject) => {
             const proof = this._genUTXOProof(
                 toBN(amount)
-                    .div(CONSTANT.PRIVACY_TOKEN_UNIT)
+                    .mul(CONSTANT.PRIVACY_TOKEN_UNIT)
+                    .div(CONSTANT.TOMO_TOKEN_UNIT)
                     .sub(CONSTANT.DEPOSIT_FEE_WEI)
                     .toString(10),
             );
@@ -361,7 +361,7 @@ export default class Wallet extends EventEmitter {
                 // check duplicated utxo
                 _self.utxos = _self.utxos || [];
                 _self.utxos = _.unionWith(_self.utxos, rawUTXOs, (utxo1, utxo2) => utxo1[UTXO_INDEX_NAME] === utxo2[UTXO_INDEX_NAME] || parseInt(utxo1[UTXO_INDEX_NAME]) === parseInt(utxo2[UTXO_INDEX_NAME]));
-             
+
                 // recalculate balance
                 _self.balance = _self._calTotal(_self.utxos);
                 _self.scannedTo = scannedTo;
@@ -498,7 +498,7 @@ export default class Wallet extends EventEmitter {
     estimateFee = (amount: ?number): BigInteger => {
         let biAmount;
         if (amount) {
-            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+            biAmount = toBN(amount).mul(CONSTANT.PRIVACY_TOKEN_UNIT).div(CONSTANT.TOMO_TOKEN_UNIT);
 
             assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
         } else {
@@ -516,7 +516,7 @@ export default class Wallet extends EventEmitter {
         );
 
         return {
-            fee: totalFee.mul(CONSTANT.PRIVACY_TOKEN_UNIT),
+            fee: totalFee.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             utxos,
         };
     }
@@ -593,7 +593,7 @@ export default class Wallet extends EventEmitter {
 
         let biAmount;
         if (amount) {
-            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+            biAmount = toBN(amount).mul(CONSTANT.PRIVACY_TOKEN_UNIT).div(CONSTANT.TOMO_TOKEN_UNIT);
         } else {
             biAmount = toBN(this.balance.toString(10));
         }
@@ -755,7 +755,7 @@ export default class Wallet extends EventEmitter {
         let biAmount;
 
         if (amount) {
-            biAmount = toBN(amount).div(CONSTANT.PRIVACY_TOKEN_UNIT);
+            biAmount = toBN(amount).mul(CONSTANT.PRIVACY_TOKEN_UNIT).div(CONSTANT.TOMO_TOKEN_UNIT);
         } else {
             biAmount = this.balance;
         }
@@ -1139,7 +1139,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
                 `0x${outputProofs[1].txPublicKey.substr(-64)}`,
             ],
-            '0x' + amount.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
+            '0x' + amount.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
@@ -1367,11 +1367,11 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        return this.balance ? this.balance.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(10) : BigInteger.ZERO();
+        return this.balance ? this.balance.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(10) : BigInteger.ZERO();
     }
 
     hexBalance() {
-        return this.balance ? '0x' + this.balance.mul(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16) : '0x0';
+        return this.balance ? '0x' + this.balance.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(16) : '0x0';
     }
 
     state(state: Object) {

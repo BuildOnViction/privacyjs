@@ -20,14 +20,23 @@ export const baseH = secp256k1.curve.point(
 
 export const UTXO_RING_SIZE = 12;
 export const MAXIMUM_ALLOWED_RING_NUMBER = 8;
+
+/**
+ * We use gwei is base unit for tomoP
+ * so deposit FEE
+ */
 export const PRIVACY_FLAT_FEE = toBN(
-    '10000000',
+    '1000000',
 ); // 0.01 TOMO
 
 export const DEPOSIT_FEE_WEI = toBN(
-    '1000000',
+    '100000',
 ); // 0.001 TOMO
 
 export const PRIVACY_TOKEN_UNIT = toBN(
-    '1000000000',
-); // use gwei as base unit for reducing size of rangeproof
+    '100000000',
+);
+
+export const TOMO_TOKEN_UNIT = toBN(
+    '1000000000000000000',
+);

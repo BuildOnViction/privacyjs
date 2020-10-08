@@ -19,9 +19,9 @@ Additional requests/features please contact anhnt@tomochain.com
 [![Build Status](https://travis-ci.org/tomochain/privacyjs.svg?branch=master)](https://travis-ci.org/tomochain/privacyjs)
 [![codecov](https://codecov.io/gh/tomochain/privacyjs/branch/master/graph/badge.svg)](https://codecov.io/gh/tomochain/privacyjs)
 ### ROADMAP
-- Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
+- [x] Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
+- [x] Privacy protocol - turn any TRC20, TRC21 token to privacy token
 - Integrated to tomowallet web and integrated bullet proof, demo on testnet
-- Total hide the transaction signer on private send and withdraw
 - Integrate to Maxbet, standardlize the transaction flow for Dapp.
 
 Usage

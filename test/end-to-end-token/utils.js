@@ -4,14 +4,14 @@ import chai from 'chai';
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import * as _ from 'lodash';
 import toBN from 'number-to-bn';
-import TestConfig from './config.json';
-import * as Address from '../src/address';
-import Stealth from '../src/stealth';
-import Wallet from '../src/wallet';
+import TestConfig from '../config.json';
+import * as Address from '../../src/address';
+import Stealth from '../../src/stealth';
+import Wallet from '../../src/wallet';
 import {
     hextobin, DEPOSIT_FEE_WEI,
-} from '../src/common';
-import { TOMO_TOKEN_UNIT, PRIVACY_TOKEN_UNIT } from '../src/constants';
+} from '../../src/common';
+import { TOMO_TOKEN_UNIT, PRIVACY_TOKEN_UNIT } from '../../src/constants';
 
 chai.should();
 
@@ -56,7 +56,9 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
     });
     // create proof for a transaction
     const proof = sender.genTransactionProof(
-        toBN(amount).mul(PRIVACY_TOKEN_UNIT).div(TOMO_TOKEN_UNIT).toString(10), sender.pubSpendKey, sender.pubViewKey,
+        toBN(amount).mul(PRIVACY_TOKEN_UNIT).div(TOMO_TOKEN_UNIT).toString(10),
+        sender.pubSpendKey,
+        sender.pubViewKey,
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
@@ -128,31 +130,6 @@ module.exports.registerPrivacyAddress = privateKey => new Promise((resolve, reje
             }
         });
 });
-
-
-function getUTXO(index) {
-    return new Promise((resolve, reject) => {
-        privacyContract.methods.getUTXO(index)
-            .call({
-                from: WALLETS[0].address,
-            })
-            .then(utxo => resolve(utxo)).catch((exception) => {
-                reject(exception);
-            });
-    });
-}
-
-function isSpent(ki) {
-    return new Promise((resolve, reject) => {
-        privacyContract.methods.isSpent(ki)
-            .call({
-                from: WALLETS[0].address,
-            })
-            .then(utxo => resolve(utxo)).catch((exception) => {
-                reject(exception);
-            });
-    });
-}
 
 /**
  * scan all utxo with input privateKey to check ownership

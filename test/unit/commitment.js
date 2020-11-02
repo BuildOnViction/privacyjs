@@ -10,7 +10,7 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-const TOMO = 1000000000000000000;
+const TOMO = 1000000;
 const sender = new Stealth({
     ...Address.generateKeys(SENDER_WALLET.privateKey),
 });

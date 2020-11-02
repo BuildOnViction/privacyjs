@@ -311,13 +311,13 @@ describe('#unittest #wallet', () => {
                 CONSTANT.PRIVACY_FLAT_FEE.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
-            expect(wallet.estimateFee('10000000000000000000').fee.eq(
+            expect(wallet.estimateFee('10000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
                 ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
             )).to.be.equal(true);
 
-            expect(wallet.estimateFee('11000000000000000000').fee.eq(
+            expect(wallet.estimateFee('11000000').fee.eq(
                 CONSTANT.PRIVACY_FLAT_FEE.mul(
                     toBN(2),
                 ).div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),

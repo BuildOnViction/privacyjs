@@ -26,11 +26,11 @@ export const MAXIMUM_ALLOWED_RING_NUMBER = 8;
  * so deposit FEE
  */
 export const PRIVACY_FLAT_FEE = toBN(
-    '1000000',
+    '500000000',
 ); // 0.01 TOMO
 
 export const DEPOSIT_FEE_WEI = toBN(
-    '100000',
+    '100000000',
 ); // 0.001 TOMO
 
 export const PRIVACY_TOKEN_UNIT = toBN(
@@ -38,5 +38,5 @@ export const PRIVACY_TOKEN_UNIT = toBN(
 );
 
 export const TOMO_TOKEN_UNIT = toBN(
-    '1000000000000000000',
+    '1000000',
 );

@@ -70,16 +70,6 @@ export const validHex = (hex) => {
  */
 export const fastHash = input => Hash(input);
 
-// export const base64tohex = (base64) => {
-//     const raw = atob(base64);
-//     let HEX = '';
-//     for (let i = 0; i < raw.length; i++) {
-//         const _hex = raw.charCodeAt(i).toString(16);
-//         HEX += (_hex.length === 2 ? _hex : `0${_hex}`);
-//     }
-//     return HEX.toUpperCase();
-// };
-
 /**
  * bconcat makes a buffer from a buffer list
  * @param {array} arr List Buffer want to concat
@@ -88,10 +78,6 @@ export const fastHash = input => Hash(input);
 export const bconcat = (arr) => {
     arr = arr.map((item) => {
         const res = (Buffer.isBuffer(item) ? item : new Buffer([item]));
-        // console.log('bconcat ------------------ ');
-        // console.log(item);
-        // console.log(res);
-        // console.log('bconcat ------------------ ');
         return res;
     });
 
@@ -121,47 +107,6 @@ export const isBN = object => BN.isBN(object);
  * @returns {Boolean}
  */
 export const isBigNumber = object => object && object.constructor && object.constructor.name === 'BigNumber';
-
-// /**
-//  * Takes an input and transforms it into an BN.js object
-//  *
-//  * @method toBN
-//  *
-//  * @param {Number|String|BN} number, string, HEX string or BN
-//  *
-//  * @returns {BN} BN
-//  */
-// export const toBN = (number) => {
-//     try {
-//         return numberToBN(number);
-//     } catch (error) {
-//         throw new Error(`${error} Given value: "${number}"`);
-//     }
-// };
-
-
-/**
- * Takes an input and transforms it into an bigi object
- * TODO - need to replace bigi by bn.js
- * @method toBN
- *
- * @param {Number|String} number, string, HEX string or BN
- *
- * @returns {BigInteger} BigInteger
- */
-// export const toBN = (number) => {
-//     try {
-//         let hexstr = numberToBN(number).toString(16);
-//         if (hexstr.length % 2 === 1) {
-//             hexstr = '0' + hexstr;
-//         }
-//         return BigInteger.fromHex(
-//             hexstr,
-//         );
-//     } catch (error) {
-//         throw new Error(`${error} Given value: "${number}"`);
-//     }
-// };
 
 /**
  * Takes and input transforms it into BN and if it is negative value, into two's complement
@@ -389,9 +334,6 @@ export const hexToNumberString = (value) => {
         value = '0x' + value;
     }
 
-    // if (value.length % 2 === 1) {
-    //     value = '0' + value;
-    // }
     return numberToBN(value).toString(10);
 };
 

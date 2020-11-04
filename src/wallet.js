@@ -517,7 +517,7 @@ export default class Wallet extends EventEmitter {
         );
 
         return {
-            fee: totalFee.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT),
+            fee: totalFee.mul(CONSTANT.TOMO_TOKEN_UNIT).div(CONSTANT.PRIVACY_TOKEN_UNIT),
             utxos,
         };
     }
@@ -648,6 +648,11 @@ export default class Wallet extends EventEmitter {
         }
     }
 
+    /**
+     * dotx sends all pending tx's proof to chain
+     * emit('ON_BALANCE_CHANGE')
+     * emit('FINISH_DOING_TXS', successfulTxs, failedTxs);
+     */
     doTx = async () => {
         const totalResponse = [];
         const txState = this.getTxState();
@@ -655,7 +660,6 @@ export default class Wallet extends EventEmitter {
         const sentUTXOs = [];
         const successfulTxs = [];
 
-        // try {
         this.emit('START_DOING_TXS');
         let currentTx = 0;
 
@@ -693,7 +697,7 @@ export default class Wallet extends EventEmitter {
 
     /**
      * Use Web3 to sign and make tx to smart-contract
-     * because we don't need to pay the tx fee directly (TRC21)
+     * don't need to pay the tx fee directly (TRC21)
      * so we randomizing privatekey each time sending
      * @param {Array} proof
      * @returns {object} new utxos and proof
@@ -760,7 +764,6 @@ export default class Wallet extends EventEmitter {
         } else {
             biAmount = this.balance;
         }
-
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
 
@@ -1140,7 +1143,7 @@ export default class Wallet extends EventEmitter {
                 `0x${outputProofs[1].txPublicKey.substr(2, 64)}`,
                 `0x${outputProofs[1].txPublicKey.substr(-64)}`,
             ],
-            '0x' + amount.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
+            '0x' + amount.mul(CONSTANT.TOMO_TOKEN_UNIT).div(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16), // withdawal amount need multiple with 10^9, convert gwei to wei
             [
                 `0x${outputProofs[1].encryptedAmount}`, // encrypt of amount using ECDH],
                 `0x${outputProofs[1].encryptedMask}`, // encrypt of mask using ECDH],
@@ -1151,7 +1154,6 @@ export default class Wallet extends EventEmitter {
                 BigInteger.fromHex(outputProofs[1].mask),
                 BigInteger.fromHex(outputProofs[0].mask),
             ]),
-            // _.fill(Array(137), '0x0'),
             _.map(
                 this._encryptedTransactionData(
                     [outputProofs[1]], amount, receiver, message || '',
@@ -1368,11 +1370,11 @@ export default class Wallet extends EventEmitter {
     }
 
     decimalBalance() {
-        return this.balance ? this.balance.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(10) : BigInteger.ZERO();
+        return this.balance ? this.balance.mul(CONSTANT.TOMO_TOKEN_UNIT).div(CONSTANT.PRIVACY_TOKEN_UNIT).toString(10) : BigInteger.ZERO();
     }
 
     hexBalance() {
-        return this.balance ? '0x' + this.balance.div(CONSTANT.PRIVACY_TOKEN_UNIT).mul(CONSTANT.TOMO_TOKEN_UNIT).toString(16) : '0x0';
+        return this.balance ? '0x' + this.balance.mul(CONSTANT.TOMO_TOKEN_UNIT).div(CONSTANT.PRIVACY_TOKEN_UNIT).toString(16) : '0x0';
     }
 
     state(state: Object) {

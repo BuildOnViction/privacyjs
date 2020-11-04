@@ -26,8 +26,8 @@ export const MAXIMUM_ALLOWED_RING_NUMBER = 8;
  * so deposit FEE
  */
 export const PRIVACY_FLAT_FEE = toBN(
-    '1000000',
-); // 0.01 TOMO
+    '100000',
+); // 0.001 TOMO
 
 export const DEPOSIT_FEE_WEI = toBN(
     '100000',

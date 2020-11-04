@@ -253,7 +253,7 @@ describe('#ete #wallet', () => {
              */
             const receiver = generateKeys(WALLETS[0].privateKey);
             try {
-                sendWallet.send(receiver.pubAddr, '400000000000000000').then((txs) => {
+                sendWallet.send(receiver.pubAddr, '300000000000000000').then((txs) => {
                     let receiveMoney = BigInteger.ZERO();
                     expect(txs).to.be.an('array');
                     expect(txs.length).to.be.above(0);
@@ -340,17 +340,17 @@ describe('#ete #wallet', () => {
     });
 
     describe('#withdraw', () => {
-        const withdrawWallet = new Wallet(WALLETS[0].privateKey, {
+        const forWithdrawingWallet = new Wallet(WALLETS[0].privateKey, {
             RPC_END_POINT: TestConfig.RPC_END_POINT,
             ABI: TestConfig.PRIVACY_ABI,
             ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
         }, WALLETS[0].address);
 
-        for (let index = 0; index < 5; index++) {
+        for (let index = 0; index < 0; index++) {
             it('Should able to withdraw', (done) => {
                 const receiver = WALLETS[0].address;
                 try {
-                    withdrawWallet.withdraw(receiver, '1000000000000000000').then((txs) => {
+                    forWithdrawingWallet.withdraw(receiver, '1000000000000000000').then((txs) => {
                         _.each(txs, (NewUTXO) => {
                             expect(NewUTXO).to.not.equal(undefined);
                             const returnUTXO = NewUTXO.returnValues;
@@ -376,7 +376,7 @@ describe('#ete #wallet', () => {
              */
             const receiver = WALLETS[0].address;
             try {
-                withdrawWallet.withdraw(receiver, '8000000000000000000').then((txs) => {
+                forWithdrawingWallet.withdraw(receiver, '8230000000000000000').then((txs) => {
                     _.each(txs, (NewUTXO) => {
                         expect(NewUTXO).to.not.equal(undefined);
                         const returnUTXO = NewUTXO.returnValues;
@@ -397,7 +397,7 @@ describe('#ete #wallet', () => {
         it('Should not able to send with amount > balance', (done) => {
             const receiver = WALLETS[0].address;
             try {
-                withdrawWallet.withdraw(receiver, '10000000000000000000000').then(() => {
+                forWithdrawingWallet.withdraw(receiver, '10000000000000000000000').then(() => {
                     done(new Error(''));
                 }).catch(() => {
                     done();

@@ -346,7 +346,7 @@ describe('#ete #wallet', () => {
             ADDRESS: TestConfig.PRIVACY_SMART_CONTRACT_ADDRESS,
         }, WALLETS[0].address);
 
-        for (let index = 0; index < 0; index++) {
+        for (let index = 0; index < 10; index++) {
             it('Should able to withdraw', (done) => {
                 const receiver = WALLETS[0].address;
                 try {

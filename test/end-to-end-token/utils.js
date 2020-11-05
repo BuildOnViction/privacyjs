@@ -63,7 +63,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
     contract.methods.deposit(
-        _amount,
+        `0x${toBN(_amount).toString(16)}`,
         `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve
         `0x${proof.onetimeAddress.toString('hex').substr(-64)}`, // the Y part of curve
         `0x${proof.txPublicKey.toString('hex').substr(2, 64)}`, // the X part of curve

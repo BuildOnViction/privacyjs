@@ -5,7 +5,7 @@
 
 import chai from 'chai';
 import TestConfig from '../config.json';
-import * as TestUtils from '../utils';
+import * as TestUtils from '../end-to-end-token/utils';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
 
@@ -23,7 +23,7 @@ const trimPrefix = (str, char) => {
 };
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 10; count++) {
+    for (let count = 0; count < 20; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {

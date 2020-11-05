@@ -163,7 +163,6 @@ export default class Wallet extends EventEmitter {
     _genUTXOProof = (amount: number, pubSpendKey: ?string, pubViewKey: ?string, predefinedMask: ?Buffer): Array<string> => {
         const proof = this.stealth.genTransactionProof(amount, pubSpendKey, pubViewKey, predefinedMask);
         // const randomProof = this.stealth.genTransactionProof(0, pubSpendKey, pubViewKey);
-
         return [
             `0x${proof.onetimeAddress.substr(2, 64)}`, // the X part of point
             `0x${proof.onetimeAddress.substr(-64)}`, // the Y part of point
@@ -196,7 +195,7 @@ export default class Wallet extends EventEmitter {
                     .sub(CONSTANT.DEPOSIT_FEE_WEI)
                     .toString(10),
             );
-            this.privacyContract.methods.deposit(...proof)
+            this.privacyContract.methods.deposit(`0x${toBN(amount).toString(16)}`, ...proof)
                 .send({
                     from: this.scOpts.from,
                     value: amount,

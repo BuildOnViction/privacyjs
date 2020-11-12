@@ -37,7 +37,7 @@ const privacyContract = new web3.eth.Contract(
 export const deposit = (_amount, privateKey, from) => new Promise((resolve, reject) => {
     let web3ls;
     let contract = privacyContract;
-    const amount = _amount - DEPOSIT_FEE_WEI;;
+    const amount = _amount - DEPOSIT_FEE_WEI;
 
     if (privateKey) {
         web3ls = new Web3(new HDWalletProvider(privateKey, TestConfig.RPC_END_POINT));
@@ -69,7 +69,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
         `0x${proof.mask}`,
         `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
         `0x${proof.encryptedMask}`,
-        _.fill(Array(137), 0), // data
+        _.fill(Array(137), '0x0'), // data
     )
         .send({
             from: from || SENDER_WALLET.address,

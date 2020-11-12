@@ -71,7 +71,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
         `0x${proof.mask}`,
         `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
         `0x${proof.encryptedMask}`,
-        _.fill(Array(137), 0), // data
+        _.fill(Array(137), '0x0'), // data
     )
         .send({
             from: from || SENDER_WALLET.address,

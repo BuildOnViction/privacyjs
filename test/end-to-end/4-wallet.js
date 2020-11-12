@@ -348,9 +348,9 @@ describe('#ete #wallet', () => {
 
         for (let index = 0; index < 10; index++) {
             it('Should able to withdraw', (done) => {
-                const receiver = WALLETS[0].address;
+                const receiver = WALLETS[3].address;
                 try {
-                    forWithdrawingWallet.withdraw(receiver, '1000000000000000000').then((txs) => {
+                    forWithdrawingWallet.withdraw(receiver, '2000000000000000000').then((txs) => {
                         _.each(txs, (NewUTXO) => {
                             expect(NewUTXO).to.not.equal(undefined);
                             const returnUTXO = NewUTXO.returnValues;
@@ -397,7 +397,7 @@ describe('#ete #wallet', () => {
         it('Should not able to send with amount > balance', (done) => {
             const receiver = WALLETS[0].address;
             try {
-                forWithdrawingWallet.withdraw(receiver, '10000000000000000000000').then(() => {
+                forWithdrawingWallet.withdraw(receiver, '20000000000000000000000').then(() => {
                     done(new Error(''));
                 }).catch(() => {
                     done();

@@ -192,7 +192,7 @@ export default class Wallet extends EventEmitter {
                 toBN(amount)
                     .mul(CONSTANT.PRIVACY_TOKEN_UNIT)
                     .div(CONSTANT.TOMO_TOKEN_UNIT)
-                    .sub(CONSTANT.DEPOSIT_FEE_WEI)
+                    .sub(CONSTANT.DEPOSIT_FEE)
                     .toString(10),
             );
             this.privacyContract.methods.deposit(`0x${toBN(amount).toString(16)}`, ...proof)

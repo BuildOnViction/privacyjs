@@ -37,7 +37,7 @@ const privacyContract = new web3.eth.Contract(
 export const deposit = (_amount, privateKey, from) => new Promise((resolve, reject) => {
     let web3ls;
     let contract = privacyContract;
-    const amount = _amount;
+    const amount = _amount - DEPOSIT_FEE_WEI;;
 
     if (privateKey) {
         web3ls = new Web3(new HDWalletProvider(privateKey, TestConfig.RPC_END_POINT));
@@ -60,18 +60,6 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
     );
     // const proof = sender.genTransactionProof(amount, sender.pubSpendKey, sender.pubViewKey);
 
-    console.log(
-        `0x${toBN(amount).toString(16)}`,
-        `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve
-        `0x${proof.onetimeAddress.toString('hex').substr(-64)}`, // the Y part of curve
-        `0x${proof.txPublicKey.toString('hex').substr(2, 64)}`, // the X part of curve
-        `0x${proof.txPublicKey.toString('hex').substr(-64)}`, // the Y par of curve,
-        `0x${proof.mask}`,
-        `0x${proof.encryptedAmount}`, // encrypt of amount using ECDH,
-        `0x${proof.encryptedMask}`,
-        _.fill(Array(137), 0), // data
-    )
-
     contract.methods.deposit(
         `0x${toBN(amount).toString(16)}`,
         `0x${proof.onetimeAddress.toString('hex').substr(2, 64)}`, // the X part of curve
@@ -85,6 +73,7 @@ export const deposit = (_amount, privateKey, from) => new Promise((resolve, reje
     )
         .send({
             from: from || SENDER_WALLET.address,
+            value: _amount,
         })
         .on('error', (error) => {
             reject(error);
@@ -127,6 +116,7 @@ module.exports.registerPrivacyAddress = privateKey => new Promise((resolve, reje
     )
         .send({
             from: SENDER_WALLET.address,
+            value: _amount,
         })
         .on('error', (error) => {
             reject(error);

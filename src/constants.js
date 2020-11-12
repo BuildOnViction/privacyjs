@@ -29,7 +29,7 @@ export const PRIVACY_FLAT_FEE = toBN(
     '100000',
 ); // 0.001 TOMO
 
-export const DEPOSIT_FEE_WEI = toBN(
+export const DEPOSIT_FEE = toBN(
     '100000',
 ); // 0.001 TOMO
 

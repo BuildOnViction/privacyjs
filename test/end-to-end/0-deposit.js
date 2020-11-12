@@ -5,7 +5,7 @@
 
 import chai from 'chai';
 import TestConfig from '../config.json';
-import * as TestUtils from '../end-to-end-token/utils';
+import * as TestUtils from '../utils';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
 
@@ -15,8 +15,8 @@ chai.should();
 const { WALLETS } = TestConfig;
 const SENDER_WALLET = WALLETS[0]; // hold around 1 mil tomo
 
-const amount = 1000000000000000000; // 1tomo
-const TX_VALUE = '99900000'; // privacy protocol use 1e8 as unit
+const amount = 2000000000000000000; // 1tomo
+const TX_VALUE = '199900000'; // privacy protocol use 1e8 as unit
 const trimPrefix = (str, char) => {
     char = char || '0';
     str.replace(new RegExp(`^${char}+`), '');

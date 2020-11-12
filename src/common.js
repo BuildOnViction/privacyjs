@@ -813,6 +813,6 @@ export function twoVectorPCommitWithGens(Gi, Hi, a, b) {
 
 export const DEPOSIT_FEE_WEI = 1000000000000000;
 
-export const FEE_WEI = 10000000000000000;
+export const FEE_WEI = 1000000000000000;
 
 export const padLeft = Web3.utils.padLeft;

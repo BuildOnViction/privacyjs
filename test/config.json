@@ -1,54 +1,6 @@
 {
   "RPC_END_POINT": "https://rpc.devnet.tomochain.com",
-  "PRIVACY_SMART_CONTRACT_ADDRESS": "0x6709a35B20211479849F70E19Bc248481a448FA5",
-  "RINGCT_PRECOMPILED_CONTRACT": {
-      "PRIVATE_KEY": "0x77291ba86Dfdd3E7DB1f2A70dCe7A32157bB1adF",
-      "ADDRESS": "0x4639C8079db95123cfA6395A273f569e18B9F846",
-      "ABI": [
-          {
-              "constant": false,
-              "inputs": [
-                  {
-                      "name": "data",
-                      "type": "bytes"
-                  }
-              ],
-              "name": "VerifyRingCT",
-              "outputs": [
-                  {
-                      "name": "",
-                      "type": "bool"
-                  }
-              ],
-              "payable": false,
-              "stateMutability": "nonpayable",
-              "type": "function"
-          },
-          {
-              "constant": false,
-              "inputs": [
-                  {
-                      "name": "numRing",
-                      "type": "uint256"
-                  },
-                  {
-                      "name": "ringSize",
-                      "type": "uint256"
-                  }
-              ],
-              "name": "ComputeSignatureSize",
-              "outputs": [
-                  {
-                      "name": "",
-                      "type": "uint256"
-                  }
-              ],
-              "payable": false,
-              "stateMutability": "nonpayable",
-              "type": "function"
-          }
-      ]
-  },
+  "PRIVACY_SMART_CONTRACT_ADDRESS": "0x959ac7C61a0b87c0B41aeaE268512CCa4c3e2573",
   "WALLETS": [
       {
         "privateKey": "dbf915cf535024fb55b00cf2d730c9e27b5420bcd8363551b9884e1df79afbae",
@@ -61,7 +13,11 @@
       {
           "privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
           "address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
-      }
+	  },
+	  {
+		"privateKey": "786a37d16d0d6877b24b53aafdf7d29c7e53b7be43134c3db7b3e2eedd66ddea",
+		"address": "0x16E409004d62eaFB987DB08F038BFd1FCC77c289"
+	}
   ],
   "PRIVACYADD_MAPPING_SMART_CONTRACT": "0xbb32d285e4cF30d439F8106bbA926941730fbf1E",
   "PRIVACYADD_MAPPING_ABI": [

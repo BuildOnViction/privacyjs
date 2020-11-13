@@ -36,7 +36,7 @@ function loadWASM() {
         if (typeof window !== 'undefined') {
 
             // todo put to config
-            fetch('http://localhost:8000/privacy.wasm').then(response =>
+            fetch(window.location.origin + '/privacy.wasm').then(response =>
                 response.arrayBuffer()
             ).then(bytes =>
                 WebAssembly.instantiate(bytes, go.importObject)

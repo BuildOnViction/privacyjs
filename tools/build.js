@@ -16,10 +16,20 @@ let promise = Promise.resolve();
 promise = promise.then(() => del(['dist/*']));
 
 // Compile source code into a distributable format with Babel
-['es', 'cjs', 'umd'].forEach((format) => {
+[ 'cjs'].forEach((format) => {
   promise = promise.then(() => rollup.rollup({
     input: 'src/index.js',
-    external: Object.keys(pkg.dependencies),
+    // entry: 'src/index.js',
+    // external: Object.keys(pkg.dependencies),
+    resolve: {
+      alias: {
+        // replace native `scrypt` module with pure js `js-scrypt`
+        "scrypt": "js-scrypt",
+
+        // fix websocket require path
+        // "websocket": path.resolve(__dirname, "../")
+      }
+    },
     plugins: [
       resolve(),
       rollJson(),
@@ -37,7 +47,7 @@ promise = promise.then(() => del(['dist/*']));
     .then(bundle => bundle.write({
       file: `dist/${format === 'cjs' ? 'index' : `index.${format}`}.js`,
       format,
-      sourceMap: true,
+      sourceMap: false,
       name: format === 'umd' ? pkg.name : undefined,
     }));
 });

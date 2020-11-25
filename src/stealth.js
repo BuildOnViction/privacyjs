@@ -14,7 +14,7 @@ const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
 
-export const toPoint = (data: Buffer | Array | String) : secp256k1.curve.point => {
+export const toPoint = (data) => {
     if (typeof (data) !== 'string') {
         data = data.toString('hex');
     }

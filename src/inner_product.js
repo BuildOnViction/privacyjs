@@ -23,14 +23,14 @@ const secp256k1 = new EC('secp256k1');
 
 const baseG = secp256k1.g;
 
-type InnerProdArg = {
-    L: Array<Point>,
-    R: Array<Point>,
-    A: BigInteger,
-    B: BigInteger,
+// type InnerProdArg = {
+//     L,
+//     R,
+//     A,
+//     B,
 
-    Challenges: Array<BigInteger>,
-}
+//     Challenges,
+// }
 
 export const hashToPoint = (shortFormPoint) => {
     assert(shortFormPoint && shortFormPoint.length, 'Invalid input public key to hash');
@@ -51,7 +51,7 @@ const hashToScalar = data => BigInteger.fromHex(
 );
 
 // return Array<Point>, Array<Point>, ECPoint)
-function GenerateNewParams(bG: Array<Point>, bH: Array<Point>, x: BigInteger, L: Point, R: Point, P: Point) {
+function GenerateNewParams(bG, bH, x, L, R, P) {
     const nprime = parseInt(bG.length / 2);
 
     const Gprime = [];
@@ -79,12 +79,12 @@ const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => e
 const scalaMulVector = (scalar, vector) => _.map(vector, element => element.mul(scalar).umod(secp256k1.n));
 
 export default class InnerProductProof {
-    static prove(a: Array<BigInteger>, b: Array<BigInteger>, c: BigInteger, P: Point, U: Point, bG : Array<Point>, bH: Array<Point>): InnerProdArg {
+    static prove(a, b, c, P, U, bG , bH) {
         const loglen = parseInt(Math.log2(a.length));
         const Lvals = [];
         const Rvals = [];
 
-        const runningProof: InnerProdArg = {
+        const runningProof = {
             L: Lvals,
             R: Rvals,
             A: ZERO,
@@ -111,13 +111,13 @@ export default class InnerProductProof {
         Proves that <a,b>=c
         This is a building block for BulletProofs
     */
-    static proveSub(proof: InnerProdArg,
-        bG: Array<Point>,
-        bH: Array<Point>,
-        a: Array<BigInteger>,
-        b: Array<BigInteger>,
-        u: Point,
-        P: Point) {
+    static proveSub(proof,
+        bG,
+        bH,
+        a,
+        b,
+        u,
+        P) {
         if (a.length === 1) {
             // Prover sends a & b
             proof.A = a[0];
@@ -166,7 +166,7 @@ export default class InnerProductProof {
         return this.proveSub(proof, Gprime, Hprime, aprime, bprime, u, Pprime);
     }
 
-    static verify(c: BigInteger, P: Point, U: Point, bG: Array<Point>, bH: Array<Point>, ipp: InnerProdArg): Boolean {
+    static verify(c, P, U, bG, bH, ipp) {
         // console.log("Verifying Inner Product Argument")
         const s1 = hashToScalar(bconcat([
             ...P.encode('array', false).slice(1),

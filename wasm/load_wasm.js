@@ -33,10 +33,9 @@ function loadWASM() {
         const go = new Go();
         let inst;
 
-        if (typeof window !== 'undefined') {
 
             // todo put to config
-            fetch('http://localhost:8000/privacy.wasm').then(response =>
+            fetch('/privacy.wasm').then(response =>
                 response.arrayBuffer()
             ).then(bytes =>
                 WebAssembly.instantiate(bytes, go.importObject)
@@ -50,22 +49,6 @@ function loadWASM() {
                 console.log(ex)
                 reject(ex);
             });
-        } else {
-            const path = require('path');
-            const fs = require('fs');
-            const fileName = path.resolve(path.dirname('./wasm/privacy.wasm'), 'privacy.wasm');
-            const data = fs.readFileSync(fileName);
- 
-            WebAssembly.instantiate(data, go.importObject).then((result) => {
-                inst = result.instance;
-                isWASMRunned = true;
-                go.run(inst)
-                resolve();
-            }).catch((ex) => {
-                console.log(ex)
-                reject(ex);
-            });
-        }
 
     });
 }

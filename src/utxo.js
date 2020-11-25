@@ -18,7 +18,7 @@ import {
 const EC = require('elliptic').ec;
 
 const secp256k1 = new EC('secp256k1');
-type Signature = EC.Signature;
+// type Signature = EC.Signature;
 
 // type Signature = require('elliptic').Signature;
 
@@ -38,59 +38,41 @@ type Signature = EC.Signature;
     * 4 - txID
 */
 
-type UTXOType = {
-    '0': {
-        '0': string,
-        '1': string,
-        '2': string
-    },
-    '1': {
-        '0': string,
-        '1': string,
-        '2': string
-    },
-    '2': {
-        '0': string,
-        '1': string
-    },
-    '3': number
-}
-
 class UTXO {
-    commitmentX: string;
+    // commitmentX;
 
-    commitmentYBit: string;
+    // commitmentYBit;
 
-    pubkeyX: string;
+    // pubkeyX;
 
-    pubkeyYBit: string;
+    // pubkeyYBit;
 
-    amount: string;
+    // amount;
 
-    mask: string;
+    // mask;
 
-    txPubX: string;
+    // txPubX;
 
-    txPubYBit: string;
+    // txPubYBit;
 
-    index: number;
+    // index;
 
-    lfStealth: secp256k1.curve.point;
+    // lfStealth;
 
-    lfTxPublicKey: secp256k1.curve.point;
+    // lfTxPublicKey;
 
-    lfCommitment: secp256k1.curve.point;
+    // lfCommitment;
 
-    decodedAmount: string;
+    // decodedAmount;
 
-    decodedMask: string;
+    // decodedMask;
 
-    privKey: string;
+    // privKey;
 
     /**
      * @param {UTXOType} utxo
      */
-    constructor(utxo: UTXOType) {
+    constructor(utxo) {
         this.commitmentX = utxo['0']['0'];
         this.commitmentYBit = utxo['1']['0'];
         this.pubkeyX = utxo['0']['1'];
@@ -127,7 +109,7 @@ class UTXO {
      * @param {string} privateSpendKey Hex string of private spend key - in other word serectkey
      * @returns {object} amount, keys
      */
-    checkOwnership(privateSpendKey: string) {
+    checkOwnership(privateSpendKey) {
         const receiver = new Stealth({
             ...generateKeys(privateSpendKey),
         });
@@ -153,7 +135,7 @@ class UTXO {
      * @param {string} targetAddress targetAddress who you're sending this utxo for
      * @returns {string} delegate data of utxo
      */
-    getHashData(targetAddress: string) {
+    getHashData(targetAddress) {
         return soliditySha3(
             bintohex(bconcat([
                 this.lfCommitment.encode('array', false),
@@ -169,7 +151,7 @@ class UTXO {
      * @param {string} privateKey
      * @results {ec.Signature} include the ec.Signature you can convert to anyform after that
      */
-    sign(privateKey: string, targetAddress: string): Signature {
+    sign(privateKey, targetAddress) {
         // Generate keys
         const key = secp256k1.keyFromPrivate(privateKey);
 
@@ -188,7 +170,7 @@ class UTXO {
      * @param {string} privateSpendKey of the owner - length 32 bytes
      * @returns {string} ringCTPrivateKey in 32 bytes format
      */
-    getRingCTKeys(privateSpendKey: string) {
+    getRingCTKeys(privateSpendKey) {
         const decodedUTXO = this.checkOwnership(privateSpendKey);
         assert(decodedUTXO, " Can't decode utxo that not belongs");
 
@@ -198,7 +180,7 @@ class UTXO {
         };
     }
 
-    // static toRawFormat(proof: Proof): UTXOType {
+    // static toRawFormat(proof: Proof) {
     //     return {
     //         '0': {
     //             '0': proof.commitment.slice(1, 33).join(''),

@@ -15,9 +15,9 @@ import {
 
 const ZERO = BigInteger.ZERO();
 const EC = require('elliptic').ec;
-const Curve = require('elliptic').curve;
+// const Curve = require('elliptic').curve;
 
-const Point = Curve.short.ShortPoint;
+// const Point = Curve.short.ShortPoint;
 
 const secp256k1 = new EC('secp256k1');
 
@@ -79,7 +79,7 @@ const vectorAddVector = (vector, vector2) => _.map(vector, (element, index) => e
 const scalaMulVector = (scalar, vector) => _.map(vector, element => element.mul(scalar).umod(secp256k1.n));
 
 export default class InnerProductProof {
-    static prove(a, b, c, P, U, bG , bH) {
+    static prove(a, b, c, P, U, bG, bH) {
         const loglen = parseInt(Math.log2(a.length));
         const Lvals = [];
         const Rvals = [];

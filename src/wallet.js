@@ -29,7 +29,9 @@ import UTXO from './utxo';
 import MLSAG, { keyImage } from './mlsag';
 import BulletProof from './bullet_proof';
 import { decodeTx, encodeTx } from './crypto';
-import { toHex, padLeft, BigInteger, hexToAscii, randomHex } from './common';
+import {
+    toHex, padLeft, BigInteger, hexToAscii, asciiToHex, isBN,
+} from './common';
 
 const EC = require('elliptic').ec;
 
@@ -88,7 +90,7 @@ export default class Wallet extends EventEmitter {
         // const web3 = new Web3(provider);
         // const address = web3.eth.accounts.privateKeyToAccount('0x' + privateKey).address;
 
-        this.scOpts.from = this.scOpts.from || address;
+        this.scOpts.from = this.scOpts.from;
 
         this.scOpts.methodsMapping = this.scOpts.methodsMapping || {
             deposit: 'deposit',
@@ -269,7 +271,7 @@ export default class Wallet extends EventEmitter {
         });
     }
 
-    _restoreWalletState(balance , scannedTo, utxos) {
+    _restoreWalletState(balance, scannedTo, utxos) {
         if (balance !== null) {
             this.balance = toBN(
                 balance || '00',
@@ -585,38 +587,38 @@ export default class Wallet extends EventEmitter {
      * @param {Array} proof
      * @returns {object} new utxos and proof
      */
-    _send = (proof: Array<any>): Promise<any> => new Promise((resolve, reject) => {
-        try {
-            // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
-            const randomPrivatekey = randomHex(32).slice(2);
+    // _send = (proof: Array<any>): Promise<any> => new Promise((resolve, reject) => {
+    //     try {
+    //         // const randomPrivatekey = secp256k1.genKeyPair().getPrivate().toString('hex');
+    //         const randomPrivatekey = randomHex(32).slice(2);
 
-            const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
-            const web3 = new Web3(provider);
-            const account = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
+    //         // const provider = new HDWalletProvider(randomPrivatekey, this.scOpts.RPC_END_POINT);
+    //         // const web3 = new Web3(provider);
+    //         // const account = web3.eth.accounts.privateKeyToAccount('0x' + randomPrivatekey);
 
-            const address = account.address;
+    //         const address = account.address;
 
-            const privacyContract = new web3.eth.Contract(
-                this.scOpts.ABI, this.scOpts.ADDRESS, {
-                    gasPrice: this.scOpts.gasPrice,
-                    gas: this.scOpts.gas,
-                },
-            );
-            privacyContract.methods.privateSend(...proof)
-                .send({
-                    from: address,
-                })
-                .on('error', (error) => {
-                    reject(error);
-                })
-                .then((receipt) => {
-                    resolve(receipt.events);
-                });
-        } catch (ex) {
-            console.log('EX -- ', ex);
-            reject(ex);
-        }
-    })
+    //         const privacyContract = new web3.eth.Contract(
+    //             this.scOpts.ABI, this.scOpts.ADDRESS, {
+    //                 gasPrice: this.scOpts.gasPrice,
+    //                 gas: this.scOpts.gas,
+    //             },
+    //         );
+    //         privacyContract.methods.privateSend(...proof)
+    //             .send({
+    //                 from: address,
+    //             })
+    //             .on('error', (error) => {
+    //                 reject(error);
+    //             })
+    //             .then((receipt) => {
+    //                 resolve(receipt.events);
+    //             });
+    //     } catch (ex) {
+    //         console.log('EX -- ', ex);
+    //         reject(ex);
+    //     }
+    // })
 
     /**
      * Withdraw money from private account to public account
@@ -828,7 +830,7 @@ export default class Wallet extends EventEmitter {
     * @param {BigInteger} amount
     * @returns {Object} Proof
     */
-    _genRangeProof(remain, amount, masks){
+    _genRangeProof(remain, amount, masks) {
         // eslint-disable-next-line no-undef
         let result = BulletProof.prove([
             remain,
@@ -1048,7 +1050,7 @@ export default class Wallet extends EventEmitter {
      * @param {UTXO} utxo
      * @returns {boolean}
      */
-    getTxs = (txIndexs) => new Promise((resolve, reject) => {
+    getTxs = txIndexs => new Promise((resolve, reject) => {
         this.privacyContract.methods.getTxs(
             txIndexs,
         )
@@ -1153,7 +1155,7 @@ export default class Wallet extends EventEmitter {
         );
 
         // conver to buffer array
-        if (!Web3.utils.isBN(amount)) {
+        if (!isBN(amount)) {
             amount = toBN(amount);
         }
 
@@ -1167,7 +1169,7 @@ export default class Wallet extends EventEmitter {
             receiver.length === 42 ? Buffer.from(padLeft(receiver.substring(2, 42), 140), 'hex') : Buffer.from(base58.decode(receiver)),
             Buffer.from(
                 padLeft(
-                    Web3.utils.asciiToHex(message).slice(2),
+                    asciiToHex(message).slice(2),
                     84,
                 ),
                 'hex',

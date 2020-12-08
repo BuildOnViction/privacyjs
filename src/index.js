@@ -7,7 +7,7 @@ import * as Crypto from './crypto';
 import UTXO from './utxo';
 import Wallet from './wallet';
 
-module.exports = {
+export default {
     Stealth,
     Address,
     common,

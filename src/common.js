@@ -827,13 +827,13 @@ export const FEE_WEI = 1000000000000000;
  * @param {String} sign, by default 0
  * @returns {String} right aligned string
  */
-export const  padLeft = function (string, chars, sign) {
-    var hasPrefix = /^0x/i.test(string) || typeof string === 'number';
+export const padLeft = function (string, chars, sign) {
+    const hasPrefix = /^0x/i.test(string) || typeof string === 'number';
     string = string.toString(16).replace(/^0x/i, '');
 
-    var padding = (chars - string.length + 1 >= 0) ? chars - string.length + 1 : 0;
+    const padding = (chars - string.length + 1 >= 0) ? chars - string.length + 1 : 0;
 
-    return (hasPrefix ? '0x' : '') + new Array(padding).join(sign ? sign : "0") + string;
+    return (hasPrefix ? '0x' : '') + new Array(padding).join(sign || '0') + string;
 };
 
 
@@ -855,16 +855,16 @@ export const randomHex = function (size) {
  * @returns {String} ascii string representation of hex value
  */
 export const hexToAscii = function (hex) {
-    if (!isHexStrict(hex))
-        throw new Error('The parameter must be a valid HEX string.');
+    if (!isHexStrict(hex)) throw new Error('The parameter must be a valid HEX string.');
 
-    var str = "";
-    var i = 0, l = hex.length;
+    let str = '';
+    let i = 0; const
+        l = hex.length;
     if (hex.substring(0, 2) === '0x') {
         i = 2;
     }
     for (; i < l; i += 2) {
-        var code = parseInt(hex.substr(i, 2), 16);
+        const code = parseInt(hex.substr(i, 2), 16);
         str += String.fromCharCode(code);
     }
 
@@ -879,14 +879,13 @@ export const hexToAscii = function (hex) {
  * @returns {String} hex representation of input string
  */
 export const asciiToHex = function (str) {
-    if (!str)
-        return "0x00";
-    var hex = "";
-    for (var i = 0; i < str.length; i++) {
-        var code = str.charCodeAt(i);
-        var n = code.toString(16);
+    if (!str) return '0x00';
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        const n = code.toString(16);
         hex += n.length < 2 ? '0' + n : n;
     }
 
-    return "0x" + hex;
+    return '0x' + hex;
 };

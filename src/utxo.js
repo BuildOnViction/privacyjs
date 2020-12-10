@@ -53,7 +53,8 @@ type UTXOType = {
         '0': string,
         '1': string
     },
-    '3': number
+    '3': number,
+    '4': number
 }
 
 class UTXO {

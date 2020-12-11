@@ -181,6 +181,18 @@ export default class Wallet extends EventEmitter {
         }
     }
 
+    keyImages = (rawUTXOs, privKey) => {
+        // const privKey = this.addresses.privSpendKey;
+        let utxos = _.map(rawUTXOs, utxo => new UTXO(utxo));
+        return Buffer.from(_.map(utxos, (utxo) => {
+            const ringctKeys = utxo.getRingCTKeys(privKey);
+            return keyImage(
+                BigInteger.fromHex(ringctKeys.privKey),
+                utxo.lfStealth.encode('hex', false).slice(2),
+            ).encode('hex', true);
+        }).join(''), 'hex')
+    }
+
     /**
      * Scan all belong UTXOs
      * // TODO remove storing UTXO instance, add checking commitment

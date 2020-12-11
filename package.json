@@ -118,7 +118,8 @@
     "coveralls": "npm run lint && nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
     "build": "npm run lint &&  node tools/build",
     "minify": "minify ./dist/*.js --out-dir ./dist/",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "nativebuild": "npx webpack"
   },
   "husky": {
     "hooks": {

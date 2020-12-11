@@ -8,6 +8,7 @@ import TestConfig from '../config.json';
 import * as TestUtils from '../utils';
 import Commitment from '../../src/commitment';
 import UTXO from '../../src/utxo';
+import Wallet from '../../src/wallet';
 
 const { expect } = chai;
 chai.should();
@@ -23,12 +24,18 @@ const trimPrefix = (str, char) => {
 };
 
 describe('#ete #deposit', () => {
-    for (let count = 0; count < 20; count++) {
+    for (let count = 0; count < 1; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {
                 const returnedValue = result.utxo;
                 const { proof } = result;
+
+                // double check keyImage
+                let wallet = new Wallet(WALLETS[0].privateKey, {
+                }, WALLETS[0].address);
+
+                console.log(Wallet.keyImages([result.utxo], WALLETS[0].privateKey))
 
                 const utxoIns = new UTXO(returnedValue);
 
@@ -84,7 +91,7 @@ describe('#ete #deposit', () => {
         });
     }
 
-    for (let count = 0; count < 10; count++) {
+    for (let count = 0; count < 1; count++) {
         it('Successful deposit to create decoys', (done) => {
             const { privateKey, address } = WALLETS[2];
             TestUtils.deposit(1000000000000000000, privateKey, address).then(() => {

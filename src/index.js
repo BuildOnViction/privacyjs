@@ -6,6 +6,7 @@ import * as common from './common';
 import * as Crypto from './crypto';
 import UTXO from './utxo';
 import Wallet from './wallet';
+import toBN from 'number-to-bn';
 
 export default {
     Stealth,
@@ -15,4 +16,5 @@ export default {
     UTXO,
     Commitment,
     Wallet,
+    toBN
 };

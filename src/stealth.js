@@ -98,7 +98,6 @@ class Stealth {
         const blindingFactor = randomBI();
 
         const ECDHSharedSerect = receiverPubViewKey.mul(blindingFactor);
-
         const f = BigInteger.fromBuffer(
             hs(
                 Buffer.from(ECDHSharedSerect.encode('array', true)),
@@ -106,7 +105,6 @@ class Stealth {
         );
 
         const F = basePoint.mul(f);
-
         const onetimeAddress = receiverPubSpendKey.add(F).encode('hex', false);
 
         const txPublicKey = basePoint.mul(blindingFactor).encode('hex', false);

@@ -27,6 +27,9 @@ describe('#ete #deposit', () => {
     for (let count = 0; count < 1; count++) {
         // eslint-disable-next-line no-loop-func
         it('Successful deposit to to privacy account', (done) => {
+            console.log(Wallet.genDepositProof(amount, SENDER_WALLET.privateKey))
+            expect(Wallet.genDepositProof(amount, SENDER_WALLET.privateKey).length).to.equal(8);
+
             TestUtils.deposit(amount, SENDER_WALLET.privateKey, SENDER_WALLET.address).then((result) => {
                 const returnedValue = result.utxo;
                 const { proof } = result;
@@ -36,6 +39,7 @@ describe('#ete #deposit', () => {
                 }, WALLETS[0].address);
 
                 console.log(Wallet.keyImages([result.utxo], WALLETS[0].privateKey))
+                
 
                 const utxoIns = new UTXO(returnedValue);
 

@@ -583,7 +583,7 @@ export default class Wallet extends EventEmitter {
 
         assert(privacyAddress.length === CONSTANT.PRIVACY_ADDRESS_LENGTH, 'Malform privacy address !!');
 
-        const biAmount = toBN(amount).mul(CONSTANT.PRIVACY_TOKEN_UNIT).div(CONSTANT.TOMO_TOKEN_UNIT);
+        const biAmount = toBN(amount);
 
         // assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
@@ -727,13 +727,15 @@ export default class Wallet extends EventEmitter {
      * on some very first version, we store the proof locally to help debugging if error happens
      */
     withdraw = async (address, amount, message) => {
-        await this.makeWithdrawProof(address, amount, message);
+        await this.genWithdrawProof(address, amount, message);
         const newUTXOS = await this.doTx();
 
         return newUTXOS;
     }
 
-    makeWithdrawProof = async (address, amount, message) => {
+    genWithdrawProof = async (address, amount, decoys, message) => {
+        this.resetTxState();
+        
         assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
 
         if (!this.balance) {
@@ -743,7 +745,7 @@ export default class Wallet extends EventEmitter {
         let biAmount;
 
         if (amount) {
-            biAmount = toBN(amount).mul(CONSTANT.PRIVACY_TOKEN_UNIT).div(CONSTANT.TOMO_TOKEN_UNIT);
+            biAmount = toBN(amount);
         } else {
             biAmount = this.balance;
         }
@@ -779,6 +781,7 @@ export default class Wallet extends EventEmitter {
                     txs[txIndex].receivAmount,
                     txs[txIndex].utxos,
                     txs[txIndex].remainAmount,
+                    decoys,
                     message,
                 );
                 txIndex++;
@@ -1061,9 +1064,9 @@ export default class Wallet extends EventEmitter {
     * @param {string} string
     * @returns {Object} proof output
     */
-    _makeWithdrawProof(receiver, amount, spendingUTXOs, remain, message) {
+    _makeWithdrawProof(receiver, amount, spendingUTXOs, remain, noisingUTXOs) {
         const outputProofs = this._genOutputProofs(receiver, amount, remain, true);
-        const { signature, decoys } = this._genRingCT(spendingUTXOs, outputProofs);
+        const { signature, decoys } = this._genRingCT(spendingUTXOs, outputProofs, noisingUTXOs);
 
         return [
             _.map(_.flatten(decoys), decoy => decoy.index),
@@ -1088,7 +1091,7 @@ export default class Wallet extends EventEmitter {
             ]),
             _.map(
                 this._encryptedTransactionData(
-                    [outputProofs[1]], amount, receiver, message || '',
+                    [outputProofs[1]], amount, receiver, '',
                 ).toString('hex').match(/.{1,2}/g), num => '0x' + num,
             ),
         ];
@@ -1235,6 +1238,31 @@ export default class Wallet extends EventEmitter {
 
         return null;
     }
+
+    getUTXOs = utxosIndexs => new Promise((resolve, reject) => {
+        this.privacyContract.methods.getUTXOs(
+            utxosIndexs,
+        )
+            .call()
+            .then((utxos) => {
+                utxos = _.map(utxos, (raw, index) => {
+                    const utxoData = _.cloneDeep(raw);
+                    utxoData[UTXO_INDEX_NAME] = utxosIndexs[parseInt(index)];
+                    // remove all redundant field - because solidity return both by field name and by index with struct
+                    // we use just index for sync with other method
+                    delete utxoData.XBits;
+                    delete utxoData.YBits;
+                    delete utxoData.encodeds;
+                    delete utxoData.index;
+
+                    return { ...utxoData };
+                });
+                resolve(utxos);
+            }).catch((exception) => {
+                reject(exception);
+            });
+    })
+
 
     /**
      * Encrypt the transaction data

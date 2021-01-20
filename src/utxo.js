@@ -73,7 +73,6 @@ class UTXO {
      * @param {UTXOType} utxo
      */
     constructor(utxo) {
-        console.log("utxo['3'] ", utxo['3']);
         this.commitmentX = utxo['0']['0'];
         this.commitmentYBit = utxo['1']['0'];
         this.pubkeyX = utxo['0']['1'];

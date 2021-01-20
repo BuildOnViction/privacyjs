@@ -733,22 +733,13 @@ export default class Wallet extends EventEmitter {
         return newUTXOS;
     }
 
-    genWithdrawProof = async (address, amount, decoys, message) => {
+    genWithdrawProof = (address, amount, decoys, message) => {
         this.resetTxState();
-        
+
         assert(address.length === CONSTANT.ETH_ADDRESS_LENGTH, 'Malform address !!');
 
-        if (!this.balance) {
-            await this.scan();
-        }
+        const biAmount = toBN(amount);
 
-        let biAmount;
-
-        if (amount) {
-            biAmount = toBN(amount);
-        } else {
-            biAmount = this.balance;
-        }
         assert(biAmount.cmp(BigInteger.ZERO()) > 0, 'Amount should be larger than zero');
         assert(biAmount.cmp(this.balance) <= 0, 'Balance is not enough');
 
@@ -763,12 +754,7 @@ export default class Wallet extends EventEmitter {
 
         assert(utxos !== null, 'Balance is not enough');
 
-        const utxoInstances = _.map(utxos, (raw) => {
-            const utxo = new UTXO(raw);
-            utxo.checkOwnership(this.addresses.privSpendKey);
-            return utxo;
-        });
-
+        const utxoInstances = utxos;
         const txs = this._splitTransaction(utxoInstances, txTimes, totalAmount);
         const txsProofs = [];
 
@@ -776,7 +762,7 @@ export default class Wallet extends EventEmitter {
             let txIndex = 0;
             while (txs[txIndex]) {
                 // eslint-disable-next-line no-await-in-loop
-                const proof = await this._makeWithdrawProof(
+                const proof = this._makeWithdrawProof(
                     address,
                     txs[txIndex].receivAmount,
                     txs[txIndex].utxos,

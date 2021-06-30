@@ -1,4 +1,4 @@
-***TOMO privacy wallet's apis***
+***TOMO privacy wallet's sdk***
 =======
 Terms
 - `keys`: private spend key, private view key, public spend key, public view key.
@@ -21,8 +21,7 @@ Additional requests/features please contact anhnt@tomochain.com
 ### ROADMAP
 - [x] Finish high-level apis that able to interact with smart-contracts and precompiled contracts on test net includes ringct, deposit, balance, privatesend and withdraw
 - [x] Privacy protocol - turn any TRC20, TRC21 token to privacy token
-- Integrated to tomowallet web and integrated bullet proof, demo on testnet
-- Integrate to Maxbet, standardlize the transaction flow for Dapp.
+- [x] Integrated to tomowallet web and integrated bullet proof, demo on testnet
 
 Usage
 -----
